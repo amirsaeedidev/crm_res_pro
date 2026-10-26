@@ -1,0 +1,187 @@
+
+name: Flutter Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build APK and AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # 1. دریافت سورس
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. بررسی ساختار پروژه
+      - name: Validate project files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f pubspec.yaml ]]; then
+            echo "::error::pubspec.yaml not found in repository root"
+            exit 1
+          fi
+
+          if [[ ! -d android ]]; then
+            echo "::error::Android folder not found"
+            exit 1
+          fi
+
+          if [[ ! -f android/gradlew ]]; then
+            echo "::error::android/gradlew not found"
+            exit 1
+          fi
+
+          if [[ ! -f android/gradle/wrapper/gradle-wrapper.properties ]]; then
+            echo "::error::Gradle wrapper configuration not found"
+            exit 1
+          fi
+
+          echo "Project structure looks valid."
+
+      # 3. جاوا مورد نیاز Android Gradle
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # 4. نصب Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # 5. نمایش نسخه‌ها برای عیب‌یابی
+      - name: Print build environment
+        run: |
+          flutter --version
+          dart --version
+          java -version
+          git log -1 --oneline
+
+      # 6. اعتبارسنجی کلید Supabase
+      - name: Validate Supabase configuration
+        env:
+          SUPABASE_URL: https://cfdzxtnkiptnlitwvnla.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SUPABASE_URL}" ]]; then
+            echo "::error::SUPABASE_URL is empty"
+            exit 1
+          fi
+
+          if [[ -z "${SUPABASE_PUBLISHABLE_KEY}" ]]; then
+            echo "::error::Missing GitHub secret SUPABASE_PUBLISHABLE_KEY"
+            echo "Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          echo "Supabase build configuration is present."
+
+      # 7. دریافت وابستگی‌های Dart و Flutter
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      # 8. بررسی خطاهای تحلیل کد
+      # خطاهای واقعی تحلیل، Build را متوقف می‌کنند.
+      - name: Analyze Flutter project
+        run: flutter analyze --no-pub
+
+      # 9. ساخت APK برای نصب و تست
+      - name: Build release APK
+        env:
+          SUPABASE_URL: https://cfdzxtnkiptnlitwvnla.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: >
+          flutter build apk --release
+          --dart-define=SUPABASE_URL=${SUPABASE_URL}
+          --dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+
+      # 10. ساخت AAB برای انتشار در فروشگاه
+      - name: Build release AAB
+        env:
+          SUPABASE_URL: https://cfdzxtnkiptnlitwvnla.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: >
+          flutter build appbundle --release
+          --dart-define=SUPABASE_URL=${SUPABASE_URL}
+          --dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+
+      # 11. بررسی وجود فایل‌های خروجی
+      - name: Validate build artifacts
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          AAB="build/app/outputs/bundle/release/app-release.aab"
+
+          if [[ ! -s "$APK" ]]; then
+            echo "::error::APK was not generated or is empty"
+            exit 1
+          fi
+
+          if [[ ! -s "$AAB" ]]; then
+            echo "::error::AAB was not generated or is empty"
+            exit 1
+          fi
+
+          ls -lh "$APK" "$AAB"
+
+      # 12. آپلود APK
+      - name: Upload APK artifact
+        if: always() && hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-android-apk-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: warn
+          retention-days: 7
+
+      # 13. آپلود AAB
+      - name: Upload AAB artifact
+        if: always() && hashFiles('build/app/outputs/bundle/release/app-release.aab') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-android-aab-${{ github.run_number }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
+          retention-days: 7
+
+      # 14. خلاصه نتیجه اجرا
+      - name: Build summary
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Flutter Android Build"
+            echo ""
+            echo "- Status: ${JOB_STATUS}"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- Run: ${GITHUB_RUN_NUMBER}"
+            echo ""
+            echo "APK and AAB artifacts are available if their respective builds succeeded."
+          } >> "$GITHUB_STEP_SUMMARY"
