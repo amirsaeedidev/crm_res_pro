@@ -6,6 +6,7 @@ import '../theme/app_radius.dart';
 
 class NavigationItem extends StatelessWidget {
   final IconData icon;
+  final String? imageAssetPath;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
@@ -13,6 +14,7 @@ class NavigationItem extends StatelessWidget {
   const NavigationItem({
     super.key,
     required this.icon,
+    this.imageAssetPath,
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -37,11 +39,24 @@ class NavigationItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
-                size: AppSizes.iconMd,
-              ),
+              if (imageAssetPath != null)
+                Image.asset(
+                  imageAssetPath!,
+                  width: AppSizes.iconMd + 4,
+                  height: AppSizes.iconMd + 4,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    icon,
+                    color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
+                    size: AppSizes.iconMd + 4,
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
+                  size: AppSizes.iconMd + 4,
+                ),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Text(
