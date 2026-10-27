@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
 import '../models/product_model.dart';
 import '../repositories/products_repository.dart';
@@ -48,7 +49,7 @@ class ProductsProvider extends ChangeNotifier {
     } catch (e, st) {
       if (_disposed || requestVersion != _requestVersion) return;
       LoggerService.error('Fetch products failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       if (!_disposed && requestVersion == _requestVersion) {
         _isLoading = false;
@@ -99,7 +100,7 @@ class ProductsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Create product failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -123,7 +124,7 @@ class ProductsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update product failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -139,7 +140,7 @@ class ProductsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Delete product failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     }
   }
@@ -158,7 +159,7 @@ class ProductsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Toggle product status failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     }
   }
