@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/utils/app_error_message.dart';
 
 class ReceiptSettingsCard extends StatefulWidget {
   const ReceiptSettingsCard({super.key});
@@ -78,9 +79,9 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
         _showNotes = row['show_notes'] != false;
       }
     } on PostgrestException catch (e) {
-      if (mounted) setState(() => _error = 'بارگذاری تنظیمات فاکتور ناموفق بود: ${e.message}');
+      if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'بارگذاری تنظیمات فاکتور انجام نشد. دوباره تلاش کنید.'));
     } catch (e) {
-      if (mounted) setState(() => _error = 'بارگذاری تنظیمات فاکتور ناموفق بود: $e');
+      if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'بارگذاری تنظیمات فاکتور انجام نشد. اتصال و سطح دسترسی را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -97,7 +98,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       if (logo.isNotEmpty) {
         final uri = Uri.tryParse(logo);
         if (uri == null || !{'https', 'http'}.contains(uri.scheme)) {
-          throw const FormatException('نشانی لوگو باید با http یا https شروع شود.');
+          throw const FormatException('نشانی اینترنتی لوگو معتبر نیست. یک نشانی اینترنتی کامل وارد کنید.');
         }
       }
       await SupabaseService.client.from('receipt_settings').upsert({
@@ -124,7 +125,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تنظیمات فاکتور ذخیره شد.')));
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'ذخیره تنظیمات فاکتور انجام نشد. اطلاعات و سطح دسترسی را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -155,13 +156,13 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('تنظیمات فاکتور و چاپ رسید', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        Text('نام فروشگاه، لوگو، شماره سفارش، نوبت روز، تخفیف، اقلام و اندازه چاپ PDF از این قسمت مدیریت می‌شوند.', style: Theme.of(context).textTheme.bodySmall),
+        Text('نام فروشگاه، لوگو، شماره سفارش، نوبت روز، تخفیف، اقلام و اندازه چاپ برگه از این قسمت مدیریت می‌شوند.', style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: AppSizes.md),
         if (_loading) const LinearProgressIndicator(),
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
         Wrap(spacing: AppSizes.md, runSpacing: AppSizes.sm, children: [
           SizedBox(width: 320, child: _field(_storeName, 'نام فروشگاه *')),
-          SizedBox(width: 320, child: _field(_logoUrl, 'آدرس عمومی لوگو (URL)')),
+          SizedBox(width: 320, child: _field(_logoUrl, 'نشانی اینترنتی عمومی لوگو')),
           SizedBox(width: 320, child: _field(_phone, 'تلفن فروشگاه', keyboardType: TextInputType.phone)),
           SizedBox(width: 320, child: _field(_address, 'آدرس فروشگاه')),
           SizedBox(width: 320, child: _field(_header, 'متن سربرگ فاکتور')),
@@ -172,7 +173,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
           initialValue: _paperSize,
           decoration: const InputDecoration(labelText: 'اندازه چاپ', border: OutlineInputBorder()),
           items: const [
-            DropdownMenuItem(value: 'a4', child: Text('A4 (برگه معمولی)')),
+            DropdownMenuItem(value: 'a4', child: Text('برگه استاندارد')),
             DropdownMenuItem(value: 'roll_80', child: Text('رول حرارتی ۸۰ میلی‌متر')),
             DropdownMenuItem(value: 'roll_58', child: Text('رول حرارتی ۵۸ میلی‌متر')),
           ],
