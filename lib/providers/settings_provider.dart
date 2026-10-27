@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/services/logger_service.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/storage_service.dart';
 import '../repositories/settings_repository.dart';
 
@@ -65,7 +66,7 @@ class SettingsProvider extends ChangeNotifier {
           await StorageService.setInt('secondary_color', secondary);
         }
       } else {
-        _error = 'ردیف تنظیمات فروشگاه در Supabase پیدا نشد. اسکریپت 004 را اجرا کنید.';
+        _error = 'تنظیمات فروشگاه در پایگاه داده پیدا نشد. ابتدا ساختار پایگاه داده را به‌روزرسانی کنید.';
       }
     } catch (e, st) {
       _error = _friendlyError(e);
@@ -149,12 +150,18 @@ class SettingsProvider extends ChangeNotifier {
 
   String _friendlyError(Object error) {
     final text = error.toString();
-    if (text.contains('PGRST205') || text.contains('42P01') || text.contains('restaurant_settings')) {
-      return 'جدول restaurant_settings در Supabase آماده نیست؛ ابتدا supabase/manual/004_restaurant_settings.sql را اجرا کنید.';
+    if (text.contains('PGRST205') ||
+        text.contains('42P01') ||
+        text.contains('restaurant_settings')) {
+      return 'ساختار تنظیمات فروشگاه در پایگاه داده آماده نیست. ابتدا به‌روزرسانی ساختار پایگاه داده را اجرا کنید.';
     }
-    if (text.contains('42501') || text.toLowerCase().contains('permission')) {
-      return 'مجوز دسترسی رد شد. با حساب مدیر فعال وارد شوید و سیاست‌های RLS را بررسی کنید.';
+    if (text.contains('42501') ||
+        text.toLowerCase().contains('permission')) {
+      return 'اجازه دسترسی به تنظیمات داده نشد. با حساب مدیر فعال وارد شوید و سطح دسترسی را بررسی کنید.';
     }
-    return 'عملیات تنظیمات ذخیره نشد: $text';
+    return AppErrorMessage.from(
+      error,
+      fallback: 'ذخیره یا دریافت تنظیمات ناموفق بود. اتصال و دسترسی حساب مدیر را بررسی کنید.',
+    );
   }
 }
