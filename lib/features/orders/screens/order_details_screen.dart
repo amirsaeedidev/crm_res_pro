@@ -33,6 +33,37 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   final TextEditingController _readyTimeController = TextEditingController();
   final TextEditingController _adminNoteController = TextEditingController();
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _statusStepLabel(String status) {
+    switch (status) {
+      case 'pending':
+        return 'در انتظار';
+      case 'confirmed':
+        return 'تأیید شده';
+      case 'preparing':
+        return 'در حال آماده‌سازی';
+      case 'ready':
+        return 'آماده';
+      case 'out_for_delivery':
+        return 'در مسیر ارسال';
+      case 'completed':
+        return 'تکمیل‌شده';
+      case 'cancelled':
+        return 'لغوشده';
+      default:
+        return 'نامشخص';
+    }
+  }
+
   String _orderTypeLabel(String type) {
     switch (type.toLowerCase()) {
       case 'delivery':
@@ -251,7 +282,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Order Status',
+            'وضعیت سفارش',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSizes.lg),
@@ -282,7 +313,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         ),
                         const SizedBox(height: AppSizes.xs),
                         Text(
-                          steps[index].split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '),
+                          _statusStepLabel(steps[index]),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
                             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -335,7 +366,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   Widget _buildOrderTypeInfo(BuildContext context, OrderModel order) {
     IconData icon = Icons.receipt_long;
-    String title = 'Order Information';
+    String title = 'اطلاعات سفارش';
 
     return AppCard(
       child: Column(
@@ -429,7 +460,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Order Items',
+            'اقلام سفارش',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSizes.md),
@@ -451,7 +482,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${item.quantity}x ${item.name}',
+                            '${_persianDigits(item.quantity)} × ${item.name}',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           if (item.note != null && item.note!.isNotEmpty)
@@ -464,7 +495,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   borderRadius: BorderRadius.circular(AppRadius.small),
                                 ),
                                 child: Text(
-                                  'Item Note: ${item.note}',
+                                  'یادداشت این مورد: ${item.note}',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.warning),
                                 ),
                               ),
@@ -473,7 +504,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ),
                     ),
                     Text(
-                      '${item.price * item.quantity} T',
+                      '${_persianDigits(item.price * item.quantity)} تومان',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -490,21 +521,21 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return AppCard(
       child: Column(
         children: [
-          _buildSummaryRow(context, 'Subtotal', '${order.totalAmount} T'),
+          _buildSummaryRow(context, 'جمع جزء', '${_persianDigits(order.totalAmount)} تومان'),
           const SizedBox(height: AppSizes.sm),
-          _buildSummaryRow(context, 'Delivery Fee', '0 T'), // Assuming fee is included or 0 for now
+          _buildSummaryRow(context, 'هزینه ارسال', '۰ تومان'), // Assuming fee is included or 0 for now
           const Divider(height: AppSizes.lg),
           _buildSummaryRow(
             context,
-            'Total',
-            '${order.totalAmount} T',
+            'مبلغ کل',
+            '${_persianDigits(order.totalAmount)} تومان',
             isTotal: true,
           ),
           const SizedBox(height: AppSizes.sm),
           _buildSummaryRow(
             context,
-            'Order Date',
-            _dateFormatter.format(order.createdAt.toLocal()),
+            'تاریخ سفارش',
+            _persianDigits(_dateFormatter.format(order.createdAt.toLocal())),
           ),
         ],
       ),
