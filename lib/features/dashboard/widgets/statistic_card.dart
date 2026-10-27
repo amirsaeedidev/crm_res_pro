@@ -35,13 +35,13 @@ class StatisticCard extends StatelessWidget {
             children: [
               Image.asset(
                 imageAssetPath,
-                width: isFeatured ? 60 : 44,
-                height: isFeatured ? 60 : 44,
+                width: isFeatured ? 68 : 52,
+                height: isFeatured ? 68 : 52,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => Icon(
                   Icons.image_not_supported_outlined,
                   color: iconColor,
-                  size: isFeatured ? 60 : 44,
+                  size: isFeatured ? 68 : 52,
                 ),
               ),
               Container(
