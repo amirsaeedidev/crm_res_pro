@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
 import '../models/reservation_model.dart';
 import '../repositories/reservations_repository.dart';
@@ -45,7 +46,7 @@ class ReservationsProvider extends ChangeNotifier {
       
     } catch (e, st) {
       LoggerService.error('Fetch reservations failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -81,7 +82,7 @@ class ReservationsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update reservation status failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isUpdating = false;
@@ -96,7 +97,7 @@ class ReservationsProvider extends ChangeNotifier {
       _currentPage = 1;
       await fetchReservations();
       return true;
-    } catch (e) { _error = e.toString(); return false; }
+    } catch (e) { _error = AppErrorMessage.from(e); return false; }
     finally { _isUpdating = false; notifyListeners(); }
   }
 
@@ -106,7 +107,7 @@ class ReservationsProvider extends ChangeNotifier {
       await _repository.updateReservationDetails(id: id, tableId: tableId, guestCount: guestCount, date: date, time: TimeOfDayValue(time), note: note);
       await fetchReservations();
       return true;
-    } catch (e) { _error = e.toString(); return false; }
+    } catch (e) { _error = AppErrorMessage.from(e); return false; }
     finally { _isUpdating = false; notifyListeners(); }
   }
 
