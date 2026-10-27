@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_error_message.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_sizes.dart';
@@ -79,7 +80,7 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تغییر موجودی و دفتر گردش مالی با موفقیت ثبت شد.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
     }
   }
 
@@ -89,7 +90,7 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
       content: SizedBox(width: 580, child: FutureBuilder<List<CustomerWalletTransactionModel>>(
         future: _repository.getTransactions(wallet.userId), builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
-          if (snapshot.hasError) return Text('خطا: ${snapshot.error}');
+          if (snapshot.hasError) return Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت گردش کیف پول ناموفق بود. دوباره تلاش کنید.'));
           final transactions = snapshot.data ?? const <CustomerWalletTransactionModel>[];
           if (transactions.isEmpty) return const Text('برای این کیف پول تراکنشی ثبت نشده است.');
           return SizedBox(height: 380, child: ListView.separated(itemCount: transactions.length, separatorBuilder: (_, _) => const Divider(height: 1), itemBuilder: (context, index) {
@@ -114,7 +115,7 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
     const SizedBox(height: AppSizes.md),
     Expanded(child: FutureBuilder<List<CustomerWalletModel>>(future: _future, builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-      if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text('دریافت کیف پول‌ها ناموفق بود\n${snapshot.error}', textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh), label: const Text('تلاش مجدد'))]));
+      if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت فهرست کیف پول‌ها ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh), label: const Text('تلاش مجدد'))]));
       final wallets = snapshot.data ?? const <CustomerWalletModel>[];
       if (wallets.isEmpty) return const Center(child: Text('کیف پولی برای نمایش وجود ندارد.')); 
       return ListView.separated(itemCount: wallets.length, separatorBuilder: (_, _) => const SizedBox(height: 8), itemBuilder: (context, index) {
