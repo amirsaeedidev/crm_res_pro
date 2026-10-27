@@ -52,7 +52,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         DiscountModel? discount;
         try { discount = await context.read<DiscountsRepository>().getDiscountById(widget.discountId!); }
-        catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('دریافت تخفیف ناموفق بود: $e'))); }
+        catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'دریافت اطلاعات تخفیف ناموفق بود. دوباره تلاش کنید.')))); }
         if (discount != null) {
           _titleController.text = discount.title;
           _codeController.text = discount.code;
@@ -248,7 +248,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     const SizedBox(height: AppSizes.md),
                     AppDropdown<String>(
                       value: _selectedType,
-                      items: _discountTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
+                      items: _discountTypes.map((type) => DropdownMenuItem(value: type, child: Text(type == 'Percentage' ? 'درصدی' : 'مبلغ ثابت'))).toList(),
                       onChanged: (value) => setState(() => _selectedType = value),
                       labelText: 'نوع تخفیف *',
                       hintText: 'نوع تخفیف را انتخاب کنید',
@@ -346,7 +346,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           child: AppTextField(
                             controller: _totalUsageController,
                             labelText: 'سقف کل استفاده',
-                            hintText: 'e.g., 100',
+                            hintText: 'مثلاً ۱۰۰',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
                           ),
