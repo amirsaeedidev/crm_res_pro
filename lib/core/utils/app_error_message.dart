@@ -3,6 +3,35 @@
 class AppErrorMessage {
   AppErrorMessage._();
 
+  /// Keeps friendly Persian messages, but prevents technical exceptions
+  /// from being shown directly by shared error widgets.
+  static String forDisplay(
+    String message, {
+    String fallback = 'نمایش اطلاعات با مشکل روبه‌رو شد. لطفاً دوباره تلاش کنید.',
+  }) {
+    final normalized = message.toLowerCase();
+    const technicalMarkers = [
+      'exception',
+      'postgrest',
+      'socketexception',
+      'failed host lookup',
+      'failed to fetch',
+      'stack trace',
+      'row-level security',
+      'permission denied',
+      'clientexception',
+      'supabase',
+      'http exception',
+    ];
+    if (technicalMarkers.any(normalized.contains)) {
+      return from(message, fallback: fallback);
+    }
+    if (RegExp(r'[\\u0600-\\u06FF]').hasMatch(message)) {
+      return message;
+    }
+    return fallback;
+  }
+
   static String from(
     Object error, {
     String fallback = 'انجام عملیات با مشکل روبه‌رو شد. لطفاً دوباره تلاش کنید.',
