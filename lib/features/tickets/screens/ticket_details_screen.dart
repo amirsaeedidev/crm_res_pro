@@ -390,7 +390,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.lock_outline, color: AppColors.getSecondaryText),
+                          Icon(Icons.lock_outline, color: AppColors.getSecondaryText(context)),
                           const SizedBox(width: AppSizes.sm),
                           const Expanded(
                             child: Text(
