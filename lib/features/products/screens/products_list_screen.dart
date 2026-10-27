@@ -57,14 +57,14 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Products Management',
+                'مدیریت محصولات',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: AppColors.getPrimaryText(context),
                       fontWeight: FontWeight.bold,
                     ),
               ),
               AppButton(
-                label: 'Add New Product',
+                label: 'افزودن محصول جدید',
                 icon: Icons.add_rounded,
                 width: 200,
                 onPressed: () {
@@ -101,8 +101,8 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
 
                 if (provider.products.isEmpty) {
                   return const EmptyWidget(
-                    title: 'No Products Found',
-                    message: 'There are no products matching your criteria.',
+                    title: 'محصولی پیدا نشد',
+                    message: 'محصولی با این مشخصات پیدا نشد.',
                     icon: Icons.inventory_2_outlined,
                   );
                 }
@@ -251,7 +251,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                           ),
                           if (product.isPopular) ...[
                             const SizedBox(width: AppSizes.sm),
-                            const CustomChip(label: 'Popular', type: ChipType.primary),
+                            const CustomChip(label: 'محبوب', type: ChipType.primary),
                           ]
                         ],
                       ),
@@ -323,7 +323,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                   onPressed: () {
                     DeleteDialog.show(
                       context: context,
-                      title: 'Delete Product',
+                      title: 'حذف محصول',
                       message: 'Are you sure you want to delete "${product.name}"?',
                       onDelete: () {
                         provider.deleteProduct(product.id);
@@ -401,7 +401,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                               ),
                             ),
                             if (product.isPopular)
-                              const CustomChip(label: 'Popular', type: ChipType.primary),
+                              const CustomChip(label: 'محبوب', type: ChipType.primary),
                           ],
                         ),
                         if (product.labels.isNotEmpty) ...[
@@ -452,7 +452,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                         onPressed: () {
                           DeleteDialog.show(
                             context: context,
-                            title: 'Delete Product',
+                            title: 'حذف محصول',
                             message: 'Are you sure you want to delete "${product.name}"?',
                             onDelete: () {
                               provider.deleteProduct(product.id);
