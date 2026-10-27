@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/utils/app_error_message.dart';
 import '../models/order_model.dart';
 import '../core/services/logger_service.dart';
 import '../repositories/orders_repository.dart';
@@ -59,7 +60,7 @@ class OrdersProvider extends ChangeNotifier {
       _totalPages = _orders.length == _pageSize ? _currentPage + 1 : _currentPage;
     } catch (e) {
       if (_disposed || requestVersion != _listRequestVersion) return;
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       if (!_disposed && requestVersion == _listRequestVersion) {
         _isLoading = false;
@@ -82,7 +83,7 @@ class OrdersProvider extends ChangeNotifier {
       _selectedOrder = order;
     } catch (e) {
       if (_disposed || requestVersion != _detailsRequestVersion) return;
-      _detailsError = e.toString();
+      _detailsError = AppErrorMessage.from(e, fallback: 'دریافت جزئیات سفارش ناموفق بود. دوباره تلاش کنید.');
     } finally {
       if (!_disposed && requestVersion == _detailsRequestVersion) {
         _isLoadingDetails = false;
@@ -136,7 +137,7 @@ class OrdersProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      _detailsError = e.toString();
+      _detailsError = AppErrorMessage.from(e, fallback: 'دریافت جزئیات سفارش ناموفق بود. دوباره تلاش کنید.');
       return false;
     } finally {
       _isUpdatingStatus = false;
@@ -160,7 +161,7 @@ class OrdersProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update estimated ready time failed', error: e, stackTrace: st);
-      _detailsError = e.toString();
+      _detailsError = AppErrorMessage.from(e, fallback: 'دریافت جزئیات سفارش ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
       return false;
     }
@@ -178,7 +179,7 @@ class OrdersProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update order admin note failed', error: e, stackTrace: st);
-      _detailsError = e.toString();
+      _detailsError = AppErrorMessage.from(e, fallback: 'دریافت جزئیات سفارش ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
       return false;
     }
