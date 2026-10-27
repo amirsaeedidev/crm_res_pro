@@ -142,11 +142,11 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             ),
             child: Row(
               children: [
-                _buildHeaderText(context, 'Product', 3),
-                _buildHeaderText(context, 'Price', 2),
-                _buildHeaderText(context, 'Rating', 1),
-                _buildHeaderText(context, 'Status', 1),
-                _buildHeaderText(context, 'Actions', 1),
+                _buildHeaderText(context, 'محصول', 3),
+                _buildHeaderText(context, 'قیمت', 2),
+                _buildHeaderText(context, 'امتیاز', 1),
+                _buildHeaderText(context, 'وضعیت', 1),
+                _buildHeaderText(context, 'عملیات', 1),
               ],
             ),
           ),
