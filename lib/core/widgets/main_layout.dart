@@ -75,34 +75,37 @@ class _MainLayoutState extends State<MainLayout> {
               width: AppSizes.sidebarWidth,
               child: const AppSidebar(),
             ),
-      body: Row(
-        children: [
-          // Permanent Sidebar for Desktop (Will appear on the Right due to RTL)
-          if (isDesktop) const AppSidebar(),
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Row(
+          children: [
+            // نوار کناری در نمایشگرهای بزرگ
+            if (isDesktop) const AppSidebar(),
 
-          // Main Content Area
-          Expanded(
-            child: Column(
-              children: [
-                AppTopbar(
-                  // استفاده از متد تبدیل مسیر به فارسی
-                  title: _getPageTitle(navProvider.currentRoute),
-                  onMenuTap: () {
-                    if (!isDesktop) {
-                      _scaffoldKey.currentState?.openDrawer();
-                    }
-                  },
-                ),
-                Expanded(
-                  child: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: widget.child,
+            // محتوای اصلی پنل
+            Expanded(
+              child: Column(
+                children: [
+                  AppTopbar(
+                    title: _getPageTitle(navProvider.currentRoute),
+                    onMenuTap: () {
+                      if (!isDesktop) {
+                        _scaffoldKey.currentState?.openDrawer();
+                      }
+                    },
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: widget.child,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
