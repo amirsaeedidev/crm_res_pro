@@ -54,6 +54,16 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
     }
   }
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   void _showTableActions(BuildContext context, TableModel table) {
     showModalBottomSheet(
       context: context,
@@ -350,7 +360,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 ),
                 const SizedBox(height: AppSizes.sm),
                 Text(
-                  '$freeCount آزاد • $occupiedCount اشغال • $reservedCount رزرو شده',
+                  '${_persianDigits(freeCount)} آزاد • ${_persianDigits(occupiedCount)} اشغال • ${_persianDigits(reservedCount)} رزرو شده',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.getSecondaryText(context),
                   ),
@@ -402,14 +412,29 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            'T-${table.tableNumber}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'میز',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      color: AppColors.getSecondaryText(context),
+                                                    ),
+                                              ),
+                                              const SizedBox(width: AppSizes.xs),
+                                              Text(
+                                                _persianDigits(table.tableNumber),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge
+                                                    ?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                              ),
+                                            ],
                                           ),
                                           Icon(
                                             Icons.table_restaurant,
@@ -463,7 +488,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                           table.currentOrderId != null) ...[
                                         const SizedBox(height: AppSizes.sm),
                                         Text(
-                                          'سفارش: #${table.currentOrderId!.substring(0, 6).toUpperCase()}',
+                                          'سفارش فعال به این میز متصل است',
                                           style: Theme.of(
                                             context,
                                           ).textTheme.bodySmall,
