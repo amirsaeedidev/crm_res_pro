@@ -81,7 +81,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'میز ${table.tableNumber}',
+                  'میز ${_persianDigits(table.tableNumber)}',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -211,7 +211,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
           title: Text(
-            table == null ? 'افزودن میز' : 'ویرایش میز ${table.tableNumber}',
+            table == null ? 'افزودن میز' : 'ویرایش میز ${_persianDigits(table.tableNumber)}',
           ),
           content: SizedBox(
             width: 420,
