@@ -19,6 +19,9 @@ class AppErrorMessage {
       'socketexception',
       'failed host lookup',
       'failed to fetch',
+      'xmlhttprequest',
+      'network request failed',
+      'handshakeexception',
       'stack trace',
       'row-level security',
       'permission denied',
@@ -46,13 +49,16 @@ class AppErrorMessage {
 
     if (message.contains('failed host lookup') ||
         message.contains('socketexception') ||
+        message.contains('xmlhttprequest') ||
+        message.contains('network request failed') ||
+        message.contains('handshakeexception') ||
         message.contains('network is unreachable') ||
         message.contains('connection refused') ||
         message.contains('connection reset') ||
         message.contains('timed out') ||
         message.contains('timeout') ||
         message.contains('clientexception')) {
-      return 'ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.';
+      return 'ارتباط با سرور برقرار نشد. اینترنت یا اتصال شبکه را بررسی کنید و دوباره تلاش کنید.';
     }
 
     if (message.contains('row-level security') ||
@@ -81,8 +87,49 @@ class AppErrorMessage {
       return 'اطلاعات ورود معتبر نیست. ایمیل و رمز عبور را بررسی کنید.';
     }
 
-    if (message.contains('jwt') || message.contains('session expired')) {
-      return 'نشست شما منقضی شده است. دوباره وارد پنل شوید.';
+    if (message.contains('email not confirmed') ||
+        message.contains('email_not_confirmed')) {
+      return 'نشانی ایمیل تأیید نشده است. ابتدا ایمیل خود را تأیید کنید.';
+    }
+
+    if (message.contains('user already registered') ||
+        message.contains('already registered') ||
+        message.contains('already exists')) {
+      return 'این حساب یا اطلاعات قبلاً ثبت شده است.';
+    }
+
+    if (message.contains('too many requests') ||
+        message.contains('rate limit') ||
+        message.contains('over_request_rate_limit')) {
+      return 'تعداد درخواست‌ها بیش از حد مجاز است. کمی صبر کنید و دوباره تلاش کنید.';
+    }
+
+    if (message.contains('password should be at least') ||
+        message.contains('password is too short')) {
+      return 'رمز عبور کوتاه است. رمز قوی‌تری انتخاب کنید.';
+    }
+
+    if (message.contains('jwt') ||
+        message.contains('session expired') ||
+        message.contains('session_not_found')) {
+      return 'نشست ورود شما منقضی شده است. دوباره وارد پنل شوید.';
+    }
+
+    if (message.contains('bucket not found') ||
+        message.contains('object not found') ||
+        message.contains('storage/object-not-found')) {
+      return 'فایل یا فضای ذخیره‌سازی موردنظر پیدا نشد.';
+    }
+
+    if (message.contains('file size exceeds') ||
+        message.contains('payload too large')) {
+      return 'حجم فایل بیشتر از حد مجاز است. فایل کوچک‌تری انتخاب کنید.';
+    }
+
+    if (message.contains('invalid mime type') ||
+        message.contains('mime type not supported') ||
+        message.contains('unsupported media type')) {
+      return 'قالب این فایل پشتیبانی نمی‌شود. فایل دیگری انتخاب کنید.';
     }
 
     if (message.contains('not found') || message.contains('404')) {
