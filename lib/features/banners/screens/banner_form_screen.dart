@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/upload_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../providers/banners_provider.dart';
 import '../../../repositories/banners_repository.dart';
 
@@ -68,7 +69,15 @@ class _BannerFormScreenState extends State<BannerFormScreen> {
   }
 
   void _message(String value) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
+    if (mounted) {
+      final safeMessage = AppErrorMessage.forDisplay(
+        value,
+        fallback: 'عملیات بنر با مشکل روبه‌رو شد. اطلاعات را بررسی و دوباره تلاش کنید.',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(safeMessage)),
+      );
+    }
   }
 
   Future<void> _pickImage({required bool logo}) async {
