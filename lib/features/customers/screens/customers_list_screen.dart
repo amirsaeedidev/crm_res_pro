@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../core/widgets/custom_chip.dart';
@@ -78,7 +79,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   _searchController.clear();
                   provider.setSearchQuery('');
                 }),
-                border: const OutlineInputBorder(),
+                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
               ),
               onChanged: (value) => provider.setSearchQuery(value),
             ),
@@ -91,7 +92,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   width: 210,
                   child: DropdownButtonFormField<String>(
                     initialValue: provider.statusFilter,
-                    decoration: const InputDecoration(labelText: 'وضعیت مشتری', border: OutlineInputBorder(), isDense: true),
+                    decoration: const InputDecoration(labelText: 'وضعیت مشتری', border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))), isDense: true),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('همه وضعیت‌ها')),
                       DropdownMenuItem(value: 'active', child: Text('فعال')),
@@ -105,7 +106,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   width: 230,
                   child: DropdownButtonFormField<String>(
                     initialValue: provider.marketingFilter,
-                    decoration: const InputDecoration(labelText: 'رضایت پیامک تبلیغاتی', border: OutlineInputBorder(), isDense: true),
+                    decoration: const InputDecoration(labelText: 'رضایت پیامک تبلیغاتی', border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))), isDense: true),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('همه مشتریان')),
                       DropdownMenuItem(value: 'opted_in', child: Text('رضایت داده‌اند')),
