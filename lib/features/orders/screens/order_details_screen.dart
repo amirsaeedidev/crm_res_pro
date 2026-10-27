@@ -9,6 +9,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../models/order_model.dart';
 import '../../../providers/orders_provider.dart';
 import '../../../shared/widgets/empty_widget.dart';
@@ -31,6 +32,43 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   final DateFormat _dateFormatter = DateFormat('yyyy-MM-dd – HH:mm');
   final TextEditingController _readyTimeController = TextEditingController();
   final TextEditingController _adminNoteController = TextEditingController();
+
+  String _orderTypeLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'delivery':
+        return 'ارسال';
+      case 'pickup':
+      case 'takeaway':
+        return 'دریافت حضوری';
+      case 'dine_in':
+        return 'سرو در رستوران';
+      default:
+        return 'نامشخص';
+    }
+  }
+
+  String _roleLabel(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+      case 'administrator':
+        return 'مدیر';
+      case 'manager':
+        return 'مدیر فروشگاه';
+      case 'cashier':
+        return 'صندوقدار';
+      case 'chef':
+      case 'cook':
+        return 'آشپز';
+      case 'delivery':
+      case 'courier':
+        return 'پیک';
+      case 'staff':
+      case 'employee':
+        return 'پرسنل';
+      default:
+        return 'پرسنل';
+    }
+  }
 
   @override
   void initState() {
@@ -60,7 +98,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       if (!mounted) return;
       setState(() => _smsStaff = rows.map((row) => Map<String, dynamic>.from(row)).toList());
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('دریافت فهرست پرسنل پیامک ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'دریافت فهرست پرسنل پیامک ناموفق بود. دوباره تلاش کنید.'))));
     } finally {
       if (mounted) setState(() => _staffLoading = false);
     }
@@ -76,7 +114,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       await provider.fetchOrderDetails(order.id);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('پرسنل سفارش ذخیره شد؛ در صورت فعال‌بودن پیامک، اعلان به پرسنل منطبق فرستاده می‌شود.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تخصیص پرسنل ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'تخصیص پرسنل به سفارش ناموفق بود. سطح دسترسی را بررسی کنید.'))));
     } finally {
       if (mounted) setState(() => _staffSaving = false);
     }
@@ -92,14 +130,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('تخصیص سفارش به پرسنل', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
-      const Text('این انتخاب مشخص می‌کند در صورت فعال بودن SMS، کدام شخص اعلان این سفارش را دریافت کند. اگر تخصیص ندهید، پرسنل فعال مطابق نوع سفارش پیامک می‌گیرند.'),
+      const Text('این انتخاب مشخص می‌کند در صورت فعال بودن پیامک، کدام شخص اعلان این سفارش را دریافت کند. اگر تخصیص ندهید، پرسنل فعال مطابق نوع سفارش پیامک می‌گیرند.'),
       const SizedBox(height: 12),
       if (_staffLoading) const LinearProgressIndicator() else DropdownButtonFormField<String?>(
         initialValue: value,
         decoration: const InputDecoration(labelText: 'پرسنل مسئول', border: OutlineInputBorder()),
         items: <DropdownMenuItem<String?>>[
           const DropdownMenuItem<String?>(value: null, child: Text('بدون تخصیص؛ براساس نوع سفارش')),
-          ...eligible.map((row) => DropdownMenuItem<String?>(value: row['id'].toString(), child: Text('${row['name']} • ${row['role_label'] ?? 'پرسنل'}'))),
+          ...eligible.map((row) => DropdownMenuItem<String?>(value: row['id'].toString(), child: Text('${row['name']} • ${_roleLabel((row['role_label'] ?? '').toString())}'))),
         ],
         onChanged: _staffSaving || _staffLoading ? null : (v) => _assignStaff(provider, order, v),
       ),
@@ -117,14 +155,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Details'),
+        title: const Text('جزئیات سفارش'),
         backgroundColor: AppColors.getSurface(context),
         foregroundColor: AppColors.getPrimaryText(context),
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.print_outlined),
-            tooltip: 'Print Customer Invoice',
+            tooltip: 'چاپ فاکتور مشتری',
             onPressed: () {
               final order = context.read<OrdersProvider>().selectedOrder;
               if (order == null) {
@@ -136,7 +174,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.kitchen_outlined),
-            tooltip: 'Print Kitchen Invoice',
+            tooltip: 'چاپ فاکتور آشپزخانه',
             onPressed: () {
               final order = context.read<OrdersProvider>().selectedOrder;
               if (order == null) {
@@ -165,8 +203,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
           if (order == null) {
             return const EmptyWidget(
-              title: 'Order Not Found',
-              message: 'The requested order could not be found.',
+              title: 'سفارش پیدا نشد',
+              message: 'سفارش موردنظر در دسترس نیست یا حذف شده است.',
               icon: Icons.receipt_long_outlined,
             );
           }
@@ -311,18 +349,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             ],
           ),
           const SizedBox(height: AppSizes.md),
-          Text('Customer Name:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+          Text('نام مشتری:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
           Text(order.customerName, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSizes.sm),
-          Text('Customer Phone:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
-          Text(order.customerPhone.isEmpty ? 'N/A' : order.customerPhone, style: Theme.of(context).textTheme.bodyMedium),
+          Text('شماره تماس مشتری:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+          Text(order.customerPhone.isEmpty ? 'ثبت نشده' : order.customerPhone, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSizes.sm),
-          Text('Order Type:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
-          Text(order.orderType.split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '), style: Theme.of(context).textTheme.bodyMedium),
+          Text('نوع سفارش:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+          Text(_orderTypeLabel(order.orderType), style: Theme.of(context).textTheme.bodyMedium),
           
           if (order.adminNote != null && order.adminNote!.isNotEmpty) ...[
             const Divider(height: AppSizes.lg),
-            Text('Admin Note:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+            Text('یادداشت مدیر:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
             Text(order.adminNote!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error)),
           ]
         ],
@@ -336,7 +374,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         children: [
           Expanded(
             child: Text(
-              'Estimated Ready Time (minutes)',
+              'زمان تقریبی آماده‌سازی (دقیقه)',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
