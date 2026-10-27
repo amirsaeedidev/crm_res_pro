@@ -42,13 +42,13 @@ class NavigationItem extends StatelessWidget {
               if (imageAssetPath != null)
                 Image.asset(
                   imageAssetPath!,
-                  width: AppSizes.iconMd + 4,
-                  height: AppSizes.iconMd + 4,
+                  width: AppSizes.iconMd + 12,
+                  height: AppSizes.iconMd + 12,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Icon(
                     icon,
                     color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
-                    size: AppSizes.iconMd + 4,
+                    size: AppSizes.iconMd + 12,
                   ),
                 )
               else
