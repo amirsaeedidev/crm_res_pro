@@ -1,3 +1,4 @@
+import '../core/utils/app_error_message.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/user_model.dart';
@@ -48,7 +49,7 @@ class CustomersProvider extends ChangeNotifier {
       _totalPages = _customers.length == _pageSize ? _page + 1 : _page;
     } catch (e) {
       if (_disposed || requestVersion != _requestVersion) return;
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       if (!_disposed && requestVersion == _requestVersion) {
         _isLoading = false;
@@ -99,7 +100,7 @@ class CustomersProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       notifyListeners();
       return false;
     }
