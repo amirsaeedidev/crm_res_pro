@@ -9,9 +9,12 @@ class AppErrorMessage {
     String message, {
     String fallback = 'نمایش اطلاعات با مشکل روبه‌رو شد. لطفاً دوباره تلاش کنید.',
   }) {
-    final normalized = message.toLowerCase();
+    final cleaned = message
+        .replaceAll('Exception: ', '')
+        .replaceAll('exception: ', '')
+        .trim();
+    final normalized = cleaned.toLowerCase();
     const technicalMarkers = [
-      'exception',
       'postgrest',
       'socketexception',
       'failed host lookup',
@@ -22,13 +25,16 @@ class AppErrorMessage {
       'clientexception',
       'supabase',
       'http exception',
+      'timed out',
+      'timeout',
     ];
     if (technicalMarkers.any(normalized.contains)) {
-      return from(message, fallback: fallback);
+      return from(cleaned, fallback: fallback);
     }
-    if (RegExp(r'[\u0600-\u06FF]').hasMatch(message)) {
-      return message;
-    }
+    final containsPersian = RegExp(r'[\u0600-\u06FF]').hasMatch(cleaned);
+    final containsEnglishText = RegExp(r'[A-Za-z]{3,}').hasMatch(cleaned);
+    if (containsPersian && !containsEnglishText) return cleaned;
+    if (containsEnglishText) return from(cleaned, fallback: fallback);
     return fallback;
   }
 
