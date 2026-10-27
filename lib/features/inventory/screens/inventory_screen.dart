@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../core/services/logger_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../repositories/inventory_repository.dart';
@@ -135,7 +136,7 @@ class _InventoryScreenState extends State<InventoryScreen>
       .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
 
   String _unitLabel(dynamic unit) =>
-      _units[unit?.toString()] ?? unit?.toString() ?? '';
+      _units[unit?.toString()] ?? 'واحد نامشخص';
 
   num _number(dynamic value) =>
       value is num ? value : num.tryParse('$value') ?? 0;
@@ -145,18 +146,26 @@ class _InventoryScreenState extends State<InventoryScreen>
 
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
+    final safeMessage = AppErrorMessage.forDisplay(
+      message,
+      fallback: isError
+          ? 'عملیات انبار ناموفق بود. اطلاعات و سطح دسترسی را بررسی کنید.'
+          : 'عملیات با موفقیت انجام شد.',
+    );
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text(safeMessage),
           backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
         ),
       );
   }
 
-  String _errorMessage(Object error) =>
-      error.toString().replaceFirst('Exception: ', '');
+  String _errorMessage(Object error) => AppErrorMessage.forDisplay(
+        error.toString(),
+        fallback: 'عملیات انبار ناموفق بود. لطفاً دوباره تلاش کنید.',
+      );
 
   Future<void> _editMaterial([Map<String, dynamic>? material]) async {
     final nameController = TextEditingController(
@@ -917,7 +926,7 @@ class _InventoryScreenState extends State<InventoryScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
             child: Text(
-              'خطا در دریافت انبار: $_error',
+              'دریافت اطلاعات انبار ناموفق بود: $_error',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
