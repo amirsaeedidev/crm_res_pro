@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_error_message.dart';
 
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
@@ -52,7 +53,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
               }
-              if (snapshot.hasError) return Text('خطا در دریافت گردش امتیاز: ${snapshot.error}');
+              if (snapshot.hasError) return Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت گردش امتیاز ناموفق بود. دوباره تلاش کنید.'));
               final transactions = snapshot.data ?? const <LoyaltyTransactionModel>[];
               if (transactions.isEmpty) return const Text('تراکنشی برای این کیف امتیاز ثبت نشده است.');
               return SizedBox(
@@ -198,7 +199,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 future: _walletsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                  if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text('خطا در دریافت کیف امتیاز: ${snapshot.error}', textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton(onPressed: _reload, child: const Text('تلاش مجدد'))]));
+                  if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت کیف امتیاز ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton(onPressed: _reload, child: const Text('تلاش مجدد'))]));
                   final wallets = snapshot.data ?? const <LoyaltyWalletModel>[];
                   if (wallets.isEmpty) return const Center(child: Text('کیف امتیازی برای نمایش وجود ندارد.'));
                   return ListView.separated(
