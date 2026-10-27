@@ -26,7 +26,7 @@ class AppErrorMessage {
     if (technicalMarkers.any(normalized.contains)) {
       return from(message, fallback: fallback);
     }
-    if (RegExp(r'[\\u0600-\\u06FF]').hasMatch(message)) {
+    if (RegExp(r'[\u0600-\u06FF]').hasMatch(message)) {
       return message;
     }
     return fallback;
