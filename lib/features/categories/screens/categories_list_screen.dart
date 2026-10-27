@@ -17,6 +17,16 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
   @override
   void dispose() { _searchController.dispose(); super.dispose(); }
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   Future<void> _delete(CategoryModel category) async {
     final approved = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
       title: const Text('حذف دسته‌بندی'), content: Text('دسته‌بندی «${category.name}» حذف شود؟ اگر محصولی به آن وابسته باشد، دیتابیس حذف را رد می‌کند.'),
@@ -40,8 +50,8 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
       if (provider.categories.isEmpty) return const Center(child: Text('هیچ دسته‌بندی‌ای در دیتابیس ثبت نشده است.'));
       return Column(children: [Expanded(child: ListView.separated(itemCount: provider.categories.length, separatorBuilder: (_, _) => const SizedBox(height: 8), itemBuilder: (context, index) {
         final category = provider.categories[index];
-        return Card(child: ListTile(leading: category.imageUrl == null || category.imageUrl!.isEmpty ? const CircleAvatar(child: Icon(Icons.category_outlined)) : CircleAvatar(backgroundImage: NetworkImage(category.imageUrl!)), title: Text(category.name), subtitle: Text('ترتیب نمایش: ${category.displayOrder} • امتیاز هر محصول: ${category.loyaltyPointsPerItem}'), trailing: Wrap(spacing: 0, children: [Switch(value: category.isActive, onChanged: (value) async { final ok = await provider.updateCategory(category.id, {'is_active': value}); if (!context.mounted) return; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'وضعیت ذخیره شد.' : provider.error ?? 'ذخیره ناموفق بود.'))); }), IconButton(tooltip: 'ویرایش', onPressed: () => context.push('/categories/edit/${category.id}'), icon: const Icon(Icons.edit_outlined)), IconButton(tooltip: 'حذف', onPressed: () => _delete(category), icon: const Icon(Icons.delete_outline, color: Colors.red))])));
-      })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const Icon(Icons.chevron_right)), Text('صفحه ${provider.currentPage}'), IconButton(onPressed: provider.categories.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const Icon(Icons.chevron_left))])]);
+        return Card(child: ListTile(leading: category.imageUrl == null || category.imageUrl!.isEmpty ? const CircleAvatar(child: Icon(Icons.category_outlined)) : CircleAvatar(backgroundImage: NetworkImage(category.imageUrl!)), title: Text(category.name), subtitle: Text('ترتیب نمایش: ${_persianDigits(category.displayOrder)} • امتیاز هر محصول: ${_persianDigits(category.loyaltyPointsPerItem)}'), trailing: Wrap(spacing: 0, children: [Switch(value: category.isActive, onChanged: (value) async { final ok = await provider.updateCategory(category.id, {'is_active': value}); if (!context.mounted) return; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'وضعیت ذخیره شد.' : provider.error ?? 'ذخیره ناموفق بود.'))); }), IconButton(tooltip: 'ویرایش', onPressed: () => context.push('/categories/edit/${category.id}'), icon: const Icon(Icons.edit_outlined)), IconButton(tooltip: 'حذف', onPressed: () => _delete(category), icon: const Icon(Icons.delete_outline, color: Colors.red))])));
+      })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const Icon(Icons.chevron_right)), Text('صفحه ${_persianDigits(provider.currentPage)}'), IconButton(onPressed: provider.categories.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const Icon(Icons.chevron_left))])]);
     }))
   ]));
 
