@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
           AppTextField(
             controller: _emailController,
             labelText: AppStrings.email,
-            hintText: 'admin@example.com',
+            hintText: 'ایمیل مدیر را وارد کنید',
             keyboardType: TextInputType.emailAddress,
             prefixIcon: const Icon(Icons.email_outlined, size: 20),
             validator: (value) {
@@ -327,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
           AppTextField(
             controller: _codeController,
-            labelText: 'کد ۶ رقمی Authenticator',
+            labelText: 'کد ۶ رقمی برنامه رمزساز',
             hintText: '000000',
             keyboardType: TextInputType.number,
             prefixIcon: const Icon(Icons.password_rounded, size: 20),
