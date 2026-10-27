@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_error_message.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../models/product_model.dart';
@@ -33,7 +34,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('جزئیات محصول')), body: FutureBuilder<ProductModel>(future: _productFuture, builder: (context, snapshot) {
     if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-    if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Text('دریافت محصول ناموفق بود: ${snapshot.error}', textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton(onPressed: () => setState(() => _productFuture = context.read<ProductsRepository>().getProductById(widget.productId)), child: const Text('تلاش مجدد'))])));
+    if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت جزئیات محصول ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton(onPressed: () => setState(() => _productFuture = context.read<ProductsRepository>().getProductById(widget.productId)), child: const Text('تلاش مجدد'))])));
     final product = snapshot.data;
     if (product == null) return const Center(child: Text('محصول پیدا نشد.'));
     return Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: ListView(padding: const EdgeInsets.all(20), children: [
