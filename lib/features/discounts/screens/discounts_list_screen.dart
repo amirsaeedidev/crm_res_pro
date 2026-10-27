@@ -28,6 +28,20 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final DateFormat _dateFormatter = DateFormat('yyyy-MM-dd');
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _formatDate(DateTime value) => _persianDigits(
+        _dateFormatter.format(value),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -228,14 +242,14 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           Expanded(
             flex: 1,
             child: Text(
-              discount.type == 'percentage' ? '${discount.value}%' : '${discount.value} T',
+              discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           Expanded(
             flex: 1,
             child: Text(
-              _dateFormatter.format(discount.endDate),
+              _formatDate(discount.endDate),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
