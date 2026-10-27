@@ -33,11 +33,21 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
     super.dispose();
   }
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   String _statusLabel(String status) => switch (status) {
         'active' => 'فعال',
         'inactive' => 'غیرفعال',
         'blocked' => 'مسدود',
-        _ => status,
+        _ => 'نامشخص',
       };
 
   ChipType _statusType(String status) => switch (status) {
@@ -168,7 +178,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
               ),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const Icon(Icons.chevron_left)),
-                Text('صفحه ${provider.currentPage} از ${provider.totalPages}'),
+                Text('صفحه ${_persianDigits(provider.currentPage)} از ${_persianDigits(provider.totalPages)}'),
                 IconButton(onPressed: provider.currentPage < provider.totalPages ? () => provider.changePage(provider.currentPage + 1) : null, icon: const Icon(Icons.chevron_right)),
               ]),
             ],
