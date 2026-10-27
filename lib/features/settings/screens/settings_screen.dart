@@ -53,6 +53,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  String _roleLabel(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+      case 'administrator':
+        return 'مدیر';
+      case 'manager':
+        return 'مدیر فروشگاه';
+      case 'staff':
+        return 'کارمند';
+      default:
+        return 'کاربر';
+    }
+  }
+
+  String _accountStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'فعال';
+      case 'inactive':
+        return 'غیرفعال';
+      case 'blocked':
+        return 'مسدود';
+      case 'pending':
+        return 'در انتظار تأیید';
+      default:
+        return 'نامشخص';
+    }
+  }
+
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? await provider.setPrimaryColor(selected)
         : await provider.setSecondaryColor(selected);
     _showMessage(
-      success ? 'رنگ برند در Supabase ذخیره شد.' : (provider.error ?? 'ذخیره رنگ انجام نشد.'),
+      success ? 'رنگ برند ذخیره شد.' : (provider.error ?? 'ذخیره رنگ انجام نشد.'),
       isError: !success,
     );
   }
@@ -127,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     if (!mounted) return;
     _showMessage(
-      success ? 'تنظیمات در Supabase ذخیره شد.' : (provider.error ?? 'ذخیره تنظیمات انجام نشد.'),
+      success ? 'تنظیمات ذخیره شد.' : (provider.error ?? 'ذخیره تنظیمات انجام نشد.'),
       isError: !success,
     );
   }
@@ -188,11 +217,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(currentUser?.fullName ?? 'کاربر احراز هویت نشده', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
                 Text(currentUser?.email ?? '', style: Theme.of(context).textTheme.bodyMedium),
-                if (currentUser != null) Text('نقش: ${currentUser.role} · وضعیت: ${currentUser.status}', style: Theme.of(context).textTheme.bodySmall),
+                if (currentUser != null) Text('نقش: ${_roleLabel(currentUser.role)} · وضعیت: ${_accountStatusLabel(currentUser.status)}', style: Theme.of(context).textTheme.bodySmall),
               ])),
             ]),
             const SizedBox(height: AppSizes.md),
-            const Text('اطلاعات حساب از پروفایل Supabase خوانده می‌شود. ویرایش نام و ایمیل حساب از این صفحه انجام نمی‌شود.'),
+            const Text('اطلاعات حساب از پایگاه داده خوانده می‌شود. ویرایش نام و ایمیل حساب از این صفحه انجام نمی‌شود.'),
           ])),
           const SizedBox(height: AppSizes.lg),
 
@@ -201,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold)),
             const Divider(height: AppSizes.lg),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Row(children: [Icon(Icons.dark_mode_outlined), SizedBox(width: AppSizes.sm), Text('حالت تیره (Dark Mode)')]),
+              const Row(children: [Icon(Icons.dark_mode_outlined), SizedBox(width: AppSizes.sm), Text('حالت تیره')]),
               CustomSwitch(value: themeProvider.isDarkMode, onChanged: (_) => context.read<ThemeProvider>().toggleTheme()),
             ]),
           ])),
