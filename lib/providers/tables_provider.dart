@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/services/logger_service.dart';
+import '../core/utils/app_error_message.dart';
 import '../models/table_model.dart';
 import '../repositories/tables_repository.dart';
 
@@ -28,7 +29,7 @@ class TablesProvider extends ChangeNotifier {
       _tables = await _repository.getTables();
     } catch (e, st) {
       LoggerService.error('Fetch tables failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست میزها ناموفق بود. دوباره تلاش کنید.');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -44,7 +45,7 @@ class TablesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Create table failed in provider', error: e, stackTrace: st);
-      _error = e.toString(); return false;
+      _error = AppErrorMessage.from(e, fallback: 'ثبت میز ناموفق بود. اطلاعات را بررسی و دوباره تلاش کنید.'); return false;
     } finally { _isUpdating = false; notifyListeners(); }
   }
 
@@ -56,7 +57,7 @@ class TablesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update table failed in provider', error: e, stackTrace: st);
-      _error = e.toString(); return false;
+      _error = AppErrorMessage.from(e, fallback: 'ویرایش اطلاعات میز ناموفق بود. دوباره تلاش کنید.'); return false;
     } finally { _isUpdating = false; notifyListeners(); }
   }
 
@@ -68,7 +69,7 @@ class TablesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Change table active state failed in provider', error: e, stackTrace: st);
-      _error = e.toString(); return false;
+      _error = AppErrorMessage.from(e, fallback: 'تغییر وضعیت فعال بودن میز ناموفق بود. دوباره تلاش کنید.'); return false;
     } finally { _isUpdating = false; notifyListeners(); }
   }
 
@@ -84,7 +85,7 @@ class TablesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Mark table as free failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'آزاد کردن میز ناموفق بود. ابتدا وضعیت سفارش فعال را بررسی کنید.');
       return false;
     } finally {
       _isUpdating = false;
@@ -104,7 +105,7 @@ class TablesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Assign order to table failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'اتصال سفارش به میز ناموفق بود. دوباره تلاش کنید.');
       return false;
     } finally {
       _isUpdating = false;
