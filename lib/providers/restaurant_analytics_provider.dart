@@ -240,7 +240,7 @@ class RestaurantAnalyticsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       debugPrint('Restaurant analytics load failed: $error\n$stackTrace');
       if (requestVersion == _requestVersion) {
-        _errorMessage = 'گزارش دریافت نشد. نام جدول‌ها، ستون‌ها و دسترسی خواندن در Supabase را بررسی کن.';
+        _errorMessage = 'گزارش دریافت نشد. نام جدول‌ها، ستون‌ها و مجوز خواندن اطلاعات را در پایگاه داده بررسی کنید.';
         _hasLoaded = true;
       }
     } finally {
