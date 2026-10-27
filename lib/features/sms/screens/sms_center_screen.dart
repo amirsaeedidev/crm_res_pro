@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../repositories/sms_repository.dart';
 
 class SmsCenterScreen extends StatefulWidget {
@@ -585,9 +586,14 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       false;
 
   void _toast(String text) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-    }
+    if (!mounted) return;
+    final safeMessage = AppErrorMessage.forDisplay(
+      text,
+      fallback: 'عملیات مرکز پیامک با مشکل روبه‌رو شد. تنظیمات و اتصال را بررسی کنید.',
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(safeMessage)),
+    );
   }
 
   String _eventTitle(String value) => switch (value) {
@@ -1438,7 +1444,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          'خطا: ${row['last_error']}',
+                          AppErrorMessage.forDisplay((row['last_error'] ?? '').toString(), fallback: 'ارسال پیامک ناموفق بود. وضعیت صف پیامک را بررسی کنید.'),
                           style: TextStyle(color: AppColors.error),
                         ),
                       ),
