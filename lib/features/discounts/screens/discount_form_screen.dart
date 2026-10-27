@@ -118,13 +118,23 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     }
   }
 
+  String _persianDigits(String value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value;
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   String? _validatePositiveNumber(String? value, {bool isRequired = false}) {
     if (value == null || value.isEmpty) {
-      return isRequired ? 'This field is required' : null;
+      return isRequired ? 'وارد کردن این مقدار الزامی است.' : null;
     }
     final num = double.tryParse(value);
-    if (num == null) return 'Invalid number';
-    if (num < 0 || (isRequired && num == 0)) return isRequired ? 'Value must be greater than zero' : 'Value cannot be negative';
+    if (num == null) return 'یک عدد معتبر وارد کنید.';
+    if (num < 0 || (isRequired && num == 0)) return isRequired ? 'مقدار باید بیشتر از صفر باشد.' : 'مقدار نمی‌تواند منفی باشد.';
     return null;
   }
 
@@ -243,7 +253,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       labelText: 'کد تخفیف *',
                       hintText: 'تابستان۲۰',
                       textCapitalization: TextCapitalization.characters,
-                      validator: (value) => value!.isEmpty ? 'Code is required' : null,
+                      validator: (value) => value!.trim().isEmpty ? 'وارد کردن کد تخفیف الزامی است.' : null,
                     ),
                     const SizedBox(height: AppSizes.md),
                     AppDropdown<String>(
@@ -257,7 +267,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     AppTextField(
                       controller: _valueController,
                       labelText: _selectedType == 'Fixed Amount' ? 'مبلغ (تومان) *' : 'مقدار (درصد) *',
-                      hintText: '0',
+                      hintText: '۰',
                       keyboardType: TextInputType.number,
                       validator: (value) => _validatePositiveNumber(value, isRequired: true),
                     ),
@@ -271,7 +281,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             child: AbsorbPointer(
                               child: AppTextField(
                                 labelText: 'تاریخ شروع *',
-                                hintText: _startDate == null ? 'انتخاب تاریخ' : DateFormat('yyyy-MM-dd').format(_startDate!),
+                                hintText: _startDate == null ? 'انتخاب تاریخ' : _persianDigits(DateFormat('yyyy-MM-dd').format(_startDate!)),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
@@ -284,7 +294,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             child: AbsorbPointer(
                               child: AppTextField(
                                 labelText: 'تاریخ پایان *',
-                                hintText: _endDate == null ? 'انتخاب تاریخ' : DateFormat('yyyy-MM-dd').format(_endDate!),
+                                hintText: _endDate == null ? 'انتخاب تاریخ' : _persianDigits(DateFormat('yyyy-MM-dd').format(_endDate!)),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
