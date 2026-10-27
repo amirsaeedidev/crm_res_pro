@@ -34,22 +34,15 @@ class StatisticCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSizes.sm),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.medium),
-                ),
-                child: Image.asset(
-                  imageAssetPath,
-                  width: isFeatured ? 52 : 36,
-                  height: isFeatured ? 52 : 36,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.image_not_supported_outlined,
-                    color: iconColor,
-                    size: isFeatured ? 52 : 36,
-                  ),
+              Image.asset(
+                imageAssetPath,
+                width: isFeatured ? 60 : 44,
+                height: isFeatured ? 60 : 44,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.image_not_supported_outlined,
+                  color: iconColor,
+                  size: isFeatured ? 60 : 44,
                 ),
               ),
               Container(
