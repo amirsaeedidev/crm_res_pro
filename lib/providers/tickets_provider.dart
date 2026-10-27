@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/utils/app_error_message.dart';
 import '../models/ticket_model.dart';
 import '../repositories/tickets_repository.dart';
 
@@ -31,7 +32,7 @@ class TicketsProvider extends ChangeNotifier {
   Future<void> fetchTickets() async {
     _isLoading = true; _error = null; notifyListeners();
     try { _tickets = await _repository.getTickets(page: _page, pageSize: _pageSize, search: _search, status: _status); _totalPages = _tickets.length == _pageSize ? _page + 1 : _page; _counts = await _repository.getTicketCounts(); }
-    catch (e) { _error = e.toString(); }
+    catch (e) { _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست تیکت‌ها ناموفق بود. دوباره تلاش کنید.'); }
     finally { _isLoading = false; notifyListeners(); }
   }
   Future<void> setSearch(String value) async { _search = value.trim(); _page = 1; await fetchTickets(); }
@@ -47,7 +48,7 @@ class TicketsProvider extends ChangeNotifier {
       if (index >= 0 && _selectedTicket != null) {
         _tickets[index] = _selectedTicket!;
       }
-    } catch (e) { _error = e.toString(); }
+    } catch (e) { _error = AppErrorMessage.from(e, fallback: 'دریافت جزئیات تیکت ناموفق بود. دوباره تلاش کنید.'); }
     finally { _isLoading = false; notifyListeners(); }
   }
   Future<bool> reply(String id, String text) async {
@@ -59,7 +60,7 @@ class TicketsProvider extends ChangeNotifier {
       final index = _tickets.indexWhere((ticket) => ticket.id == id);
       if (index >= 0) _tickets[index] = _tickets[index].copyWith(status: 'answered');
       return true;
-    } catch (e) { _error = e.toString(); return false; }
+    } catch (e) { _error = AppErrorMessage.from(e, fallback: 'ارسال پاسخ ناموفق بود. دوباره تلاش کنید.'); return false; }
     finally { _isWorking = false; notifyListeners(); }
   }
   Future<bool> updateStatus(String id, String status) async {
@@ -71,7 +72,7 @@ class TicketsProvider extends ChangeNotifier {
       if (index >= 0) _tickets[index] = _tickets[index].copyWith(status: status);
       if (_selectedTicket?.id == id) _selectedTicket = _selectedTicket!.copyWith(status: status);
       return true;
-    } catch (e) { _error = e.toString(); return false; }
+    } catch (e) { _error = AppErrorMessage.from(e, fallback: 'تغییر وضعیت تیکت ناموفق بود. دوباره تلاش کنید.'); return false; }
     finally { _isWorking = false; notifyListeners(); }
   }
 }
