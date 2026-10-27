@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -26,7 +25,6 @@ class OrdersListScreen extends StatefulWidget {
 class _OrdersListScreenState extends State<OrdersListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _currencyFormatter = NumberFormat.decimalPattern('en_US');
-  final DateFormat _dateFormatter = DateFormat('yyyy-MM-dd – HH:mm');
 
   @override
   void initState() {
@@ -94,7 +92,9 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     final date = value.toLocal();
     return _persianDigits(
       '${date.year}/${date.month.toString().padLeft(2, '0')}/'
-      '${date.day.toString().padLeft(2, '0')}',
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
     );
   }
 
