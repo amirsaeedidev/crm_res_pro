@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
 import '../models/discount_model.dart';
 import '../repositories/discounts_repository.dart';
@@ -38,7 +39,7 @@ class DiscountsProvider extends ChangeNotifier {
       _totalPages = _discounts.length == _pageSize ? _currentPage + 1 : _currentPage;
     } catch (e, st) {
       LoggerService.error('Fetch discounts failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -77,7 +78,7 @@ class DiscountsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Create discount failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -100,7 +101,7 @@ class DiscountsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update discount failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -116,7 +117,7 @@ class DiscountsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Delete discount failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     }
   }
@@ -132,7 +133,7 @@ class DiscountsProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Toggle discount status failed', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     }
   }
