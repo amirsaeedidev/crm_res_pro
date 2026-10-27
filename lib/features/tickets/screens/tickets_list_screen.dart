@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../providers/tickets_provider.dart';
 
 class TicketsListScreen extends StatefulWidget {
@@ -173,45 +174,67 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
             },
           ),
           const SizedBox(height: AppSizes.md),
-          TextField(
-            controller: _searchController,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              labelText: 'جست‌وجو در عنوان تیکت',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: IconButton(
-                tooltip: 'پاک کردن جست‌وجو',
-                onPressed: () {
-                  _searchController.clear();
-                  context.read<TicketsProvider>().setSearch('');
+          AppCard(
+            child: Consumer<TicketsProvider>(
+              builder: (context, provider, _) => LayoutBuilder(
+                builder: (context, constraints) {
+                  final searchField = TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      labelText: 'جست‌وجو در عنوان تیکت',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: IconButton(
+                        tooltip: 'پاک کردن جست‌وجو',
+                        onPressed: () {
+                          _searchController.clear();
+                          provider.setSearch('');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ),
+                    onChanged: provider.setSearch,
+                  );
+
+                  final statusField = DropdownButtonFormField<String>(
+                    initialValue: provider.status,
+                    decoration: const InputDecoration(
+                      labelText: 'وضعیت تیکت',
+                      prefixIcon: Icon(Icons.filter_alt_outlined),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'all', child: Text('همه تیکت‌ها')),
+                      DropdownMenuItem(value: 'received', child: Text('تیکت‌های باز')),
+                      DropdownMenuItem(value: 'unread', child: Text('خوانده‌نشده')),
+                      DropdownMenuItem(value: 'answered', child: Text('پاسخ داده‌شده')),
+                      DropdownMenuItem(value: 'closed', child: Text('بسته‌شده')),
+                    ],
+                    onChanged: provider.isLoading
+                        ? null
+                        : (value) {
+                            if (value != null) provider.setStatus(value);
+                          },
+                  );
+
+                  if (constraints.maxWidth < 620) {
+                    return Column(
+                      children: [
+                        searchField,
+                        const SizedBox(height: AppSizes.sm),
+                        statusField,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: searchField),
+                      const SizedBox(width: AppSizes.md),
+                      SizedBox(width: 250, child: statusField),
+                    ],
+                  );
                 },
-                icon: const Icon(Icons.clear),
               ),
-              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
-            ),
-            onSubmitted: (value) =>
-                context.read<TicketsProvider>().setSearch(value),
-          ),
-          const SizedBox(height: AppSizes.md),
-          Consumer<TicketsProvider>(
-            builder: (context, provider, _) => DropdownButtonFormField<String>(
-              initialValue: provider.status,
-              decoration: const InputDecoration(
-                labelText: 'فیلتر وضعیت تیکت',
-                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('همه تیکت‌ها')),
-                DropdownMenuItem(value: 'received', child: Text('تیکت‌های باز')),
-                DropdownMenuItem(value: 'unread', child: Text('خوانده‌نشده')),
-                DropdownMenuItem(value: 'answered', child: Text('پاسخ داده‌شده')),
-                DropdownMenuItem(value: 'closed', child: Text('بسته‌شده')),
-              ],
-              onChanged: provider.isLoading
-                  ? null
-                  : (value) {
-                      if (value != null) provider.setStatus(value);
-                    },
             ),
           ),
           const SizedBox(height: AppSizes.md),
