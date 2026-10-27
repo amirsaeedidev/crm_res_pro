@@ -86,7 +86,7 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
             }),
           ))),
           const SizedBox(height: AppSizes.md),
-          Wrap(spacing: AppSizes.md, runSpacing: AppSizes.sm, children: List.generate(data.length, (index) => _legend(context, colors[index % colors.length], '${data[index].name} (${data[index].count})'))),
+          Wrap(spacing: AppSizes.md, runSpacing: AppSizes.sm, children: List.generate(data.length, (index) => _legend(context, colors[index % colors.length], '${data[index].name} (${_persianDigits(data[index].count)})'))),
           Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: () => setState(() => _future = _fetchCounts()), icon: const Icon(Icons.refresh), label: const Text('به‌روزرسانی'))),
         ]);
       },
