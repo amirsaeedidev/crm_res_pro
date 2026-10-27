@@ -72,7 +72,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     } on StorageException catch (e) {
       if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست فایل‌ها ناموفق بود. اتصال و سطح دسترسی را بررسی کنید.'));
     } catch (e) {
-      if (mounted) setState(() => _error = 'خطا در دریافت فایل‌ها: $e');
+      if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'دریافت فایل‌ها ناموفق بود. لطفاً اتصال و سطح دسترسی را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -95,12 +95,22 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     };
   }
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   String _formatSize(dynamic raw) {
     if (raw is! num || raw <= 0) return 'حجم نامشخص';
     final bytes = raw.toDouble();
-    if (bytes < 1024) return '${bytes.toInt()} B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024) return '${_persianDigits(bytes.toInt())} بایت';
+    if (bytes < 1024 * 1024) return '${_persianDigits((bytes / 1024).toStringAsFixed(1))} کیلوبایت';
+    return '${_persianDigits((bytes / (1024 * 1024)).toStringAsFixed(1))} مگابایت';
   }
 
   Future<void> _pickAndUploadFile() async {
@@ -122,7 +132,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       await _loadFiles();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر با موفقیت ذخیره شد.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('آپلود ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'بارگذاری تصویر ناموفق بود. دوباره تلاش کنید.'))));
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -138,7 +148,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     } on StorageException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'حذف فایل ناموفق بود. لطفاً دوباره تلاش کنید.'))));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حذف ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'حذف فایل ناموفق بود. دوباره تلاش کنید.'))));
     }
   }
 
@@ -160,7 +170,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       Row(children: [
         Expanded(child: Text('مدیریت فایل‌ها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold))),
         const SizedBox(width: AppSizes.sm),
-        DropdownButton<String>(value: _selectedBucket, items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(), onChanged: (v) { if (v != null) setState(() => _selectedBucket = v); }),
+        DropdownButton<String>(value: _selectedBucket, items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(), onChanged: (v) { if (v != null) setState(() => _selectedBucket = v); }),
         const SizedBox(width: AppSizes.sm),
         AppButton(label: _isUploading ? 'در حال آپلود...' : 'آپلود تصویر', icon: Icons.cloud_upload_outlined, isLoading: _isUploading, onPressed: _isUploading ? null : _pickAndUploadFile, width: 170),
       ]),
