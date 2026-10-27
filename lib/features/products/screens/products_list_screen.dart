@@ -31,6 +31,20 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   final NumberFormat _currencyFormatter = NumberFormat.decimalPattern('en_US');
   final Set<String> _togglingProductIds = <String>{};
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _priceLabel(num value) => '${_persianDigits(
+        _currencyFormatter.format(value).replaceAll(',', '٬'),
+      )} تومان';
+
   @override
   void initState() {
     super.initState();
@@ -477,14 +491,14 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${_currencyFormatter.format(product.price)} T',
+            _priceLabel(product.price),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   decoration: TextDecoration.lineThrough,
                   color: AppColors.getSecondaryText(context),
                 ),
           ),
           Text(
-            '${_currencyFormatter.format(product.discountedPrice)} T',
+            _priceLabel(product.discountedPrice),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.error,
@@ -495,7 +509,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
     }
     
     return Text(
-      '${_currencyFormatter.format(product.price)} T',
+      _priceLabel(product.price),
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
