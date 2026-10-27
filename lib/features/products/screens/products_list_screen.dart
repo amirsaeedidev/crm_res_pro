@@ -324,7 +324,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                     DeleteDialog.show(
                       context: context,
                       title: 'حذف محصول',
-                      message: 'Are you sure you want to delete "${product.name}"?',
+                      message: 'آیا از حذف محصول «${product.name}» مطمئن هستید؟',
                       onDelete: () {
                         provider.deleteProduct(product.id);
                       },
@@ -453,7 +453,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                           DeleteDialog.show(
                             context: context,
                             title: 'حذف محصول',
-                            message: 'Are you sure you want to delete "${product.name}"?',
+                            message: 'آیا از حذف محصول «${product.name}» مطمئن هستید؟',
                             onDelete: () {
                               provider.deleteProduct(product.id);
                             },
