@@ -245,7 +245,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       controller: _titleController,
                       labelText: 'عنوان تخفیف *',
                       hintText: 'مثلاً تخفیف تابستانی',
-                      validator: (value) => value!.isEmpty ? 'Title is required' : null,
+                      validator: (value) => value!.trim().isEmpty ? 'وارد کردن عنوان تخفیف الزامی است.' : null,
                     ),
                     const SizedBox(height: AppSizes.md),
                     AppTextField(
@@ -329,7 +329,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           child: AppTextField(
                             controller: _minPurchaseController,
                             labelText: 'حداقل مبلغ خرید (تومان)',
-                            hintText: '0',
+                            hintText: '۰',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
                           ),
@@ -339,7 +339,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           child: AppTextField(
                             controller: _maxDiscountController,
                             labelText: 'حداکثر مبلغ تخفیف (تومان)',
-                            hintText: '0',
+                            hintText: '۰',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
                           ),
