@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
 
@@ -43,7 +44,23 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
-        if (snapshot.hasError) return SizedBox(height: 200, child: Center(child: Padding(padding: const EdgeInsets.all(12), child: Text('دریافت توزیع محصولات ناموفق بود: ${snapshot.error}', textAlign: TextAlign.center))));
+        if (snapshot.hasError) {
+          return SizedBox(
+            height: 200,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  AppErrorMessage.from(
+                    snapshot.error!,
+                    fallback: 'دریافت آمار دسته‌بندی محصولات ناموفق بود. دوباره تلاش کنید.',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
         final data = snapshot.data ?? const <_CategoryCount>[];
         if (data.isEmpty) return const SizedBox(height: 150, child: Center(child: Text('محصول فعال برای نمایش وجود ندارد.')));
         final total = data.fold<int>(0, (sum, item) => sum + item.count);
