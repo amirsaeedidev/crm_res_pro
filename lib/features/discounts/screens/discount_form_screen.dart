@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_error_message.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -132,13 +133,13 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     if (_formKey.currentState!.validate()) {
       if (_selectedType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select discount type'), backgroundColor: AppColors.error),
+          const SnackBar(content: Text('نوع تخفیف را انتخاب کنید'), backgroundColor: AppColors.error),
         );
         return;
       }
       if (_startDate == null || _endDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select start and end dates'), backgroundColor: AppColors.error),
+          const SnackBar(content: Text('تاریخ شروع و پایان را انتخاب کنید'), backgroundColor: AppColors.error),
         );
         return;
       }
@@ -180,7 +181,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isEditing ? 'Discount updated successfully' : 'Discount created successfully'),
+              content: Text(isEditing ? 'تخفیف با موفقیت ویرایش شد.' : 'تخفیف با موفقیت ایجاد شد.'),
               backgroundColor: AppColors.success,
             ),
           );
@@ -189,7 +190,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+            SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'ذخیره تخفیف ناموفق بود. لطفاً اطلاعات و اتصال را بررسی کنید.')), backgroundColor: AppColors.error),
           );
         }
       } finally {
@@ -205,7 +206,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     return Scaffold(
       backgroundColor: AppColors.getBackground(context),
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Discount' : 'Add New Discount'),
+        title: Text(isEditing ? 'ویرایش تخفیف' : 'افزودن تخفیف جدید'),
         backgroundColor: AppColors.getSurface(context),
         foregroundColor: AppColors.getPrimaryText(context),
         elevation: 0,
@@ -232,15 +233,15 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     const SizedBox(height: AppSizes.lg),
                     AppTextField(
                       controller: _titleController,
-                      labelText: 'Discount Title *',
-                      hintText: 'e.g., Summer Sale',
+                      labelText: 'عنوان تخفیف *',
+                      hintText: 'مثلاً تخفیف تابستانی',
                       validator: (value) => value!.isEmpty ? 'Title is required' : null,
                     ),
                     const SizedBox(height: AppSizes.md),
                     AppTextField(
                       controller: _codeController,
-                      labelText: 'Discount Code *',
-                      hintText: 'SUMMER20',
+                      labelText: 'کد تخفیف *',
+                      hintText: 'تابستان۲۰',
                       textCapitalization: TextCapitalization.characters,
                       validator: (value) => value!.isEmpty ? 'Code is required' : null,
                     ),
@@ -249,13 +250,13 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       value: _selectedType,
                       items: _discountTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
                       onChanged: (value) => setState(() => _selectedType = value),
-                      labelText: 'Discount Type *',
-                      hintText: 'Select Type',
+                      labelText: 'نوع تخفیف *',
+                      hintText: 'نوع تخفیف را انتخاب کنید',
                     ),
                     const SizedBox(height: AppSizes.md),
                     AppTextField(
                       controller: _valueController,
-                      labelText: _selectedType == 'Fixed Amount' ? 'Value (Toman) *' : 'Value (%) *',
+                      labelText: _selectedType == 'Fixed Amount' ? 'مبلغ (تومان) *' : 'مقدار (درصد) *',
                       hintText: '0',
                       keyboardType: TextInputType.number,
                       validator: (value) => _validatePositiveNumber(value, isRequired: true),
@@ -269,8 +270,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             onTap: () => _pickDate(context, true),
                             child: AbsorbPointer(
                               child: AppTextField(
-                                labelText: 'Start Date *',
-                                hintText: _startDate == null ? 'Select Date' : DateFormat('yyyy-MM-dd').format(_startDate!),
+                                labelText: 'تاریخ شروع *',
+                                hintText: _startDate == null ? 'انتخاب تاریخ' : DateFormat('yyyy-MM-dd').format(_startDate!),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
@@ -282,8 +283,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             onTap: () => _pickDate(context, false),
                             child: AbsorbPointer(
                               child: AppTextField(
-                                labelText: 'End Date *',
-                                hintText: _endDate == null ? 'Select Date' : DateFormat('yyyy-MM-dd').format(_endDate!),
+                                labelText: 'تاریخ پایان *',
+                                hintText: _endDate == null ? 'انتخاب تاریخ' : DateFormat('yyyy-MM-dd').format(_endDate!),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
@@ -317,7 +318,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           width: 250,
                           child: AppTextField(
                             controller: _minPurchaseController,
-                            labelText: 'Min Purchase Amount (Toman)',
+                            labelText: 'حداقل مبلغ خرید (تومان)',
                             hintText: '0',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
@@ -327,7 +328,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           width: 250,
                           child: AppTextField(
                             controller: _maxDiscountController,
-                            labelText: 'Max Discount Amount (Toman)',
+                            labelText: 'حداکثر مبلغ تخفیف (تومان)',
                             hintText: '0',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
@@ -344,7 +345,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           width: 250,
                           child: AppTextField(
                             controller: _totalUsageController,
-                            labelText: 'Total Usage Limit',
+                            labelText: 'سقف کل استفاده',
                             hintText: 'e.g., 100',
                             keyboardType: TextInputType.number,
                             validator: (value) => _validatePositiveNumber(value),
@@ -399,8 +400,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
               // Settings Card
               AppCard(
                 child: SwitchListTile(
-                  title: const Text('Active Discount'),
-                  subtitle: const Text('If disabled, discount cannot be used by customers'),
+                  title: const Text('تخفیف فعال باشد'),
+                  subtitle: const Text('در صورت غیرفعال بودن، مشتریان نمی‌توانند از این تخفیف استفاده کنند.'),
                   value: _isActive,
                   activeThumbColor: AppColors.primary,
                   onChanged: (val) => setState(() => _isActive = val),
