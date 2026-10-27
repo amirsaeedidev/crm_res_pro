@@ -694,7 +694,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                     ),
                     Text(
                       _settings['provider_key_configured'] == true
-                          ? 'کلید ملی پیامک در Vault ثبت شده است.'
+                          ? 'کلید دسترسی در خزانهٔ امن ثبت شده است.'
                           : 'درگاه هنوز تنظیم نشده؛ پیامک واقعی ارسال نمی‌شود.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: _settings['provider_key_configured'] == true
@@ -726,7 +726,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               ),
               Tab(icon: Icon(Icons.campaign_outlined), text: 'کمپین تبلیغاتی'),
               Tab(icon: Icon(Icons.groups_outlined), text: 'پرسنل'),
-              Tab(icon: Icon(Icons.analytics_outlined), text: 'گزارش و لاگ'),
+              Tab(icon: Icon(Icons.analytics_outlined), text: 'گزارش و رویدادها'),
             ],
           ),
         ),
@@ -796,7 +796,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             ),
             const SizedBox(height: 8),
             const Text(
-              'API Key فقط هنگام ذخیره به سرور فرستاده و در Supabase Vault نگهداری می‌شود؛ کلید ذخیره‌شده هرگز دوباره به رابط کاربری برگردانده نمی‌شود.',
+              'کلید دسترسی فقط هنگام ذخیره به سرور فرستاده می‌شود و در خزانهٔ امن نگهداری می‌شود؛ کلید ذخیره‌شده هرگز دوباره به رابط کاربری بازگردانده نمی‌شود.',
             ),
             const SizedBox(height: 14),
             _switch(
@@ -983,7 +983,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               ],
             ),
             const Text(
-              'برای ارسال پترن، Body ID هر رویداد را مطابق الگوی ثبت‌شده در پنل ملی پیامک وارد کنید. ترتیب مقادیر متغیرها باید با ترتیب پارامترهای الگو یکسان باشد.',
+              'برای ارسال پیامک الگومحور، شناسهٔ الگوی هر رویداد را مطابق الگوی ثبت‌شده در پنل ملی پیامک وارد کنید. ترتیب مقدارهای متغیر باید با ترتیب پارامترهای الگو یکسان باشد.',
             ),
             const SizedBox(height: 12),
             ..._templates.map((template) {
