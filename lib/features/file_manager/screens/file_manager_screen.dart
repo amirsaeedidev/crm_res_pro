@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/upload_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../shared/dialogs/delete_dialog.dart';
@@ -24,6 +25,19 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   bool _isLoading = false;
   String? _error;
   List<Map<String, dynamic>> _files = [];
+
+  String _bucketLabel(String bucket) {
+    switch (bucket) {
+      case 'products':
+        return 'تصاویر محصولات';
+      case 'categories':
+        return 'تصاویر دسته‌بندی‌ها';
+      case 'banners':
+        return 'تصاویر بنرها';
+      default:
+        return 'فایل‌های دیگر';
+    }
+  }
 
   @override
   void initState() {
@@ -56,7 +70,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       results.sort((a, b) => (b['created_at'] as String).compareTo(a['created_at'] as String));
       if (mounted) setState(() => _files = results);
     } on StorageException catch (e) {
-      if (mounted) setState(() => _error = 'خطا در دریافت فایل‌ها از Storage: ${e.message}');
+      if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست فایل‌ها ناموفق بود. اتصال و سطح دسترسی را بررسی کنید.'));
     } catch (e) {
       if (mounted) setState(() => _error = 'خطا در دریافت فایل‌ها: $e');
     } finally {
@@ -104,9 +118,9 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         folderName: 'uploads',
         bucketName: _selectedBucket,
       );
-      if (url.isEmpty) throw Exception('آپلود انجام نشد؛ مجوز Storage را بررسی کنید.');
+      if (url.isEmpty) throw Exception('بارگذاری تصویر انجام نشد؛ دسترسی بارگذاری فایل را بررسی کنید.');
       await _loadFiles();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر با موفقیت در Supabase Storage ذخیره شد.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر با موفقیت ذخیره شد.')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('آپلود ناموفق بود: $e')));
     } finally {
@@ -120,9 +134,9 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       if (!mounted) return;
       await _loadFiles();
       if (!mounted || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل از Storage حذف شد.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل با موفقیت حذف شد.')));
     } on StorageException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حذف ناموفق بود: ${e.message}')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'حذف فایل ناموفق بود. لطفاً دوباره تلاش کنید.'))));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حذف ناموفق بود: $e')));
     }
@@ -134,7 +148,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         Align(alignment: Alignment.centerRight, child: IconButton(onPressed: () => Navigator.pop(dialogContext), icon: const Icon(Icons.close))),
         ConstrainedBox(constraints: const BoxConstraints(maxHeight: 500), child: Image.network(file['url'] as String, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('نمایش تصویر امکان‌پذیر نیست.'))),
         const SizedBox(height: AppSizes.sm),
-        Text('${file['bucket']} / ${file['path']}'),
+        Text(_bucketLabel((file['bucket'] ?? '').toString())),
       ])),
     ));
   }
@@ -144,14 +158,14 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     padding: const EdgeInsets.all(AppSizes.md),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Expanded(child: Text('مدیریت فایل‌های Storage', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold))),
+        Expanded(child: Text('مدیریت فایل‌ها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold))),
         const SizedBox(width: AppSizes.sm),
         DropdownButton<String>(value: _selectedBucket, items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(), onChanged: (v) { if (v != null) setState(() => _selectedBucket = v); }),
         const SizedBox(width: AppSizes.sm),
         AppButton(label: _isUploading ? 'در حال آپلود...' : 'آپلود تصویر', icon: Icons.cloud_upload_outlined, isLoading: _isUploading, onPressed: _isUploading ? null : _pickAndUploadFile, width: 170),
       ]),
       const SizedBox(height: AppSizes.md),
-      Text('نمایش محتویات واقعی باکت‌های products، categories و banners', style: Theme.of(context).textTheme.bodySmall),
+      Text('نمایش فایل‌های تصاویر محصولات، دسته‌بندی‌ها و بنرها', style: Theme.of(context).textTheme.bodySmall),
       const SizedBox(height: AppSizes.md),
       if (_error != null) AppCard(child: Column(children: [Text(_error!, textAlign: TextAlign.center), const SizedBox(height: 8), FilledButton(onPressed: _loadFiles, child: const Text('تلاش مجدد'))])),
       if (_isLoading) const Expanded(child: Center(child: CircularProgressIndicator()))
@@ -168,10 +182,10 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
               : const Icon(Icons.insert_drive_file_outlined, size: 42))),
             Padding(padding: const EdgeInsets.all(AppSizes.sm), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(file['name'] as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text('${file['bucket']} • ${_formatSize(file['size'])}', style: Theme.of(context).textTheme.bodySmall),
+              Text('${_bucketLabel((file['bucket'] ?? '').toString())} • ${_formatSize(file['size'])}', style: Theme.of(context).textTheme.bodySmall),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 if (isImage) IconButton(tooltip: 'نمایش', onPressed: () => _showImagePreview(file), icon: const Icon(Icons.visibility_outlined, color: AppColors.info)),
-                IconButton(tooltip: 'حذف', onPressed: () => DeleteDialog.show(context: context, title: 'حذف فایل', message: 'آیا فایل ${file['name']} از باکت ${file['bucket']} حذف شود؟', onDelete: () => _deleteFile(file)), icon: const Icon(Icons.delete_outline, color: AppColors.error)),
+                IconButton(tooltip: 'حذف', onPressed: () => DeleteDialog.show(context: context, title: 'حذف فایل', message: 'آیا فایل ${file['name']} از بخش ${_bucketLabel((file['bucket'] ?? '').toString())} حذف شود؟', onDelete: () => _deleteFile(file)), icon: const Icon(Icons.delete_outline, color: AppColors.error)),
               ]),
             ])),
           ]));
