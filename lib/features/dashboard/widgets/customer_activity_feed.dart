@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/utils/app_error_message.dart';
 
 // --- Models (Usually in models folder, kept here for self-containment) ---
 enum ActivityType { orderPlaced, discountUsed, addressAdded, unknown }
@@ -39,10 +40,10 @@ class CustomerActivityFeed extends StatelessWidget {
 
   String _getRelativeTime(DateTime time) {
     final diff = DateTime.now().difference(time);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return 'همین الان';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} دقیقه پیش';
+    if (diff.inHours < 24) return '${diff.inHours} ساعت پیش';
+    return '${diff.inDays} روز پیش';
   }
 
   IconData _getIcon(ActivityType type) {
@@ -73,7 +74,7 @@ class CustomerActivityFeed extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Customer Activity',
+                'فعالیت‌های مشتریان',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.getPrimaryText(context),
@@ -217,7 +218,7 @@ class CustomerActivityFeed extends StatelessWidget {
             Icon(Icons.history_toggle_off, size: 40, color: AppColors.getSecondaryText(context)),
             const SizedBox(height: AppSizes.md),
             Text(
-              'No recent activity',
+              'فعالیت تازه‌ای ثبت نشده است',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.getSecondaryText(context),
                   ),
@@ -237,7 +238,7 @@ class CustomerActivityFeed extends StatelessWidget {
             Icon(Icons.error_outline, size: 40, color: AppColors.error),
             const SizedBox(height: AppSizes.md),
             Text(
-              error!,
+              AppErrorMessage.forDisplay(error!),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.error,
                   ),
@@ -247,7 +248,7 @@ class CustomerActivityFeed extends StatelessWidget {
               const SizedBox(height: AppSizes.md),
               TextButton(
                 onPressed: onRetry,
-                child: const Text('Retry'),
+                child: const Text('تلاش دوباره'),
               ),
             ],
           ],
