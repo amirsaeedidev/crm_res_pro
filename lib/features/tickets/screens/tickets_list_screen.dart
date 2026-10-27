@@ -84,7 +84,12 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSizes.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -121,7 +126,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                   const spacing = AppSizes.sm;
                   final columns = constraints.maxWidth >= 1050
                       ? 4
-                      : constraints.maxWidth >= 560
+                      : constraints.maxWidth >= 360
                           ? 2
                           : 1;
                   final cardWidth =
