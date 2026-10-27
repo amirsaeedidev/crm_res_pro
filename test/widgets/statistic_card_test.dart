@@ -7,14 +7,13 @@ import 'package:crm_panel/features/dashboard/widgets/statistic_card.dart';
 void main() {
   testWidgets('StatisticCard displays title, value, and percentage correctly',
       (WidgetTester tester) async {
-    // آرایه‌ای از ویجت‌های مورد نیاز برای تست
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: StatisticCard(
             title: 'فروش کل',
             value: '45,200,000 T',
-            icon: Icons.attach_money,
+            imageAssetPath: 'assets/images/dashboard_sales.webp',
             iconColor: AppColors.success,
             changePercentage: '12',
             isPositiveChange: true,
@@ -23,15 +22,10 @@ void main() {
       ),
     );
 
-    // بررسی نمایش متن عنوان
     expect(find.text('فروش کل'), findsOneWidget);
-    // بررسی نمایش متن مقدار
     expect(find.text('45,200,000 T'), findsOneWidget);
-    // بررسی نمایش درصد رشد
     expect(find.text('12%'), findsOneWidget);
-    // بررسی وجود آیکون
-    expect(find.byIcon(Icons.attach_money), findsOneWidget);
-    // بررسی وجود آیکون رشد مثبت
+    expect(find.byType(Image), findsOneWidget);
     expect(find.byIcon(Icons.arrow_upward), findsOneWidget);
   });
 
@@ -43,16 +37,19 @@ void main() {
           body: StatisticCard(
             title: 'سفارشات لغو شده',
             value: '15',
-            icon: Icons.cancel_outlined,
+            imageAssetPath: 'assets/images/dashboard_orders.webp',
             iconColor: AppColors.error,
             changePercentage: '5',
-            isPositiveChange: false, // رشد منفی
+            isPositiveChange: false,
           ),
         ),
       ),
     );
 
+    expect(find.text('سفارشات لغو شده'), findsOneWidget);
     expect(find.text('15'), findsOneWidget);
-    expect(find.byIcon(Icons.arrow_downward), findsOneWidget); // آیکون رشد منفی
+    expect(find.text('5%'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
   });
 }
