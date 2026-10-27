@@ -8,19 +8,21 @@ import '../../../core/widgets/app_card.dart';
 class StatisticCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
+  final String imageAssetPath;
   final Color iconColor;
   final String changePercentage;
   final bool isPositiveChange;
+  final bool isFeatured;
 
   const StatisticCard({
     super.key,
     required this.title,
     required this.value,
-    required this.icon,
+    required this.imageAssetPath,
     required this.iconColor,
     required this.changePercentage,
     this.isPositiveChange = true,
+    this.isFeatured = false,
   });
 
   @override
@@ -38,7 +40,17 @@ class StatisticCard extends StatelessWidget {
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.medium),
                 ),
-                child: Icon(icon, color: iconColor, size: AppSizes.iconMd),
+                child: Image.asset(
+                  imageAssetPath,
+                  width: isFeatured ? 44 : 30,
+                  height: isFeatured ? 44 : 30,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.image_not_supported_outlined,
+                    color: iconColor,
+                    size: isFeatured ? 44 : 30,
+                  ),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
@@ -67,10 +79,13 @@ class StatisticCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.md),
+          SizedBox(height: isFeatured ? AppSizes.lg : AppSizes.md),
           Text(
             value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: AppTypography.headlineMedium.copyWith(
+              fontSize: isFeatured ? 30 : null,
               color: AppColors.getPrimaryText(context),
               fontWeight: FontWeight.bold,
             ),
