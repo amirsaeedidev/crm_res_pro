@@ -168,16 +168,15 @@ class _RestaurantSalesChartState extends State<RestaurantSalesChart> {
 
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(
+        Image.asset(
+          'assets/images/dashboard_reports.webp',
+          width: 56,
+          height: 56,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(
             Icons.query_stats_rounded,
             color: AppColors.primary,
+            size: 48,
           ),
         ),
         const SizedBox(width: 12),
