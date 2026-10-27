@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
@@ -44,12 +45,55 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   void _refresh() => setState(_reloadFutures);
 
   String _statusLabel(String value) => switch (value) {
-    'pending' => 'در انتظار', 'confirmed' => 'تأیید شده', 'preparing' => 'در حال آماده‌سازی',
-    'ready' => 'آماده', 'out_for_delivery' => 'در مسیر ارسال', 'completed' => 'تکمیل‌شده',
-    'cancelled' => 'لغوشده', _ => value,
+    'pending' => 'در انتظار',
+    'confirmed' => 'تأیید شده',
+    'preparing' => 'در حال آماده‌سازی',
+    'ready' => 'آماده',
+    'out_for_delivery' => 'در مسیر ارسال',
+    'completed' => 'تکمیل‌شده',
+    'cancelled' => 'لغوشده',
+    _ => 'نامشخص',
   };
 
-  String _money(num amount) => amount.round().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  String _customerStatusLabel(String value) => switch (value.toLowerCase()) {
+    'active' => 'فعال',
+    'inactive' => 'غیرفعال',
+    'blocked' => 'مسدود',
+    'pending' => 'در انتظار تأیید',
+    _ => 'نامشخص',
+  };
+
+  String _persianDigits(String value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value;
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _formatDate(DateTime value) {
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
+
+  String _displayDate(Object? value) {
+    final date = DateTime.tryParse(value?.toString() ?? '');
+    return date == null ? '—' : _formatDate(date);
+  }
+
+  String _money(num amount) => _persianDigits(
+        amount.round().toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '٬',
+        ),
+      );
 
   Future<void> _editCustomer(UserModel customer) async {
     final firstName = TextEditingController(text: customer.firstName ?? '');
@@ -90,7 +134,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       _refresh();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اطلاعات مشتری از دیتابیس به‌روزرسانی شد.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ویرایش مشتری ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'ویرایش اطلاعات مشتری ناموفق بود. دوباره تلاش کنید.'))));
     }
   }
 
@@ -130,7 +174,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       _refresh();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('موجودی جدید: $newBalance امتیاز. تراکنش ثبت شد.')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('اصلاح امتیاز ناموفق بود: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'اصلاح امتیاز مشتری ناموفق بود. دوباره تلاش کنید.'))));
     }
   }
 
@@ -142,7 +186,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       future: _customerFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: AppLoading());
-        if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text('خطا در دریافت مشتری: ${snapshot.error}', textAlign: TextAlign.center)));
+        if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت اطلاعات مشتری ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center)));
         final customer = snapshot.data;
         if (customer == null) return const Center(child: Text('مشتری پیدا نشد.'));
         return ListView(padding: const EdgeInsets.all(AppSizes.lg), children: [
@@ -153,7 +197,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Text(customer.fullName, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               if (customer.email.isNotEmpty) Text(customer.email),
               if ((customer.phone ?? '').isNotEmpty) Text(customer.phone!),
-              Text('وضعیت: ${customer.status} • ثبت‌نام: ${customer.createdAt.toLocal()}'),
+              Text('وضعیت: ${_customerStatusLabel(customer.status)} • تاریخ ثبت‌نام: ${_formatDate(customer.createdAt)}'),
               const SizedBox(height: 6),
               Wrap(spacing: 6, children: [Chip(label: Text(customer.marketingSmsOptIn ? 'رضایت پیامک تبلیغاتی' : 'بدون رضایت تبلیغاتی')), Chip(label: Text('شناسه ${customer.id.substring(0, customer.id.length > 8 ? 8 : customer.id.length)}'))]),
             ])),
@@ -164,23 +208,23 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           const SizedBox(height: AppSizes.sm),
           FutureBuilder<Map<String, dynamic>?>(future: _walletFuture, builder: (context, walletSnapshot) {
             if (walletSnapshot.connectionState == ConnectionState.waiting) return const AppCard(child: LinearProgressIndicator());
-            if (walletSnapshot.hasError) return AppCard(child: Text('خطا در دریافت کیف مشتری: ${walletSnapshot.error}'));
+            if (walletSnapshot.hasError) return AppCard(child: Text(AppErrorMessage.from(walletSnapshot.error!, fallback: 'دریافت کیف امتیاز مشتری ناموفق بود. دوباره تلاش کنید.')));
             final wallet = walletSnapshot.data;
             if (wallet == null) return const AppCard(child: Text('برای این مشتری کیف امتیاز ثبت نشده است.'));
             final balance = (wallet['total_points'] as num? ?? 0).toInt();
             return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(Icons.account_balance_wallet_outlined, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('$balance امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${wallet['updated_at'] ?? '—'}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح موجودی'))]),
+              Row(children: [const Icon(Icons.account_balance_wallet_outlined, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('$balance امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${_displayDate(wallet['updated_at'])}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح موجودی'))]),
               const Divider(height: 24),
               Text('گردش آخرین تراکنش‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               FutureBuilder<List<Map<String, dynamic>>>(future: _transactionsFuture, builder: (context, transactionsSnapshot) {
                 if (transactionsSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                if (transactionsSnapshot.hasError) return Text('خطا در گردش تراکنش‌ها: ${transactionsSnapshot.error}');
+                if (transactionsSnapshot.hasError) return Text(AppErrorMessage.from(transactionsSnapshot.error!, fallback: 'دریافت گردش امتیاز ناموفق بود. دوباره تلاش کنید.'));
                 final transactions = transactionsSnapshot.data ?? const <Map<String, dynamic>>[];
                 if (transactions.isEmpty) return const Text('تراکنشی ثبت نشده است.');
                 return Column(children: transactions.take(15).map((tx) {
                   final n = (tx['points'] as num? ?? 0).toInt();
-                  final type = switch ((tx['transaction_type'] ?? '').toString()) {'earned' => 'کسب', 'redeemed' => 'مصرف', 'adjusted' => 'اصلاح دستی', _ => (tx['transaction_type'] ?? '').toString()};
+                  final type = switch ((tx['transaction_type'] ?? '').toString()) {'earned' => 'کسب', 'redeemed' => 'مصرف', 'adjusted' => 'اصلاح دستی', _ => 'سایر'};
                   return ListTile(dense: true, contentPadding: EdgeInsets.zero, title: Text('$type • ${n > 0 ? '+' : ''}$n امتیاز'), subtitle: Text('${tx['description'] ?? ''}\n${tx['created_at'] ?? ''}'), isThreeLine: true, trailing: Text(n >= 0 ? '+$n' : '$n', style: TextStyle(color: n >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold)));
                 }).toList());
               }),
@@ -191,7 +235,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           const SizedBox(height: AppSizes.sm),
           FutureBuilder<List<Map<String, dynamic>>>(future: _addressesFuture, builder: (context, addressSnapshot) {
             if (addressSnapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
-            if (addressSnapshot.hasError) return AppCard(child: Text('خطا در دریافت آدرس‌ها: ${addressSnapshot.error}'));
+            if (addressSnapshot.hasError) return AppCard(child: Text(AppErrorMessage.from(addressSnapshot.error!, fallback: 'دریافت آدرس‌های مشتری ناموفق بود. دوباره تلاش کنید.')));
             final addresses = addressSnapshot.data ?? const <Map<String, dynamic>>[];
             if (addresses.isEmpty) return const AppCard(child: Text('آدرسی برای این مشتری ثبت نشده است.'));
             return Column(children: addresses.map((address) => AppCard(margin: const EdgeInsets.only(bottom: AppSizes.sm), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -207,11 +251,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           const SizedBox(height: AppSizes.sm),
           FutureBuilder<List<OrderModel>>(future: _ordersFuture, builder: (context, ordersSnapshot) {
             if (ordersSnapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
-            if (ordersSnapshot.hasError) return AppCard(child: Text('خطا در دریافت سفارش‌ها: ${ordersSnapshot.error}'));
+            if (ordersSnapshot.hasError) return AppCard(child: Text(AppErrorMessage.from(ordersSnapshot.error!, fallback: 'دریافت سفارش‌های مشتری ناموفق بود. دوباره تلاش کنید.')));
             final orders = ordersSnapshot.data ?? const <OrderModel>[];
             if (orders.isEmpty) return const AppCard(child: Text('سفارشی برای این مشتری ثبت نشده است.'));
             return Column(children: orders.map((order) => AppCard(margin: const EdgeInsets.only(bottom: AppSizes.sm), child: Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('سفارش ${order.id}', style: const TextStyle(fontWeight: FontWeight.bold)), Text(order.createdAt.toLocal().toString()), Text('وضعیت: ${_statusLabel(order.status)}')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('سفارش ${order.id}', style: const TextStyle(fontWeight: FontWeight.bold)), Text(_formatDate(order.createdAt)), Text('وضعیت: ${_statusLabel(order.status)}')])),
               Text('${_money(order.totalAmount)} تومان', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
             ]))).toList());
           }),
