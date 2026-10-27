@@ -148,7 +148,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, setDialogState) => AlertDialog(
         title: const Text('اصلاح موجودی کیف امتیاز'),
         content: SizedBox(width: 420, child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('موجودی فعلی: $current امتیاز'),
+          Text('موجودی فعلی: ${_persianDigits(current.toString())} امتیاز'),
           const SizedBox(height: 12),
           SegmentedButton<bool>(segments: const [ButtonSegment(value: true, label: Text('افزایش'), icon: Icon(Icons.add)), ButtonSegment(value: false, label: Text('کاهش'), icon: Icon(Icons.remove))], selected: {isAdding}, onSelectionChanged: (s) => setDialogState(() => isAdding = s.first)),
           const SizedBox(height: 12),
@@ -172,7 +172,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       final newBalance = await _customersRepository.adjustCustomerPoints(userId: widget.customerId, pointsDelta: result.delta, description: result.reason);
       if (!mounted) return;
       _refresh();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('موجودی جدید: $newBalance امتیاز. تراکنش ثبت شد.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('موجودی جدید: ${_persianDigits(newBalance.toString())} امتیاز. تراکنش ثبت شد.')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'اصلاح امتیاز مشتری ناموفق بود. دوباره تلاش کنید.'))));
     }
@@ -213,7 +213,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             if (wallet == null) return const AppCard(child: Text('برای این مشتری کیف امتیاز ثبت نشده است.'));
             final balance = (wallet['total_points'] as num? ?? 0).toInt();
             return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(Icons.account_balance_wallet_outlined, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('$balance امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${_displayDate(wallet['updated_at'])}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح موجودی'))]),
+              Row(children: [const Icon(Icons.account_balance_wallet_outlined, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_persianDigits(balance.toString())} امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${_displayDate(wallet['updated_at'])}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح موجودی'))]),
               const Divider(height: 24),
               Text('گردش آخرین تراکنش‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -225,7 +225,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 return Column(children: transactions.take(15).map((tx) {
                   final n = (tx['points'] as num? ?? 0).toInt();
                   final type = switch ((tx['transaction_type'] ?? '').toString()) {'earned' => 'کسب', 'redeemed' => 'مصرف', 'adjusted' => 'اصلاح دستی', _ => 'سایر'};
-                  return ListTile(dense: true, contentPadding: EdgeInsets.zero, title: Text('$type • ${n > 0 ? '+' : ''}$n امتیاز'), subtitle: Text('${tx['description'] ?? ''}\n${tx['created_at'] ?? ''}'), isThreeLine: true, trailing: Text(n >= 0 ? '+$n' : '$n', style: TextStyle(color: n >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold)));
+                  return ListTile(dense: true, contentPadding: EdgeInsets.zero, title: Text('$type • ${_persianDigits(n > 0 ? '+$n' : '$n')} امتیاز'), subtitle: Text('${tx['description'] ?? ''}\n${_displayDate(tx['created_at'])}'), isThreeLine: true, trailing: Text(_persianDigits(n >= 0 ? '+$n' : '$n'), style: TextStyle(color: n >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold)));
                 }).toList());
               }),
             ]));
@@ -241,9 +241,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             return Column(children: addresses.map((address) => AppCard(margin: const EdgeInsets.only(bottom: AppSizes.sm), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [Expanded(child: Text((address['title'] ?? 'آدرس').toString(), style: const TextStyle(fontWeight: FontWeight.bold))), if (address['is_default'] == true) const Chip(label: Text('پیش‌فرض'))]),
               if ((address['recipient_name'] ?? '').toString().isNotEmpty) Text('گیرنده: ${address['recipient_name']}'),
-              if ((address['phone'] ?? '').toString().isNotEmpty) Text('تلفن: ${address['phone']}'),
+              if ((address['phone'] ?? '').toString().isNotEmpty) Text('تلفن: ${_persianDigits((address['phone'] ?? '').toString())}'),
               Text((address['address_line'] ?? '').toString()),
-              if ((address['postal_code'] ?? '').toString().isNotEmpty) Text('کد پستی: ${address['postal_code']}'),
+              if ((address['postal_code'] ?? '').toString().isNotEmpty) Text('کد پستی: ${_persianDigits((address['postal_code'] ?? '').toString())}'),
             ]))).toList());
           }),
           const SizedBox(height: AppSizes.lg),
@@ -255,7 +255,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             final orders = ordersSnapshot.data ?? const <OrderModel>[];
             if (orders.isEmpty) return const AppCard(child: Text('سفارشی برای این مشتری ثبت نشده است.'));
             return Column(children: orders.map((order) => AppCard(margin: const EdgeInsets.only(bottom: AppSizes.sm), child: Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('سفارش ${order.id}', style: const TextStyle(fontWeight: FontWeight.bold)), Text(_formatDate(order.createdAt)), Text('وضعیت: ${_statusLabel(order.status)}')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('شناسه سفارش: ${order.id.substring(0, order.id.length > 8 ? 8 : order.id.length)}', style: const TextStyle(fontWeight: FontWeight.bold)), Text(_formatDate(order.createdAt)), Text('وضعیت: ${_statusLabel(order.status)}')])),
               Text('${_money(order.totalAmount)} تومان', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
             ]))).toList());
           }),
