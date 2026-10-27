@@ -92,12 +92,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return num.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  String _number(num value) => value.round().toString().replaceAllMapped(
-        RegExp(r'\B(?=(\d{3})+(?!\d))'),
-        (_) => ',',
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _number(num value) => _persianDigits(
+        value.round().toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '٬',
+        ),
       );
 
-  String _percentage(num value) => '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}٪';
+  String _percentage(num value) =>
+      '${value >= 0 ? '+' : ''}${_persianDigits(value.toStringAsFixed(1))}٪';
 
   @override
   Widget build(BuildContext context) {
