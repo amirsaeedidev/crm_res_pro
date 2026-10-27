@@ -550,7 +550,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
           )
         else
           Text(
-            product.status == 'active' ? 'Available' : 'Unavailable',
+            product.status == 'active' ? 'فعال' : 'غیرفعال',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: product.status == 'active' ? AppColors.success : AppColors.error,
                   fontWeight: FontWeight.bold,
