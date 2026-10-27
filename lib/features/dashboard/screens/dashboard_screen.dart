@@ -39,18 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
 
-          final int cardColumns;
-          if (contentWidth >= 1050) {
-            cardColumns = 3;
-          } else if (contentWidth >= 620) {
-            cardColumns = 2;
-          } else {
-            cardColumns = 1;
-          }
-
-          final cardWidth =
-              (contentWidth - AppSizes.md * (cardColumns - 1)) / cardColumns;
-
+          final compactStats = contentWidth < 480;
           final stackCharts = contentWidth < 900;
 
           return Consumer<DashboardProvider>(
@@ -93,53 +82,78 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: AppSizes.lg),
 
-                  // کارت‌های آماری واکنش‌گرا
-                  Wrap(
-                    spacing: AppSizes.md,
-                    runSpacing: AppSizes.md,
-                    children: [
-                      _buildStatCard(
-                        width: cardWidth,
-                        title: 'فروش کل',
-                        value: stats != null
-                            ? '${stats.totalSales.toStringAsFixed(0)} تومان'
-                            : 'ناموجود',
-                        icon: Icons.attach_money,
-                        iconColor: AppColors.success,
-                        changePercentage: stats != null
-                            ? stats.salesGrowthPercentage.toStringAsFixed(1)
-                            : '0',
-                      ),
-                      Row(
-                        children: [
-                          _buildStatCard(
-                            width: cardWidth,
+                  // کارت اصلی فروش؛ تمام عرض صفحه را می‌گیرد.
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildStatCard(
+                      title: 'فروش کل',
+                      value: stats != null
+                          ? '${stats.totalSales.toStringAsFixed(0)} تومان'
+                          : 'ناموجود',
+                      imageAssetPath: 'assets/images/dashboard_sales.webp',
+                      iconColor: AppColors.success,
+                      changePercentage: stats != null
+                          ? stats.salesGrowthPercentage.toStringAsFixed(1)
+                          : '0',
+                      isFeatured: true,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  // دو کارت کوچک؛ در صفحه باریک زیر هم و در صفحه عریض کنار هم.
+                  if (compactStats) ...[
+                    _buildStatCard(
+                      title: 'سفارشات جدید',
+                      value: stats != null ? stats.totalOrders.toString() : 'ناموجود',
+                      imageAssetPath: 'assets/images/dashboard_orders.webp',
+                      iconColor: AppColors.primary,
+                      changePercentage: stats != null
+                          ? stats.ordersGrowthPercentage.toStringAsFixed(1)
+                          : '0',
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                    _buildStatCard(
+                      title: 'کاربران فعال',
+                      value: stats != null ? stats.totalCustomers.toString() : 'ناموجود',
+                      imageAssetPath: 'assets/images/dashboard_customers.webp',
+                      iconColor: AppColors.accent,
+                      changePercentage: stats != null
+                          ? stats.customersGrowthPercentage.toStringAsFixed(1)
+                          : '0',
+                    ),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
                             title: 'سفارشات جدید',
                             value: stats != null
                                 ? stats.totalOrders.toString()
                                 : 'ناموجود',
-                            icon: Icons.shopping_cart_checkout,
+                            imageAssetPath: 'assets/images/dashboard_orders.webp',
                             iconColor: AppColors.primary,
                             changePercentage: stats != null
                                 ? stats.ordersGrowthPercentage.toStringAsFixed(1)
                                 : '0',
                           ),
-                          _buildStatCard(
-                            width: cardWidth,
+                        ),
+                        const SizedBox(width: AppSizes.md),
+                        Expanded(
+                          child: _buildStatCard(
                             title: 'کاربران فعال',
                             value: stats != null
                                 ? stats.totalCustomers.toString()
                                 : 'ناموجود',
-                            icon: Icons.people_alt_outlined,
+                            imageAssetPath: 'assets/images/dashboard_customers.webp',
                             iconColor: AppColors.accent,
                             changePercentage: stats != null
                                 ? stats.customersGrowthPercentage.toStringAsFixed(1)
                                 : '0',
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
 
                   const SizedBox(height: AppSizes.lg),
 
@@ -204,22 +218,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatCard({
-    required double width,
     required String title,
     required String value,
-    required IconData icon,
+    required String imageAssetPath,
     required Color iconColor,
     required String changePercentage,
+    bool isFeatured = false,
   }) {
-    return SizedBox(
-      width: width,
-      child: StatisticCard(
-        title: title,
-        value: value,
-        icon: icon,
-        iconColor: iconColor,
-        changePercentage: changePercentage,
-      ),
+    return StatisticCard(
+      title: title,
+      value: value,
+      imageAssetPath: imageAssetPath,
+      iconColor: iconColor,
+      changePercentage: changePercentage,
+      isFeatured: isFeatured,
     );
   }
 }
