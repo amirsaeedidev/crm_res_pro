@@ -63,11 +63,41 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   }
 
   String _formatStatus(String status) {
-    if (status.isEmpty) return 'Unknown';
-    return status.split('_').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'در انتظار';
+      case 'confirmed':
+        return 'تأیید شده';
+      case 'preparing':
+        return 'در حال آماده‌سازی';
+      case 'ready':
+        return 'آماده';
+      case 'out_for_delivery':
+      case 'shipped':
+        return 'در مسیر ارسال';
+      case 'delivered':
+        return 'تحویل شده';
+      case 'completed':
+        return 'تکمیل‌شده';
+      case 'cancelled':
+      case 'canceled':
+        return 'لغوشده';
+      case 'unknown':
+      case '':
+        return 'نامشخص';
+      default:
+        return 'نامشخص';
+    }
+  }
+
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
   }
 
   @override
@@ -79,7 +109,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         children: [
           // Header
           Text(
-            'Orders Management',
+            'مدیریت سفارش‌ها',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: AppColors.getPrimaryText(context),
                   fontWeight: FontWeight.bold,
