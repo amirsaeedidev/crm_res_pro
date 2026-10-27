@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../providers/tickets_provider.dart';
 
 class TicketsListScreen extends StatefulWidget {
@@ -186,7 +187,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                 },
                 icon: const Icon(Icons.clear),
               ),
-              border: const OutlineInputBorder(),
+              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
             ),
             onSubmitted: (value) =>
                 context.read<TicketsProvider>().setSearch(value),
@@ -197,7 +198,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
               initialValue: provider.status,
               decoration: const InputDecoration(
                 labelText: 'فیلتر وضعیت تیکت',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
               ),
               items: const [
                 DropdownMenuItem(value: 'all', child: Text('همه تیکت‌ها')),
