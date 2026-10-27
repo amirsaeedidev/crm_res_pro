@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   provider.requiresMfa
                       ? (provider.isMfaSetupRequired
-                          ? 'اتصال Google Authenticator'
+                          ? 'اتصال برنامه کدساز'
                           : 'تأیید هویت مدیر')
                       : AppStrings.welcomeBack,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -110,8 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   provider.requiresMfa
                       ? (provider.isMfaSetupRequired
-                          ? 'برای محافظت از پنل، اپ Authenticator را یک‌بار به حساب متصل کنید.'
-                          : 'کد فعلی اپ Google Authenticator را وارد کنید.')
+                          ? 'برای محافظت از پنل، برنامه کدساز را یک‌بار به حساب متصل کنید.'
+                          : 'کد فعلی برنامه کدساز را وارد کنید.')
                       : 'لطفاً برای ادامه با حساب مدیر وارد شوید.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.getSecondaryText(context),
@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Icon(Icons.security_rounded, size: 34),
                   const SizedBox(height: AppSizes.sm),
                   Text(
-                    '۱. در Google Authenticator گزینه افزودن حساب را بزنید.',
+                    '۱. در برنامه کدساز گوگل، گزینهٔ افزودن حساب را انتخاب کنید.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -277,8 +277,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (qrSvg != null) const SizedBox(height: AppSizes.sm),
                   Text(
                     qrSvg == null
-                        ? 'اگر امکان اسکن QR ندارید، کلید زیر را به‌صورت دستی وارد کنید.'
-                        : 'اگر QR اسکن نشد، کلید راه‌اندازی را به‌صورت دستی وارد کنید.',
+                        ? 'اگر امکان خواندن رمزینهٔ دوبعدی را ندارید، کلید زیر را دستی وارد کنید.'
+                        : 'اگر رمزینهٔ دوبعدی خوانده نشد، کلید راه‌اندازی را دستی وارد کنید.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.getSecondaryText(context),
@@ -300,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
-                    'نوع کد: مبتنی بر زمان (Time-based)',
+                    'نوع کد: زمان‌محور',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.getSecondaryText(context),
                         ),
@@ -310,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: AppSizes.lg),
             Text(
-              '۲. کد ۶ رقمی نمایش‌داده‌شده در Authenticator را وارد کنید تا اتصال فعال شود.',
+              '۲. کد ۶ رقمی نمایش‌داده‌شده در برنامه کدساز را وارد کنید تا اتصال فعال شود.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -319,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const Icon(Icons.verified_user_outlined, size: 44),
             const SizedBox(height: AppSizes.sm),
             Text(
-              'اپ Google Authenticator را باز کنید و کد ۶ رقمی حساب مدیر را وارد کنید. کد به‌صورت دوره‌ای تغییر می‌کند.',
+              'برنامه کدساز را باز کنید و کد ۶ رقمی حساب مدیر را وارد کنید. کد به‌صورت دوره‌ای تغییر می‌کند.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -328,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
           AppTextField(
             controller: _codeController,
             labelText: 'کد ۶ رقمی برنامه رمزساز',
-            hintText: '000000',
+            hintText: '۰۰۰۰۰۰',
             keyboardType: TextInputType.number,
             prefixIcon: const Icon(Icons.password_rounded, size: 20),
             validator: (value) {
