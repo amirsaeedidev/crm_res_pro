@@ -34,7 +34,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSizes.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.md,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
