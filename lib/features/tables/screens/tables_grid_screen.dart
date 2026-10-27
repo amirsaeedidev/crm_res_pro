@@ -305,6 +305,38 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
     }
   }
 
+  Widget _buildCountBadge({
+    required String label,
+    required int count,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(AppRadius.circular),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSizes.xs),
+          Text(
+            _persianDigits(count),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: AppSizes.xs),
+          Text(label, style: TextStyle(color: color)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -359,11 +391,29 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                   ],
                 ),
                 const SizedBox(height: AppSizes.sm),
-                Text(
-                  '${_persianDigits(freeCount)} آزاد • ${_persianDigits(occupiedCount)} اشغال • ${_persianDigits(reservedCount)} رزرو شده',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.getSecondaryText(context),
-                  ),
+                Wrap(
+                  spacing: AppSizes.sm,
+                  runSpacing: AppSizes.sm,
+                  children: [
+                    _buildCountBadge(
+                      label: 'میز آزاد',
+                      count: freeCount,
+                      color: AppColors.success,
+                      icon: Icons.check_circle_outline,
+                    ),
+                    _buildCountBadge(
+                      label: 'میز اشغال',
+                      count: occupiedCount,
+                      color: AppColors.error,
+                      icon: Icons.event_busy_outlined,
+                    ),
+                    _buildCountBadge(
+                      label: 'میز رزروشده',
+                      count: reservedCount,
+                      color: AppColors.warning,
+                      icon: Icons.event_available_outlined,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSizes.lg),
                 Expanded(
