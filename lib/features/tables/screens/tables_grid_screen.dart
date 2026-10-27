@@ -39,6 +39,17 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
     }
   }
 
+  IconData _getStatusIcon(TableStatus status) {
+    switch (status) {
+      case TableStatus.free:
+        return Icons.check_circle_outline;
+      case TableStatus.occupied:
+        return Icons.event_busy_outlined;
+      case TableStatus.reserved:
+        return Icons.event_available_outlined;
+    }
+  }
+
   String _formatStatus(String status) {
     switch (status.toLowerCase()) {
       case 'free':
@@ -428,17 +439,16 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: 200,
-                                childAspectRatio: 1,
+                                childAspectRatio: 0.88,
                                 crossAxisSpacing: AppSizes.md,
                                 mainAxisSpacing: AppSizes.md,
                               ),
                           itemCount: provider.tables.length,
                           itemBuilder: (context, index) {
                             final table = provider.tables[index];
-                            final statusColor = _getStatusColor(
-                              table.status,
-                              context,
-                            );
+                            final statusColor = table.isActive
+                                ? _getStatusColor(table.status, context)
+                                : AppColors.getSecondaryText(context);
 
                             return AppCard(
                               padding: EdgeInsets.zero,
@@ -508,29 +518,58 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                       ),
                                       const SizedBox(height: AppSizes.sm),
                                       Container(
+                                        width: double.infinity,
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: AppSizes.sm,
-                                          vertical: 4,
+                                          vertical: AppSizes.sm,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: statusColor.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            AppRadius.small,
+                                          color: statusColor.withValues(alpha: 0.09),
+                                          borderRadius: AppRadius.mediumAll,
+                                          border: Border.all(
+                                            color: statusColor.withValues(alpha: 0.22),
                                           ),
                                         ),
-                                        child: Text(
-                                          _formatStatus(
-                                            table.isActive
-                                                ? table.status.name
-                                                : 'inactive',
-                                          ),
-                                          style: TextStyle(
-                                            color: statusColor,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'وضعیت میز',
+                                              style: Theme.of(context).textTheme.labelSmall
+                                                  ?.copyWith(
+                                                color: AppColors.getSecondaryText(context),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  table.isActive
+                                                      ? _getStatusIcon(table.status)
+                                                      : Icons.visibility_off_outlined,
+                                                  size: 16,
+                                                  color: statusColor,
+                                                ),
+                                                const SizedBox(width: AppSizes.xs),
+                                                Expanded(
+                                                  child: Text(
+                                                    _formatStatus(
+                                                      table.isActive
+                                                          ? table.status.name
+                                                          : 'inactive',
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: statusColor,
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       if (table.status ==
