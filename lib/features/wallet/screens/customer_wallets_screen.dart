@@ -41,7 +41,33 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
     if (!mounted) return;
     setState(() => _future = _repository.getWallets(search: _search.text));
   }
-  String _money(num value) => value.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _money(num value) => _persianDigits(
+        value.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '٬',
+        ),
+      );
+
+  String _formatDateTime(DateTime? value) {
+    if (value == null) return '—';
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
 
   Future<void> _editBalance(CustomerWalletModel wallet) async {
     final amountController = TextEditingController();
@@ -97,7 +123,7 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
             final tx = transactions[index];
             final positive = tx.amountDelta > 0;
             final label = switch (tx.type) {'top_up' => 'شارژ کیف پول', 'refund' => 'بازپرداخت', 'order_payment' => 'پرداخت سفارش', _ => 'اصلاح دستی'};
-            return ListTile(title: Text(label), subtitle: Text('${tx.reason}\n${tx.createdAt?.toLocal() ?? '—'} · موجودی پس از تراکنش: ${_money(tx.balanceAfter)} تومان'), isThreeLine: true,
+            return ListTile(title: Text(label), subtitle: Text('${tx.reason}\n${_formatDateTime(tx.createdAt)} · موجودی پس از تراکنش: ${_money(tx.balanceAfter)} تومان'), isThreeLine: true,
               trailing: Text('${positive ? '+' : ''}${_money(tx.amountDelta)}', style: TextStyle(color: positive ? Colors.green : Colors.red, fontWeight: FontWeight.bold)));
           }));
         })),
