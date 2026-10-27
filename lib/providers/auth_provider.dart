@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/services/logger_service.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/storage_service.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
@@ -208,12 +209,12 @@ class AuthProvider extends ChangeNotifier {
   /// new TOTP factor if [isMfaSetupRequired] is true.
   Future<void> verifyAuthenticatorCode(String code) async {
     if (_mfaFactorId == null) {
-      _errorMessage = 'شناسه Authenticator در دسترس نیست. دوباره وارد شوید.';
+      _errorMessage = 'اطلاعات برنامه رمزساز در دسترس نیست. دوباره وارد شوید.';
       _notifyIfAlive();
       return;
     }
     if (!RegExp(r'^\d{6}$').hasMatch(code.trim())) {
-      _errorMessage = 'کد Authenticator باید دقیقاً ۶ رقم باشد.';
+      _errorMessage = 'کد برنامه رمزساز باید دقیقاً ۶ رقم باشد.';
       _notifyIfAlive();
       return;
     }
@@ -335,7 +336,7 @@ class AuthProvider extends ChangeNotifier {
         _mfaSetupSecret = step.setupSecret;
         _mfaSetupQrSvg = step.setupQrCode;
         _infoMessage =
-            'Authenticator هنوز به این حساب متصل نیست. ابتدا آن را راه‌اندازی و سپس کد ۶ رقمی را وارد کنید.';
+            'برنامه رمزساز هنوز به این حساب متصل نیست. ابتدا آن را راه‌اندازی کنید و سپس کد ۶ رقمی را وارد کنید.';
         await _removeStoredUserId();
         break;
     }
@@ -350,10 +351,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _readableError(Object error) {
-    final message = error.toString();
-    const prefix = 'Exception: ';
-    if (message.startsWith(prefix)) return message.substring(prefix.length);
-    return message;
+    final message = error.toString().replaceFirst('Exception: ', '').trim();
+    return AppErrorMessage.forDisplay(
+      message,
+      fallback: 'ورود یا بررسی هویت ناموفق بود. اطلاعات واردشده را بررسی کنید و دوباره تلاش کنید.',
+    );
   }
 
   Future<void> register(String email, String password) async {
