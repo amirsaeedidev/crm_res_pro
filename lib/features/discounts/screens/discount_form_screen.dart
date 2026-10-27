@@ -234,7 +234,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Discount Information',
+                      'اطلاعات تخفیف',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: AppColors.getPrimaryText(context),
                             fontWeight: FontWeight.bold,
