@@ -90,6 +90,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     }
   }
 
+  String _formatDate(DateTime value) {
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}',
+    );
+  }
+
   String _persianDigits(Object? value) {
     const latin = '0123456789';
     const persian = '۰۱۲۳۴۵۶۷۸۹';
@@ -157,12 +165,12 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         child: AppTable(
                           minWidth: 900,
                           headers: const [
-                            'Order ID',
-                            'Customer',
-                            'Date',
-                            'Amount',
-                            'Status',
-                            'Actions'
+                            'شماره سفارش',
+                            'مشتری',
+                            'تاریخ',
+                            'مبلغ',
+                            'وضعیت',
+                            'عملیات'
                           ],
                           rows: provider.orders.map((order) {
                             return [
@@ -181,7 +189,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                                     ),
                               ),
                               Text(
-                                _dateFormatter.format(order.createdAt.toLocal()),
+                                _formatDate(order.createdAt),
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: AppColors.getSecondaryText(context),
                                     ),
