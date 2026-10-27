@@ -187,7 +187,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                                     ),
                               ),
                               Text(
-                                '${_currencyFormatter.format(order.totalAmount)} T',
+                                '${_persianDigits(_currencyFormatter.format(order.totalAmount))} تومان',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: AppColors.getPrimaryText(context),
                                     ),
