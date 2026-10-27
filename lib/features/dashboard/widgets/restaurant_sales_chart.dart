@@ -170,13 +170,13 @@ class _RestaurantSalesChartState extends State<RestaurantSalesChart> {
       children: [
         Image.asset(
           'assets/images/dashboard_reports.webp',
-          width: 56,
-          height: 56,
+          width: 64,
+          height: 64,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) => const Icon(
             Icons.query_stats_rounded,
             color: AppColors.primary,
-            size: 48,
+            size: 56,
           ),
         ),
         const SizedBox(width: 12),
