@@ -105,7 +105,7 @@ class _InventoryScreenState extends State<InventoryScreen>
         stackTrace: stackTrace,
       );
       if (mounted) {
-        setState(() => _error = error.toString());
+        setState(() => _error = AppErrorMessage.from(error, fallback: 'دریافت اطلاعات انبار ناموفق بود. اتصال و سطح دسترسی را بررسی کنید.'));
       }
     } finally {
       if (mounted) {
@@ -128,12 +128,37 @@ class _InventoryScreenState extends State<InventoryScreen>
     super.dispose();
   }
 
-  String _quantity(num value) =>
-      value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 3);
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
 
-  String _money(num value) => value
-      .toStringAsFixed(0)
-      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  String _formatDateTime(Object? raw) {
+    final parsed = DateTime.tryParse(raw?.toString() ?? '');
+    if (parsed == null) return 'زمان نامشخص';
+    final date = parsed.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
+
+  String _quantity(num value) => _persianDigits(
+        value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 3)
+            .replaceAll('.', '٫'),
+      );
+
+  String _money(num value) => _persianDigits(
+        value.toStringAsFixed(0)
+            .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '٬'),
+      );
 
   String _unitLabel(dynamic unit) =>
       _units[unit?.toString()] ?? 'واحد نامشخص';
@@ -1240,7 +1265,7 @@ class _InventoryScreenState extends State<InventoryScreen>
         };
         final unit = _unitLabel(material?['unit']);
         final orderId = transaction['order_id'];
-        final createdAt = transaction['created_at'] ?? '';
+        final createdAt = _formatDateTime(transaction['created_at']);
         final reason = transaction['reason'] ?? '';
 
         return ListTile(
