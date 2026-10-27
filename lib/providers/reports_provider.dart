@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/services/logger_service.dart';
+import '../core/utils/app_error_message.dart';
 import '../models/report_model.dart';
 import '../repositories/reports_repository.dart';
 
@@ -30,7 +31,7 @@ class ReportsProvider extends ChangeNotifier {
       _salesReport = await _repository.getSalesReport(startDate: startDate, endDate: endDate);
     } catch (e, st) {
       LoggerService.error('Fetch sales report failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش فروش ناموفق بود. دوباره تلاش کنید.');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -43,7 +44,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch top products report failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست محصولات پرفروش ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
@@ -54,7 +55,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch customer distribution report failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش مشتریان ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
