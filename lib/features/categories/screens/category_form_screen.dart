@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/upload_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../providers/categories_provider.dart';
 import '../../../repositories/categories_repository.dart';
 
@@ -51,7 +52,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
         _existingImageUrl = category.imageUrl;
       });
     } catch (e) {
-      if (mounted) _message('دریافت دسته‌بندی ناموفق بود: $e');
+      if (mounted) _message(AppErrorMessage.from(e, fallback: 'دریافت اطلاعات دسته‌بندی ناموفق بود. دوباره تلاش کنید.'));
     }
   }
 
@@ -76,7 +77,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       if (bytes.length > 12 * 1024 * 1024) throw Exception('حجم تصویر باید کمتر از ۱۲ مگابایت باشد.');
       setState(() { _image = picked; _imageBytes = bytes; });
     } catch (e) {
-      _message('انتخاب تصویر ناموفق بود: $e');
+      _message(AppErrorMessage.forDisplay('انتخاب تصویر ناموفق بود: $e', fallback: 'انتخاب تصویر ناموفق بود. فرمت و اندازه فایل را بررسی کنید.'));
     }
   }
 
@@ -105,7 +106,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       _message(_editing ? 'دسته‌بندی ویرایش شد.' : 'دسته‌بندی اضافه شد.');
       Navigator.of(context).pop();
     } catch (e) {
-      _message('ذخیره دسته‌بندی ناموفق بود: $e');
+      _message(AppErrorMessage.from(e, fallback: 'ذخیره دسته‌بندی ناموفق بود. اطلاعات واردشده و اتصال را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
