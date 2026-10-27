@@ -439,7 +439,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: 200,
-                                childAspectRatio: 0.88,
+                                mainAxisExtent: 220,
                                 crossAxisSpacing: AppSizes.md,
                                 mainAxisSpacing: AppSizes.md,
                               ),
