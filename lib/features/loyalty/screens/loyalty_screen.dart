@@ -35,10 +35,32 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
     setState(() => _walletsFuture = _repository.getWallets(search: _searchController.text));
   }
 
-  String _number(int value) => value.toString().replaceAllMapped(
-        RegExp(r'\B(?=(\d{3})+(?!\d))'),
-        (_) => ',',
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _number(int value) => _persianDigits(
+        value.toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '٬',
+        ),
       );
+
+  String _formatDateTime(DateTime value) {
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
 
   Future<void> _showTransactions(LoyaltyWalletModel wallet) async {
     await showDialog<void>(
@@ -68,7 +90,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                       'earned' => 'کسب امتیاز',
                       'redeemed' => 'مصرف امتیاز',
                       'adjusted' => 'اصلاح دستی',
-                      _ => transaction.type,
+                      _ => 'سایر',
                     };
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -76,7 +98,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                       subtitle: Text([
                         transaction.description,
                         if (transaction.orderId != null) 'سفارش: ${transaction.orderId}',
-                        if (transaction.createdAt != null) transaction.createdAt!.toLocal().toString(),
+                        if (transaction.createdAt != null) _formatDateTime(transaction.createdAt!),
                       ].where((part) => part.isNotEmpty).join('\n')),
                       trailing: Text(
                         '${positive ? '+' : ''}${_number(transaction.points)}',
@@ -168,7 +190,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('امتیاز و سابقه تراکنش به‌صورت اتمیک ثبت شد.')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.forDisplay(error.toString(), fallback: 'اصلاح امتیاز مشتری ناموفق بود. دوباره تلاش کنید.'))));
     }
   }
 
