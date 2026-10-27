@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/utils/app_error_message.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/theme/app_typography.dart';
 
@@ -40,7 +41,7 @@ class AppErrorWidget extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.sm),
             Text(
-              message,
+              AppErrorMessage.forDisplay(message),
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.getSecondaryText(context),
