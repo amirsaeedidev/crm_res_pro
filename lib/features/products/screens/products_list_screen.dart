@@ -498,7 +498,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                 ),
           ),
           Text(
-            _priceLabel(product.discountedPrice),
+            _priceLabel(product.discountedPrice!),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.error,
