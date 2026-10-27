@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
 import '../models/category_model.dart';
 import '../repositories/categories_repository.dart';
@@ -43,7 +44,7 @@ class CategoriesProvider extends ChangeNotifier {
       
     } catch (e, st) {
       LoggerService.error('Fetch categories failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -83,7 +84,7 @@ class CategoriesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Create category failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -107,7 +108,7 @@ class CategoriesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Update category failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     } finally {
       _isSaving = false;
@@ -123,7 +124,7 @@ class CategoriesProvider extends ChangeNotifier {
       return true;
     } catch (e, st) {
       LoggerService.error('Delete category failed in provider', error: e, stackTrace: st);
-      _error = e.toString();
+      _error = AppErrorMessage.from(e);
       return false;
     }
   }
