@@ -319,9 +319,9 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
               _buildMobileRow(
                 context,
                 Icons.percent,
-                'مقدار: ${discount.type == 'percentage' ? '${discount.value}%' : '${discount.value} T'}',
+                'مقدار: ${discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان'}',
               ),
-              _buildMobileRow(context, Icons.calendar_today, 'پایان: ${_dateFormatter.format(discount.endDate)}'),
+              _buildMobileRow(context, Icons.calendar_today, 'پایان: ${_formatDate(discount.endDate)}'),
               const SizedBox(height: AppSizes.md),
               Align(
                 alignment: Alignment.centerLeft,
