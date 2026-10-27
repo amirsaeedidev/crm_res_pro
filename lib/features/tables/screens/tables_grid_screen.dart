@@ -50,7 +50,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
       case 'inactive':
         return 'غیرفعال';
       default:
-        return status;
+        return 'وضعیت نامشخص';
     }
   }
 
@@ -446,7 +446,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                       ),
                                       const Spacer(),
                                       Text(
-                                        '${table.capacity} نفر',
+                                        '${_persianDigits(table.capacity)} نفر',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
