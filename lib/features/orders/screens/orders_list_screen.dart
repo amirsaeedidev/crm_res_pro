@@ -113,8 +113,8 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 
                 if (provider.orders.isEmpty) {
                   return const EmptyWidget(
-                    title: 'No Orders Found',
-                    message: 'There are no orders matching your criteria.',
+                    title: 'سفارشی پیدا نشد',
+                    message: 'سفارشی با این مشخصات پیدا نشد.',
                     icon: Icons.receipt_long_outlined,
                   );
                 }
@@ -206,7 +206,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   Widget _buildStatusChangeMenu(BuildContext context, OrderModel order) {
     return PopupMenuButton<String>(
       icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
-      tooltip: 'Change Status',
+      tooltip: 'تغییر وضعیت',
       onSelected: (String newStatus) {
         context.read<OrdersProvider>().updateOrderStatus(order.id, newStatus);
       },
