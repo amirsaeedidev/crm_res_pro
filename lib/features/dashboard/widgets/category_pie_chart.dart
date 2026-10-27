@@ -34,11 +34,21 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
     return items;
   }
 
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) => AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text('توزیع محصولات', style: AppTypography.titleLarge.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold)),
     const SizedBox(height: AppSizes.sm),
-    Text('بر اساس تعداد محصولات فعال در دیتابیس', style: AppTypography.bodyMedium.copyWith(color: AppColors.getSecondaryText(context))),
+    Text('بر اساس تعداد محصولات فعال در پایگاه داده', style: AppTypography.bodyMedium.copyWith(color: AppColors.getSecondaryText(context))),
     const SizedBox(height: AppSizes.xl),
     FutureBuilder<List<_CategoryCount>>(
       future: _future,
@@ -71,7 +81,7 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
             sections: List.generate(data.length, (index) {
               final item = data[index];
               final percent = total == 0 ? 0 : item.count * 100 / total;
-              return PieChartSectionData(color: colors[index % colors.length], value: item.count.toDouble(), title: '${percent.toStringAsFixed(0)}%', radius: 48,
+              return PieChartSectionData(color: colors[index % colors.length], value: item.count.toDouble(), title: '${_persianDigits(percent.toStringAsFixed(0))}٪', radius: 48,
                 titleStyle: AppTypography.labelMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold));
             }),
           ))),
