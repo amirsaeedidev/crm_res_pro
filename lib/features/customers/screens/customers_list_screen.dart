@@ -92,7 +92,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '${_persianDigits(provider.totalItems)} مشتری ثبت‌شده',
+                        'جست‌وجو، وضعیت حساب و رضایت پیامکی',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.getSecondaryText(context),
                             ),
