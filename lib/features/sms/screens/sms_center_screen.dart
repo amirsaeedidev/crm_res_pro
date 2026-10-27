@@ -132,7 +132,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _applySettingsToForm();
       _applyTemplatesToForm();
     } catch (e) {
-      _loadError = e.toString();
+      _loadError = AppErrorMessage.from(e, fallback: 'بارگذاری مرکز پیامک ناموفق بود. تنظیمات و اتصال را بررسی کنید.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -604,7 +604,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     'new_order_staff' => 'سفارش جدید پرسنل',
     'marketing_campaign' => 'کمپین تبلیغاتی',
     'admin_test' => 'پیامک آزمایشی',
-    _ => value,
+    _ => 'رویداد پیامکی دیگر',
   };
 
   String _statusTitle(String status) => switch (status) {
@@ -614,8 +614,30 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     'queued' => 'در صف',
     'sending' => 'در حال ارسال',
     'cancelled' => 'لغو شده',
-    _ => status,
+    _ => 'نامشخص',
   };
+
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _formatTimestamp(Object? value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    if (parsed == null) return 'زمان نامشخص';
+    final date = parsed.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')}  '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
 
   String _maskPhone(String phone) {
     final s = phone.trim();
@@ -1424,7 +1446,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                     '${_eventTitle((row['event_key'] ?? '').toString())} • ${_maskPhone((row['recipient_phone'] ?? '').toString())}',
                   ),
                   subtitle: Text(
-                    '${_statusTitle(status)} • تلاش ${(row['attempts'] ?? 0)}/${row['max_attempts'] ?? 5} • ${row['created_at'] ?? ''}',
+                    '${_statusTitle(status)} • تلاش ${_persianDigits(row['attempts'] ?? 0)}/${_persianDigits(row['max_attempts'] ?? 5)} • ${_formatTimestamp(row['created_at'])}',
                   ),
                   children: [
                     Align(
@@ -1492,10 +1514,10 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                               : AppColors.error,
                         ),
                         title: Text(
-                          'تلاش ${a['attempt_no']} • ${a['response_code'] ?? 'بدون کد'}',
+                          'تلاش ${_persianDigits(a['attempt_no'])} • ${_persianDigits(a['response_code'] ?? 'بدون کد')}',
                         ),
                         subtitle: Text(
-                          '${a['created_at'] ?? ''} • ${a['error_message'] ?? 'بدون خطا'}',
+                          '${_formatTimestamp(a['created_at'])} • ${AppErrorMessage.forDisplay((a['error_message'] ?? 'بدون خطا').toString(), fallback: 'جزئیات خطای ارسال در دسترس نیست.')}',
                         ),
                       ),
                     ),
