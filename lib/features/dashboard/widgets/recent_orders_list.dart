@@ -15,7 +15,7 @@ class RecentOrdersList extends StatelessWidget {
         'pending' => 'در انتظار', 'confirmed' => 'تأییدشده',
         'preparing' => 'در حال آماده‌سازی', 'ready' => 'آماده',
         'out_for_delivery' => 'در مسیر ارسال', 'completed' => 'تکمیل‌شده',
-        'cancelled' => 'لغوشده', _ => status,
+        'cancelled' => 'لغوشده', _ => 'نامشخص',
       };
 
   ChipType _statusType(String status) => switch (status) {
@@ -25,8 +25,32 @@ class RecentOrdersList extends StatelessWidget {
         _ => ChipType.neutral,
       };
 
-  String _money(num amount) => amount.round().toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',');
+  String _persianDigits(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
+  }
+
+  String _money(num amount) => _persianDigits(
+        amount.round().toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => '٬',
+        ),
+      );
+
+  String _dateTime(DateTime value) {
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+      '${date.day.toString().padLeft(2, '0')} '
+      '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}',
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Consumer<DashboardProvider>(
@@ -56,7 +80,7 @@ class RecentOrdersList extends StatelessWidget {
                 const SizedBox(width: AppSizes.md),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(customer, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.getPrimaryText(context))),
-                  Text('سفارش ${order.id.substring(0, order.id.length < 8 ? order.id.length : 8)} • ${order.createdAt.toLocal()}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+                  Text('سفارش ${order.id.substring(0, order.id.length < 8 ? order.id.length : 8)} • ${_dateTime(order.createdAt)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
                 ])),
                 const SizedBox(width: AppSizes.sm),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
