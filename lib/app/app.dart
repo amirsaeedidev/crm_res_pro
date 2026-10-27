@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers.dart';
 import 'router.dart';
@@ -17,6 +18,9 @@ class CrmApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp.router(
             title: AppStrings.appName,
+            locale: const Locale('fa', 'IR'),
+            supportedLocales: const [Locale('fa', 'IR')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
