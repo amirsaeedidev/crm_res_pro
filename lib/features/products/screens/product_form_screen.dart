@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/upload_service.dart';
+import '../../../core/utils/app_error_message.dart';
 import '../../../models/product_model.dart';
 import '../../../providers/categories_provider.dart';
 import '../../../providers/products_provider.dart';
@@ -66,7 +67,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _active = product.status == 'active';
       setState(() {});
     } catch (e) {
-      if (mounted) _message('دریافت اطلاعات محصول ناموفق بود: $e');
+      if (mounted) _message(AppErrorMessage.from(e, fallback: 'دریافت اطلاعات محصول ناموفق بود. دوباره تلاش کنید.'));
     } finally {
       if (mounted) setState(() => _loadingProduct = false);
     }
@@ -91,7 +92,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (bytes.length > 12 * 1024 * 1024) throw Exception('حجم تصویر باید کمتر از ۱۲ مگابایت باشد.');
       setState(() { _image = picked; _imageBytes = bytes; });
     } catch (e) {
-      _message('انتخاب تصویر ناموفق بود: $e');
+      _message(AppErrorMessage.forDisplay('انتخاب تصویر ناموفق بود: $e', fallback: 'انتخاب تصویر ناموفق بود. فرمت و اندازه فایل را بررسی کنید.'));
     }
   }
 
@@ -136,7 +137,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _message(_editing ? 'محصول ویرایش شد.' : 'محصول اضافه شد.');
       Navigator.of(context).pop();
     } catch (e) {
-      _message('ذخیره محصول ناموفق بود: $e');
+      _message(AppErrorMessage.from(e, fallback: 'ذخیره محصول ناموفق بود. اطلاعات واردشده و اتصال را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
