@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/services/logger_service.dart';
+import '../core/utils/app_error_message.dart';
 import '../models/statistics_model.dart';
 import '../models/order_model.dart';
 import '../repositories/dashboard_repository.dart';
@@ -111,14 +112,10 @@ class DashboardProvider extends ChangeNotifier {
   }
 
   String _readableError(Object error) {
-    final message = error.toString();
-    const prefix = 'Exception: ';
-
-    if (message.startsWith(prefix)) {
-      return message.substring(prefix.length);
-    }
-
-    return message;
+    return AppErrorMessage.from(
+      error,
+      fallback: 'دریافت اطلاعات داشبورد ناموفق بود. لطفاً دوباره تلاش کنید.',
+    );
   }
 
   void _notifyIfAlive() {
