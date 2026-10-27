@@ -542,7 +542,7 @@ class _RestaurantSalesChartState extends State<RestaurantSalesChart> {
                 if (!supportsFoodBreakdown) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'برای محاسبه تعداد غذاهای فروخته‌شده، جدول اقلام سفارش را در تنظیمات Provider معرفی کن.',
+                    'برای محاسبه تعداد غذاهای فروخته‌شده، منبع اطلاعات اقلام سفارش را در تنظیمات گزارش مشخص کنید.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.getSecondaryText(context),
                     ),
