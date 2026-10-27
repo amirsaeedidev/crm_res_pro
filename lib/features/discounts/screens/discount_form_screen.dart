@@ -313,7 +313,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Limits & Conditions',
+                      'محدودیت‌ها و شرایط استفاده',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: AppColors.getPrimaryText(context),
                             fontWeight: FontWeight.bold,
