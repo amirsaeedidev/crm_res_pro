@@ -449,7 +449,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _metricGrid(BuildContext context, bool mobile, List<Widget> cards) {
     return LayoutBuilder(builder: (context, constraints) {
       final columns = constraints.maxWidth >= 1000 ? 3 : constraints.maxWidth >= 620 ? 2 : 1;
-      final ratio = columns == 1 ? 3.4 : 1.65;
+      final ratio = columns == 1 ? 2.1 : 1.65;
       return GridView.count(
         crossAxisCount: columns,
         shrinkWrap: true,
