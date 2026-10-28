@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/widgets/app_card.dart';
@@ -34,7 +35,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 6, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -72,6 +73,8 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchSalesReport(startDate: startDate, endDate: endDate);
     provider.fetchTopProductsReport();
     provider.fetchCustomerDistributionReport();
+    provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
+    provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
   }
 
   Future<void> _pickCustomRange() async {
@@ -194,6 +197,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.trending_up, size: 18), text: 'فروش'),
                         Tab(icon: Icon(Icons.fastfood_outlined, size: 18), text: 'محصولات'),
                         Tab(icon: Icon(Icons.people_alt_outlined, size: 18), text: 'مشتریان'),
+                        Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
+                        Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                       ],
                     ),
                   ),
@@ -207,6 +212,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _salesTab(context, mobile, summary, sales, orders, growth, types, totalTypes),
                         _productsTab(context, products, provider.isLoading),
                         _customersTab(context, customers?.summary ?? const {}, customers?.chartData ?? const [], provider.isLoading),
+                        _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
+                        _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                       ],
                     ),
                   ),
@@ -443,6 +450,174 @@ class _ReportsScreenState extends State<ReportsScreen>
             );
           }).toList(),
         )),
+    ]);
+  }
+
+
+  Widget _financialTab(BuildContext context, bool mobile, Map<String, dynamic> summary, List<Map<String, dynamic>> chart, bool loading) {
+    if (loading && summary.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
+    }
+    if (summary.isEmpty) {
+      return _sectionCard(title: 'گزارش مالی و سود', subtitle: 'درآمد، هزینه و سود تخمینی', icon: Icons.account_balance_wallet_outlined,
+        child: const _NoData(message: 'گزارش مالی در دسترس نیست. اسکریپت گزارش مالی Supabase را اجرا کنید.'));
+    }
+    final revenue = _asNum(summary['revenue']);
+    final stockCost = _asNum(summary['inventory_cost']);
+    final expenses = _asNum(summary['operating_expenses']);
+    final profit = _asNum(summary['estimated_profit']);
+    final costs = _asNum(summary['total_costs']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _metricGrid(context, mobile, [
+        _metric('درآمد فروش', '${_number(revenue)} تومان', Icons.payments_outlined, _blue, 'فقط سفارش‌های تکمیل‌شده'),
+        _metric('هزینه مواد اولیه', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مصرف ثبت‌شده انبار'),
+        _metric('هزینه‌های جاری', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده'),
+        _metric('سود تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درآمد منهای هزینه‌های ثبت‌شده'),
+      ]),
+      const SizedBox(height: 18),
+      _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: Icons.account_balance_outlined,
+        trailing: TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت هزینه')),
+        child: Column(children: [
+          _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
+          _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
+          _financialLine('هزینه‌های جاری', expenses, const Color(0xFFE9A23B)),
+          const Divider(height: 24),
+          _financialLine('مجموع هزینه‌ها', costs, const Color(0xFFE45B70)),
+          _financialLine('سود تخمینی', profit, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
+          const SizedBox(height: 12),
+          const Text('توجه: سود قطعی حسابداری نیست؛ به ثبت دقیق بهای مواد اولیه، دستور پخت و هزینه‌های جاری وابسته است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+        ])),
+      if (chart.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        _sectionCard(title: 'ترکیب مالی', subtitle: 'مقایسه فروش و هزینه‌های ثبت‌شده', icon: Icons.bar_chart_rounded,
+          child: Column(children: chart.map((item) {
+            final label = (item['label'] ?? 'شاخص').toString();
+            final amount = _asNum(item['amount']);
+            final ratio = revenue > 0 ? (amount.abs() / revenue).clamp(0.0, 1.0).toDouble() : 0.0;
+            return Padding(padding: const EdgeInsets.only(bottom: 14), child: Column(children: [
+              Row(children: [Expanded(child: Text(label, style: const TextStyle(color: _ink, fontWeight: FontWeight.w600))), Text('${_number(amount)} تومان', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 12))]),
+              const SizedBox(height: 7),
+              ClipRRect(borderRadius: BorderRadius.circular(8), child: LinearProgressIndicator(value: ratio, minHeight: 7, backgroundColor: const Color(0xFFF0F3FA), color: _blue)),
+            ]));
+          }).toList())),
+      ],
+    ]);
+  }
+
+  Widget _financialLine(String label, num amount, Color color, {bool strong = false}) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(children: [
+      Container(width: 9, height: 9, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+      const SizedBox(width: 10),
+      Expanded(child: Text(label, style: TextStyle(color: _ink, fontWeight: strong ? FontWeight.w800 : FontWeight.w500))),
+      Text('${_number(amount)} تومان', style: TextStyle(color: _ink, fontWeight: strong ? FontWeight.w800 : FontWeight.w600)),
+    ]),
+  );
+
+  Future<void> _addExpense(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController();
+    final amountController = TextEditingController();
+    final categoryController = TextEditingController(text: 'عمومی');
+    final notesController = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ثبت هزینه رستوران'),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextFormField(controller: titleController, decoration: const InputDecoration(labelText: 'عنوان هزینه'), validator: (v) => (v == null || v.trim().isEmpty) ? 'عنوان را وارد کنید' : null),
+            const SizedBox(height: 10),
+            TextFormField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مبلغ (تومان)'), validator: (v) => (_asNum(v) <= 0) ? 'مبلغ معتبر وارد کنید' : null),
+            const SizedBox(height: 10),
+            TextFormField(controller: categoryController, decoration: const InputDecoration(labelText: 'دسته‌بندی')),
+            const SizedBox(height: 10),
+            TextFormField(controller: notesController, maxLines: 2, decoration: const InputDecoration(labelText: 'توضیحات (اختیاری)')),
+          ])),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () async {
+            if (!formKey.currentState!.validate()) return;
+            try {
+              final userId = SupabaseService.client.auth.currentUser?.id;
+              await SupabaseService.client.from('restaurant_expenses').insert({
+                'title': titleController.text.trim(),
+                'amount': _asNum(amountController.text),
+                'category': categoryController.text.trim().isEmpty ? 'other' : categoryController.text.trim(),
+                'notes': notesController.text.trim(),
+                'created_by': userId,
+              });
+              if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+            } catch (e) {
+              if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(
+                const SnackBar(content: Text('ثبت هزینه ناموفق بود. اجرای SQL گزارش مالی و دسترسی مدیر را بررسی کنید.')),
+              );
+            }
+          }, child: const Text('ثبت هزینه')),
+        ],
+      ),
+    );
+    titleController.dispose();
+    amountController.dispose();
+    categoryController.dispose();
+    notesController.dispose();
+    if (saved == true && mounted) _fetchReport();
+  }
+
+  Widget _inventoryTab(BuildContext context, bool mobile, Map<String, dynamic> summary, List<Map<String, dynamic>> rows, bool loading) {
+    if (loading && summary.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
+    }
+    if (summary.isEmpty) {
+      return _sectionCard(title: 'گزارش انبار', subtitle: 'موجودی، ارزش انبار و مواد کم‌موجود', icon: Icons.inventory_2_outlined,
+        child: const _NoData(message: 'گزارش انبار در دسترس نیست. اسکریپت گزارش انبار Supabase را اجرا کنید.'));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _metricGrid(context, mobile, [
+        _metric('مواد فعال', _number(_asNum(summary['active_materials'])), Icons.category_outlined, _blue, 'مواد اولیه فعال'),
+        _metric('موجودی کم', _number(_asNum(summary['low_stock_materials'])), Icons.warning_amber_rounded, const Color(0xFFE45B70), 'برابر یا کمتر از حد سفارش'),
+        _metric('ارزش فعلی انبار', '${_number(_asNum(summary['stock_value']))} تومان', Icons.inventory_2_outlined, const Color(0xFF39B982), 'موجودی × بهای واحد'),
+        _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', Icons.restaurant_outlined, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
+      ]),
+      const SizedBox(height: 18),
+      _sectionCard(title: 'گردش مواد اولیه', subtitle: 'خرید، مصرف، ضایعات و برگشت ثبت‌شده در بازه', icon: Icons.swap_vert_rounded,
+        child: Column(children: [
+          _financialLine('خرید مواد', _asNum(summary['purchases_cost']), _blue),
+          _financialLine('مصرف در سفارش‌ها', _asNum(summary['consumption_cost']), const Color(0xFF8B72E8)),
+          _financialLine('ضایعات', _asNum(summary['waste_cost']), const Color(0xFFE45B70)),
+          _financialLine('برگشت مواد', _asNum(summary['return_cost']), const Color(0xFF39B982)),
+        ])),
+      const SizedBox(height: 18),
+      _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: Icons.list_alt_rounded,
+        child: rows.isEmpty ? const _NoData(message: 'ماده اولیه‌ای برای نمایش وجود ندارد.') : Column(children: rows.asMap().entries.map((entry) {
+          final item = entry.value;
+          final low = item['is_low_stock'] == true;
+          final name = (item['material_name'] ?? 'بدون نام').toString();
+          final unit = (item['unit'] ?? '').toString();
+          final quantity = _asNum(item['quantity_on_hand']);
+          final value = _asNum(item['stock_value']);
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF0F3FA)))),
+            child: Row(children: [
+              Container(width: 38, height: 38, decoration: BoxDecoration(color: low ? const Color(0xFFFFF0F1) : _paleBlue, borderRadius: BorderRadius.circular(12)),
+                child: Icon(low ? Icons.warning_amber_rounded : Icons.inventory_2_outlined, color: low ? const Color(0xFFE45B70) : _blue, size: 20)),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text('${_number(quantity)} $unit', style: const TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+              ])),
+              const SizedBox(width: 8),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('${_number(value)} تومان', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700, fontSize: 12)),
+                if (low) const Text('نیاز به شارژ', style: TextStyle(color: Color(0xFFE45B70), fontSize: 11, fontWeight: FontWeight.w700)),
+              ]),
+            ]),
+          );
+        }).toList())),
     ]);
   }
 
