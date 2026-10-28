@@ -32,8 +32,8 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
         _defaultLevel=_num(s['default_reorder_level'],1).toDouble();
         _multiplier=_num(s['near_empty_multiplier'],1.5).toDouble();
         _lowEnabled=s['show_low_stock_alerts'] as bool? ?? true;
-        _nearEnabled=s['show_near_empty_alerts'] as bool???true;
-        _zeroEnabled=s['include_zero_stock'] as bool???true;
+        _nearEnabled=(s['show_near_empty_alerts'] as bool?) ?? true;
+        _zeroEnabled=(s['include_zero_stock'] as bool?) ?? true;
         _materials=(r[1] as List).map((e)=>Map<String,dynamic>.from(e)).toList();
       });
     }catch(e){if(mounted)setState(()=>_error=e.toString());}
