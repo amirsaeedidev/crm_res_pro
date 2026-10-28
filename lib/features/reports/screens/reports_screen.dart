@@ -31,7 +31,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 6, vsync: this);
+    _tabs = TabController(length: 7, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -71,6 +71,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchCustomerDistributionReport();
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
+    provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
   }
 
   Future<void> _pickCustomRange() async {
@@ -195,6 +196,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.people_alt_outlined, size: 18), text: 'مشتریان'),
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
+                        Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
                       ],
                     ),
                   ),
@@ -210,6 +212,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _customersTab(context, customers?.summary ?? const {}, customers?.chartData ?? const [], provider.isLoading),
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
+                        _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
                       ],
                     ),
                   ),
@@ -220,6 +223,81 @@ class _ReportsScreenState extends State<ReportsScreen>
         },
       ),
     );
+  }
+
+
+  Widget _orderHealthTab(
+    BuildContext context, bool mobile, Map<String, dynamic> summary,
+    List<Map<String, dynamic>> rows, bool loading,
+  ) {
+    final cancelled = _num(summary, 'cancelled_count');
+    final cancelledAmount = _num(summary, 'cancelled_amount');
+    final delayed = _num(summary, 'delayed_count');
+    final repeatCustomers = _num(summary, 'repeat_customer_count');
+    Widget metric(String title, String value, IconData icon, Color color) => Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5EBF7))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: color), const SizedBox(height: 10),
+          Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: _ink)),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF75819A))),
+        ]),
+      ),
+    );
+    final cancelledRows = rows.where((r) => r['category'] == 'cancelled').toList();
+    final delayedRows = rows.where((r) => r['category'] == 'delayed').toList();
+    final repeatRows = rows.where((r) => r['category'] == 'repeat_customer').toList();
+    Widget reportCard(String title, String subtitle, IconData icon, List<Map<String, dynamic>> items, String category) =>
+      _sectionCard(title: title, subtitle: subtitle, icon: icon, child: items.isEmpty
+        ? const _NoData(message: 'در بازه انتخاب‌شده موردی ثبت نشده است.')
+        : Column(children: items.take(50).map((item) {
+          final name = (item['customer_name'] ?? 'مشتری نامشخص').toString();
+          final phone = (item['customer_phone'] ?? '').toString();
+          final queue = item['daily_queue_number'];
+          final orderLabel = queue == null ? '' : 'سفارش روز ${_digits(queue)} · ';
+          final count = _num(item, 'order_count');
+          final delay = _num(item, 'delay_minutes');
+          final amount = _num(item, 'amount');
+          final details = category == 'cancelled'
+            ? '${orderLabel}علت: ${(item['reason'] ?? '').toString().isEmpty ? 'ثبت نشده' : item['reason']}'
+            : category == 'delayed'
+              ? '${orderLabel}تأخیر: ${_digits(delay)} دقیقه · ${(item['status'] ?? '').toString()}'
+              : '${_digits(count)} سفارش · ${_number(amount)} تومان مجموع خرید';
+          return ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: category == 'cancelled' ? const Color(0xFFFFE9ED) : category == 'delayed' ? const Color(0xFFFFF2DB) : _paleBlue,
+              child: Icon(category == 'cancelled' ? Icons.cancel_outlined : category == 'delayed' ? Icons.timer_outlined : Icons.repeat_rounded,
+                color: category == 'cancelled' ? const Color(0xFFE45B70) : category == 'delayed' ? const Color(0xFFB7791F) : _blue, size: 20),
+            ),
+            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('${phone.isEmpty ? '' : '$phone · '}$details'),
+            trailing: category == 'cancelled' ? Text('${_number(amount)} ت', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)) : null,
+          );
+        }).toList()));
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (loading) const LinearProgressIndicator(minHeight: 2),
+      Row(children: [
+        metric('سفارش لغوشده', _number(cancelled), Icons.cancel_outlined, const Color(0xFFE45B70)),
+        const SizedBox(width: 10),
+        metric('سفارش تأخیردار', _number(delayed), Icons.timer_outlined, const Color(0xFFB7791F)),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        metric('مشتری پرتکرار (۳+ سفارش)', _number(repeatCustomers), Icons.repeat_rounded, _blue),
+        const SizedBox(width: 10),
+        metric('مبلغ سفارش‌های لغوشده', '${_number(cancelledAmount)} تومان', Icons.payments_outlined, const Color(0xFF8B72E8)),
+      ]),
+      const SizedBox(height: 18),
+      reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', Icons.cancel_outlined, cancelledRows, 'cancelled'),
+      const SizedBox(height: 16),
+      reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', Icons.timer_outlined, delayedRows, 'delayed'),
+      const SizedBox(height: 16),
+      reportCard('مشتریان پرتکرار', 'مشتریانی با حداقل ۳ سفارش در بازه انتخابی', Icons.repeat_rounded, repeatRows, 'repeat_customer'),
+    ]);
   }
 
   Widget _buildHeader(BuildContext context, bool mobile) {
