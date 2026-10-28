@@ -118,7 +118,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         TextFormField(controller:paid,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مبلغ پرداخت‌شده (تومان)')),
         TextFormField(controller:notes,decoration:const InputDecoration(labelText:'یادداشت'),maxLines:2),
         const SizedBox(height:8),
-        Text('جمع اقلام: ${_money(lines.fold<double>(0,(sum,l)=>sum+((l['quantity'] as num)*(l['unit_cost'] as num))))} تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
+        Text('جمع اقلام: ${_money(_itemsSubtotal(lines))} تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
       ])))),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:(){
         if(lines.isEmpty || lines.any((l)=>(l['quantity'] as num)<=0 || (l['unit_cost'] as num)<0)){_message('حداقل یک قلم با مقدار مثبت و بهای معتبر اضافه کنید.',error:true);return;}
@@ -141,6 +141,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
     }
     for(final c in [invoice,discount,shipping,paid,notes]) { c.dispose(); }
   }
+
+  double _itemsSubtotal(List<Map<String, dynamic>> lines) => lines.fold<double>(0, (sum, line) => sum + ((line['quantity'] as num) * (line['unit_cost'] as num)));
 
   String _money(dynamic v) {
     final n=v is num?v:num.tryParse('$v')??0;
