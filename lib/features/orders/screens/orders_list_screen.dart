@@ -109,7 +109,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         return 'آماده';
       case 'out_for_delivery':
       case 'shipped':
-        return 'در مسیر ارسال';
+        return 'ارسال شده';
       case 'delivered':
         return 'تحویل شده';
       case 'completed':
@@ -303,36 +303,84 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     );
   }
 
+  String? _nextStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'confirmed';
+      case 'confirmed':
+        return 'preparing';
+      case 'preparing':
+        return 'ready';
+      case 'ready':
+        return 'out_for_delivery';
+      case 'out_for_delivery':
+      case 'shipped':
+        return 'completed';
+      default:
+        return null;
+    }
+  }
+
   Widget _buildStatusChangeMenu(BuildContext context, OrderModel order) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
-      tooltip: 'تغییر وضعیت',
-      onSelected: (String newStatus) {
-        context.read<OrdersProvider>().updateOrderStatus(order.id, newStatus);
-      },
-      itemBuilder: (context) {
-        final statuses = [
-          'pending',
-          'confirmed',
-          'preparing',
-          'out_for_delivery',
-          'delivered',
-          'cancelled'
-        ];
-        return statuses.map((status) {
-          return PopupMenuItem<String>(
-            value: status,
-            enabled: status != order.status.toLowerCase(),
-            child: Row(
-              children: [
-                Icon(Icons.arrow_forward, size: 16, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: AppSizes.sm),
-                Text(_formatStatus(status)),
-              ],
-            ),
-          );
-        }).toList();
-      },
+    final provider = context.read<OrdersProvider>();
+    final next = _nextStatus(order.status);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (next != null)
+          TextButton.icon(
+            onPressed: provider.isUpdatingStatus
+                ? null
+                : () async {
+                    final ok = await provider.updateOrderStatus(order.id, next);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? 'وضعیت سفارش: ${_formatStatus(next)}'
+                            : provider.detailsError ?? 'تغییر وضعیت سفارش ناموفق بود.'),
+                      ),
+                    );
+                  },
+            icon: const Icon(Icons.arrow_forward),
+            label: Text(_formatStatus(next)),
+          ),
+        PopupMenuButton<String>(
+          icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
+          tooltip: 'تغییر وضعیت سفارش',
+          onSelected: (String newStatus) async {
+            final ok = await provider.updateOrderStatus(order.id, newStatus);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(ok
+                  ? 'وضعیت سفارش به «${_formatStatus(newStatus)}» تغییر کرد.'
+                  : provider.detailsError ?? 'تغییر وضعیت سفارش ناموفق بود.')),
+            );
+          },
+          itemBuilder: (context) {
+            const statuses = [
+              'pending',
+              'confirmed',
+              'preparing',
+              'ready',
+              'out_for_delivery',
+              'completed',
+              'cancelled',
+            ];
+            return statuses.map((status) => PopupMenuItem<String>(
+              value: status,
+              enabled: status != order.status.toLowerCase(),
+              child: Row(
+                children: [
+                  Icon(Icons.arrow_forward, size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: AppSizes.sm),
+                  Text(_formatStatus(status)),
+                ],
+              ),
+            )).toList();
+          },
+        ),
+      ],
     );
   }
 }
