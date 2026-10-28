@@ -103,4 +103,21 @@ class ReportsRepository {
     }
   }
 
+  /// Returns cancelled, delayed and repeat-customer order analytics for a date range.
+  Future<ReportModel> getOrderHealthReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      final response = await _client.rpc('get_order_health_report', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(response as Map<String, dynamic>);
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch order health report failed', error: e);
+      throw Exception('خطا در دریافت گزارش لغو و تأخیر سفارش‌ها: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected order health report error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در گزارش وضعیت سفارش‌ها');
+    }
+  }
+
 }
