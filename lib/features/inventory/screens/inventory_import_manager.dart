@@ -97,7 +97,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
     if (_busy) return;
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['xlsx', 'xls'],
+      allowedExtensions: const ['xlsx'],
       withData: true,
     );
     if (picked == null || picked.files.isEmpty) return;
@@ -169,8 +169,9 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
             if (name.isEmpty || !knownUnits.contains(unit) || cost == null || cost < 0 || reorder == null || reorder < 0 || initial == null || initial < 0) {
               throw Exception('نام، واحد یا مقادیر عددی معتبر نیستند.');
             }
+            final skuMatches = skuRaw.isEmpty ? <Map<String, dynamic>>[] : materials.where((m) => (m['sku'] ?? '').toString().toLowerCase() == skuRaw.toLowerCase()).toList();
             final existing = skuRaw.isNotEmpty
-                ? materials.where((m) => (m['sku'] ?? '').toString().toLowerCase() == skuRaw.toLowerCase()).firstOrNull
+                ? (skuMatches.isEmpty ? null : skuMatches.first)
                 : materialByName[name.toLowerCase()];
             await _repository.saveMaterial(
               id: existing?['id']?.toString(),
