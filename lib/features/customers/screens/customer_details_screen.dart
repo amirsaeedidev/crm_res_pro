@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/app_error_message.dart';
@@ -10,7 +11,7 @@ import '../../../models/order_model.dart';
 import '../../../models/user_model.dart';
 import '../../../repositories/customers_repository.dart';
 import '../../../repositories/orders_repository.dart';
-import '../../../repositories/customer_wallet_repository.dart';
+import '../../../core/services/supabase_service.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String customerId;
@@ -22,7 +23,6 @@ class CustomerDetailsScreen extends StatefulWidget {
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late final CustomersRepository _customersRepository;
   late final OrdersRepository _ordersRepository;
-  late final CustomerWalletRepository _customerWalletRepository;
   late Future<UserModel> _customerFuture;
   late Future<List<OrderModel>> _ordersFuture;
   late Future<List<Map<String, dynamic>>> _addressesFuture;
@@ -36,7 +36,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.initState();
     _customersRepository = CustomersRepository();
     _ordersRepository = OrdersRepository();
-    _customerWalletRepository = CustomerWalletRepository();
     _reloadFutures();
   }
 
