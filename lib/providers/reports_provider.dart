@@ -16,6 +16,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? _customerDistributionReport;
   ReportModel? _financialReport;
   ReportModel? _inventoryReport;
+  ReportModel? _orderHealthReport;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -25,6 +26,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? get customerDistributionReport => _customerDistributionReport;
   ReportModel? get financialReport => _financialReport;
   ReportModel? get inventoryReport => _inventoryReport;
+  ReportModel? get orderHealthReport => _orderHealthReport;
 
   Future<void> fetchSalesReport({required DateTime startDate, required DateTime endDate}) async {
     _isLoading = true;
@@ -82,6 +84,17 @@ class ReportsProvider extends ChangeNotifier {
     } catch (e, st) {
       LoggerService.error('Fetch inventory report failed in provider', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش انبار ناموفق بود. دوباره تلاش کنید.');
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchOrderHealthReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _orderHealthReport = await _repository.getOrderHealthReport(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch order health report failed in provider', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش سفارش‌های لغوشده و تأخیردار ناموفق بود.');
       notifyListeners();
     }
   }
