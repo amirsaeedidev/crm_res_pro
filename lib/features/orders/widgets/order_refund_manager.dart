@@ -108,7 +108,7 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
         Align(alignment: Alignment.centerRight, child: OutlinedButton.icon(onPressed:_busy ? null : _cancel, icon:const Icon(Icons.cancel_outlined), label:const Text('لغو سفارش و ثبت علت'))),
       const Divider(height:24),
       Text('ثبت درخواست بازپرداخت', style:Theme.of(context).textTheme.titleMedium),
-      Text('مبلغ سفارش: \${NumberFormat.decimalPattern().format(widget.totalAmount)} تومان'),
+      Text('مبلغ سفارش: ${NumberFormat.decimalPattern().format(widget.totalAmount)} تومان'),
       const SizedBox(height:8),
       TextField(controller:_amount, keyboardType:const TextInputType.numberWithOptions(decimal:true), decoration:const InputDecoration(labelText:'مبلغ بازپرداخت (تومان)',border:OutlineInputBorder())),
       const SizedBox(height:8),
@@ -127,8 +127,8 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
       ..._rows.map((row) {
         final status = (row['status'] ?? 'pending').toString();
         return ListTile(contentPadding:EdgeInsets.zero,
-          title:Text('\${NumberFormat.decimalPattern().format((row['amount'] as num?)?.toDouble() ?? 0)} تومان • \${_label(status)}'),
-          subtitle:Text('\${row['reason']} • \${row['refund_method']}'),
+          title:Text('${NumberFormat.decimalPattern().format((row['amount'] as num?)?.toDouble() ?? 0)} تومان • ${_label(status)}'),
+          subtitle:Text('${row['reason']} • ${row['refund_method']}'),
           trailing:PopupMenuButton<String>(enabled:!_busy && status != 'refunded' && status != 'rejected',
             onSelected:(v)=>_setStatus(row,v), itemBuilder:(_)=>const [
               PopupMenuItem(value:'approved',child:Text('تأیید')),
