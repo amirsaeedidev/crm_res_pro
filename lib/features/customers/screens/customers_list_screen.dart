@@ -80,7 +80,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
 
   String _money(num value) => _persianDigits(
         value.round().toString().replaceAllMapped(
-          RegExp(r'\\B(?=(\\d{3})+(?!\\d))'),
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
           (_) => '٬',
         ),
       );
