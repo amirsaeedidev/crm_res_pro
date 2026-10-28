@@ -15,6 +15,7 @@ class ProductModel {
   final String imageUrl;
   final String status; // Derived from is_active.
   final bool isPopular;
+  final bool isAvailable;
   final double? rating;
   final int? reviewCount;
   final DateTime createdAt;
@@ -34,6 +35,7 @@ class ProductModel {
     required this.imageUrl,
     required this.status,
     this.isPopular = false,
+    this.isAvailable = true,
     this.rating,
     this.reviewCount,
     required this.createdAt,
@@ -57,6 +59,7 @@ class ProductModel {
       imageUrl: (json['image_url'] ?? '').toString(),
       status: active ? 'active' : 'inactive',
       isPopular: json['is_popular'] as bool? ?? false,
+      isAvailable: json['is_available'] as bool? ?? true,
       rating: json['rating'] is num ? (json['rating'] as num).toDouble() : null,
       reviewCount: json['review_count'] is num ? (json['review_count'] as num).toInt() : null,
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
@@ -75,6 +78,7 @@ class ProductModel {
         'image_url': imageUrl,
         'is_active': status == 'active',
         'is_popular': isPopular,
+        'is_available': isAvailable,
         'rating': rating,
         'review_count': reviewCount,
         'category_id': categoryId,
@@ -96,6 +100,7 @@ class ProductModel {
     String? imageUrl,
     String? status,
     bool? isPopular,
+    bool? isAvailable,
     double? rating,
     int? reviewCount,
     DateTime? createdAt,
@@ -114,6 +119,7 @@ class ProductModel {
         imageUrl: imageUrl ?? this.imageUrl,
         status: status ?? this.status,
         isPopular: isPopular ?? this.isPopular,
+        isAvailable: isAvailable ?? this.isAvailable,
         rating: rating ?? this.rating,
         reviewCount: reviewCount ?? this.reviewCount,
         createdAt: createdAt ?? this.createdAt,
