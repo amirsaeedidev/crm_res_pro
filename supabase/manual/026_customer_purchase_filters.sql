@@ -1,5 +1,10 @@
 -- Customer CRM filters based on completed purchase history.
 begin;
+create index if not exists orders_customer_purchase_metrics_idx
+  on public.orders (user_id, completed_at desc)
+  include (total_amount, created_at)
+  where status = 'completed';
+
 create or replace function public.get_customer_purchase_metrics(
   p_search text default null,
   p_status_filter text default 'all',
@@ -41,10 +46,11 @@ begin
   with order_metrics as (
     select
       o.user_id,
-      count(*) filter (where o.status = 'completed')::bigint as purchase_count,
-      coalesce(sum(o.total_amount) filter (where o.status = 'completed'), 0)::numeric as total_purchase_amount,
-      max(coalesce(o.completed_at, o.created_at)) filter (where o.status = 'completed') as last_purchase_at
+      count(*)::bigint as purchase_count,
+      coalesce(sum(o.total_amount), 0)::numeric as total_purchase_amount,
+      max(coalesce(o.completed_at, o.created_at)) as last_purchase_at
     from public.orders o
+    where o.status = 'completed'
     group by o.user_id
   ),
   customer_rows as (
