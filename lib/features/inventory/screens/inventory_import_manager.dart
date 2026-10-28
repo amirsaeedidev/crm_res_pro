@@ -93,6 +93,30 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
     if (path != null && mounted) _message('قالب اکسل آماده شد.');
   }
 
+  Future<bool> _previewBeforeImport(List<String> headers, List<List<Data?>> rows) async {
+    final nonEmpty = rows.where((r) => r.any((cell) => (cell?.value?.toString().trim() ?? '').isNotEmpty)).toList();
+    return await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('پیش‌نمایش فایل اکسل'),
+      content: SizedBox(width: 760, child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('نوع داده: ${_type == 'materials' ? 'مواد اولیه' : 'دستور مصرف غذا'} · تعداد ردیف‌ها: ${nonEmpty.length}'),
+        const SizedBox(height: 8),
+        const Text('مقادیر و ستون‌های الزامی بررسی اولیه شده‌اند؛ اعتبارسنجی هر ردیف هنگام پردازش نیز انجام می‌شود.'),
+        const SizedBox(height: 8),
+        Flexible(child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: SingleChildScrollView(child: DataTable(
+          columns: [const DataColumn(label: Text('ردیف')), ...headers.map((h) => DataColumn(label: Text(h)))],
+          rows: nonEmpty.take(100).toList().asMap().entries.map((entry) => DataRow(cells: [
+            DataCell(Text('${entry.key + 2}')),
+            ...headers.asMap().entries.map((h) => DataCell(SizedBox(width: 120, child: Text(h.key < entry.value.length ? (entry.value[h.key]?.value?.toString() ?? '') : '', maxLines: 2, overflow: TextOverflow.ellipsis))))
+          ])).toList(),
+        )))),
+        if (nonEmpty.length > 100) const Text('فقط ۱۰۰ ردیف اول در پیش‌نمایش دیده می‌شود.'),
+      ])),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('بازگشت')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأیید و ادامه ایمپورت')),
+      ],
+    )) ?? false;
+  }
   Future<void> _pickAndImport() async {
     if (_busy) return;
     final picked = await FilePicker.pickFiles(
@@ -131,6 +155,9 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
       final missing = required.where((h) => col(h) < 0).toList();
       if (missing.isNotEmpty) throw Exception('ستون‌های الزامی وجود ندارند: ${missing.join(', ')}');
 
+      final dataRows = sheet.rows.skip(1).where((row) => row.any((cell) => (cell?.value?.toString().trim() ?? '').isNotEmpty)).toList();
+      final previewOk = await _previewBeforeImport(headers, dataRows);
+      if (!previewOk) { if (mounted) setState(() => _busy = false); return; }
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('برای ایمپورت باید وارد حساب مدیر شده باشید.');
       storagePath = '$userId/${DateTime.now().toUtc().millisecondsSinceEpoch}_${file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_')}';
@@ -152,8 +179,6 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
       final materialByName = {for (final m in materials) (m['name'] ?? '').toString().trim().toLowerCase(): m};
       final productByName = {for (final p in products) (p['name'] ?? '').toString().trim().toLowerCase(): p};
       final knownUnits = {'g', 'kg', 'ml', 'l', 'unit', 'pack', 'box'};
-      final dataRows = sheet.rows.skip(1).where((row) => row.any((cell) => (cell?.value?.toString().trim() ?? '').isNotEmpty)).toList();
-
       for (var i = 0; i < dataRows.length; i++) {
         final row = dataRows[i];
         try {
