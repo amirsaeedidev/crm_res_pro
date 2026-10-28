@@ -62,4 +62,45 @@ class ReportsRepository {
       throw Exception('خطای ناشناخته در دریافت توزیع مشتریان');
     }
   }
+
+  /// Fetches financial totals for the selected date range.
+  Future<ReportModel> getFinancialReport({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final response = await _client.rpc('get_financial_report', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(response as Map<String, dynamic>);
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch financial report failed', error: e);
+      throw Exception('خطا در دریافت گزارش مالی: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected financial report error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در دریافت گزارش مالی');
+    }
+  }
+
+  /// Fetches current stock valuation and movements for the selected date range.
+  Future<ReportModel> getInventoryReport({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final response = await _client.rpc('get_inventory_report', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(response as Map<String, dynamic>);
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch inventory report failed', error: e);
+      throw Exception('خطا در دریافت گزارش انبار: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected inventory report error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در دریافت گزارش انبار');
+    }
+  }
+
 }
