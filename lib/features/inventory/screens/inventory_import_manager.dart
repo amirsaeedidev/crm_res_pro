@@ -241,6 +241,30 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
     }
   }
 
+  Future<void> _downloadArchivedFile(Map<String, dynamic> batch) async {
+    try {
+      final path = batch['storage_path']?.toString() ?? '';
+      if (path.isEmpty) throw Exception('مسیر فایل آرشیو موجود نیست.');
+      final bytes = await _client.storage.from('inventory-imports').download(path);
+      await FilePicker.saveFile(dialogTitle: 'ذخیره مجدد فایل آرشیو', fileName: (batch['file_name'] ?? 'inventory_import.xlsx').toString(), bytes: bytes);
+      if (mounted) _message('درخواست ذخیره فایل آرشیو انجام شد.');
+    } catch (e) { _message('دانلود فایل آرشیو ناموفق بود: $e', error: true); }
+  }
+
+  Future<void> _showBatchDetails(Map<String, dynamic> batch) async {
+    final summary = (batch['error_summary'] ?? '').toString().trim();
+    await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+      title: Text('جزئیات ایمپورت: ${batch['file_name'] ?? 'فایل اکسل'}'),
+      content: SizedBox(width: 600, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text('کل ردیف‌ها: ${batch['rows_total'] ?? 0}'),
+        Text('موفق: ${batch['rows_success'] ?? 0}'),
+        Text('ناموفق: ${batch['rows_failed'] ?? 0}'),
+        const Divider(),
+        Text(summary.isEmpty ? 'خطایی برای این فایل ثبت نشده است.' : summary),
+      ]))),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('بستن'))],
+    ));
+  }
   Future<void> _deleteBatch(Map<String, dynamic> batch) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -334,11 +358,11 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
                 leading: const Icon(Icons.description_outlined),
                 title: Text((batch['file_name'] ?? 'فایل اکسل').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text(details),
-                trailing: IconButton(
-                  tooltip: 'حذف فایل و سابقه',
-                  onPressed: () => _deleteBatch(batch),
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                ),
+                trailing: Wrap(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(tooltip: 'دانلود مجدد فایل', onPressed: () => _downloadArchivedFile(batch), icon: const Icon(Icons.download_outlined)),
+                  IconButton(tooltip: 'مشاهده جزئیات خطاها', onPressed: () => _showBatchDetails(batch), icon: const Icon(Icons.info_outline)),
+                  IconButton(tooltip: 'حذف فایل و سابقه', onPressed: () => _deleteBatch(batch), icon: const Icon(Icons.delete_outline, color: Colors.red)),
+                ]),
               ),
             );
           }),
