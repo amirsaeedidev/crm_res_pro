@@ -18,4 +18,40 @@ drop policy if exists inventory_purchase_items_admin_all on public.inventory_pur
 create policy inventory_purchase_items_admin_all on public.inventory_purchase_items for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 grant select,insert,update,delete on public.inventory_suppliers, public.inventory_purchases, public.inventory_purchase_items to authenticated;
 grant usage,select on all sequences in schema public to authenticated;
+create or replace function public.admin_record_inventory_purchase(
+ p_supplier_id uuid, p_invoice_number text, p_purchase_date date, p_items jsonb,
+ p_discount_amount numeric default 0, p_shipping_amount numeric default 0,
+ p_paid_amount numeric default 0, p_notes text default ''
+) returns uuid language plpgsql security invoker set search_path = '' as $
+declare
+ v_purchase_id uuid; v_item jsonb; v_material_id uuid; v_quantity numeric;
+ v_unit_cost numeric; v_subtotal numeric := 0; v_total numeric;
+ v_discount numeric := coalesce(p_discount_amount,0); v_shipping numeric := coalesce(p_shipping_amount,0);
+ v_paid numeric := coalesce(p_paid_amount,0); v_reason text;
+begin
+ if not (select public.is_admin()) then raise exception 'Administrator access required' using errcode='42501'; end if;
+ if p_supplier_id is null or not exists(select 1 from public.inventory_suppliers where id=p_supplier_id and is_active) then raise exception 'Supplier is missing or inactive' using errcode='22023'; end if;
+ if p_items is null or jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then raise exception 'At least one purchase item is required' using errcode='22023'; end if;
+ if v_discount<0 or v_shipping<0 or v_paid<0 then raise exception 'Purchase amounts cannot be negative' using errcode='22023'; end if;
+ for v_item in select value from jsonb_array_elements(p_items) loop
+   v_material_id := (v_item->>'material_id')::uuid; v_quantity := (v_item->>'quantity')::numeric; v_unit_cost := (v_item->>'unit_cost')::numeric;
+   if v_quantity<=0 or v_unit_cost<0 then raise exception 'Invalid quantity or unit cost' using errcode='22023'; end if;
+   if not exists(select 1 from public.inventory_materials where id=v_material_id) then raise exception 'Unknown inventory material' using errcode='22023'; end if;
+   v_subtotal := v_subtotal + round(v_quantity*v_unit_cost,2);
+ end loop;
+ v_total := greatest(0,v_subtotal-v_discount+v_shipping);
+ if v_paid>v_total then raise exception 'Paid amount cannot exceed purchase total' using errcode='22023'; end if;
+ insert into public.inventory_purchases(supplier_id,invoice_number,purchase_date,subtotal,discount_amount,shipping_amount,total_amount,paid_amount,payment_status,notes,created_by)
+ values(p_supplier_id,coalesce(trim(p_invoice_number),''),coalesce(p_purchase_date,current_date),v_subtotal,v_discount,v_shipping,v_total,v_paid,
+ case when v_paid=0 then 'unpaid' when v_paid>=v_total then 'paid' else 'partial' end,coalesce(p_notes,''),auth.uid()) returning id into v_purchase_id;
+ for v_item in select value from jsonb_array_elements(p_items) loop
+   v_material_id := (v_item->>'material_id')::uuid; v_quantity := (v_item->>'quantity')::numeric; v_unit_cost := (v_item->>'unit_cost')::numeric;
+   insert into public.inventory_purchase_items(purchase_id,material_id,quantity,unit_cost) values(v_purchase_id,v_material_id,v_quantity,v_unit_cost);
+   v_reason := 'خرید تامین‌کننده؛ سند '||coalesce(nullif(trim(p_invoice_number),''),v_purchase_id::text);
+   perform public.admin_receive_inventory(v_material_id,v_quantity,v_unit_cost,v_reason);
+ end loop;
+ return v_purchase_id;
+end; $;
+revoke all on function public.admin_record_inventory_purchase(uuid,text,date,jsonb,numeric,numeric,numeric,text) from public,anon;
+grant execute on function public.admin_record_inventory_purchase(uuid,text,date,jsonb,numeric,numeric,numeric,text) to authenticated;
 commit;
