@@ -19,6 +19,10 @@ class CustomersListScreen extends StatefulWidget {
 
 class _CustomersListScreenState extends State<CustomersListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _minPurchasesController = TextEditingController();
+  final TextEditingController _maxPurchasesController = TextEditingController();
+  final TextEditingController _minSpendController = TextEditingController();
+  final TextEditingController _maxSpendController = TextEditingController();
 
   @override
   void initState() {
@@ -31,6 +35,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _minPurchasesController.dispose();
+    _maxPurchasesController.dispose();
+    _minSpendController.dispose();
+    _maxSpendController.dispose();
     super.dispose();
   }
 
@@ -42,6 +50,75 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       result = result.replaceAll(latin[i], persian[i]);
     }
     return result;
+  }
+
+
+  String _latinDigits(String value) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    const latin = '0123456789';
+    var result = value;
+    for (var i = 0; i < 10; i++) {
+      result = result.replaceAll(persian[i], latin[i]);
+      result = result.replaceAll(arabic[i], latin[i]);
+    }
+    return result;
+  }
+
+  int? _parseCount(String value) {
+    final normalized = _latinDigits(value).replaceAll('٬', '').replaceAll(',', '').trim();
+    if (normalized.isEmpty) return null;
+    return int.tryParse(normalized);
+  }
+
+  double? _parseSpend(String value) {
+    final normalized = _latinDigits(value)
+        .replaceAll('٬', '').replaceAll(',', '').replaceAll('٫', '.').trim();
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
+  }
+
+  String _money(num value) => _persianDigits(
+        value.round().toString().replaceAllMapped(
+          RegExp(r'\\B(?=(\\d{3})+(?!\\d))'),
+          (_) => '٬',
+        ),
+      );
+
+  String _lastVisitLabel(DateTime? value) {
+    if (value == null) return 'خرید تکمیل‌شده‌ای ثبت نشده';
+    final date = value.toLocal();
+    return _persianDigits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}',
+    );
+  }
+
+  Future<void> _applyPurchaseFilters(CustomersProvider provider) async {
+    final minCount = _parseCount(_minPurchasesController.text);
+    final maxCount = _parseCount(_maxPurchasesController.text);
+    final minSpend = _parseSpend(_minSpendController.text);
+    final maxSpend = _parseSpend(_maxSpendController.text);
+    if ((_minPurchasesController.text.trim().isNotEmpty && minCount == null) ||
+        (_maxPurchasesController.text.trim().isNotEmpty && maxCount == null) ||
+        (_minSpendController.text.trim().isNotEmpty && minSpend == null) ||
+        (_maxSpendController.text.trim().isNotEmpty && maxSpend == null) ||
+        (minCount != null && minCount < 0) ||
+        (maxCount != null && maxCount < 0) ||
+        (minSpend != null && minSpend < 0) ||
+        (maxSpend != null && maxSpend < 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('مقادیر فیلتر باید عددی و صفر یا بیشتر باشند.')),
+      );
+      return;
+    }
+    await provider.setPurchaseFilters(
+      minPurchases: minCount,
+      maxPurchases: maxCount,
+      minSpend: minSpend,
+      maxSpend: maxSpend,
+      lastVisitFilter: provider.lastVisitFilter,
+      sortBy: provider.sortBy,
+    );
   }
 
   String _statusLabel(String status) => switch (status) {
@@ -199,6 +276,117 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
               ),
             ),
             const SizedBox(height: AppSizes.md),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('فیلتر خرید و آخرین مراجعه',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: AppSizes.xs),
+                  Text('مبالغ بر اساس خریدهای تکمیل‌شده و به تومان محاسبه می‌شوند.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+                  const SizedBox(height: AppSizes.md),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final width = constraints.maxWidth < 540 ? constraints.maxWidth : 180.0;
+                    InputDecoration decoration(String label) => InputDecoration(labelText: label, isDense: true);
+                    return Wrap(
+                      spacing: AppSizes.sm,
+                      runSpacing: AppSizes.sm,
+                      children: [
+                        SizedBox(width: width, child: TextField(
+                          controller: _minPurchasesController,
+                          keyboardType: TextInputType.number,
+                          decoration: decoration('حداقل تعداد خرید'),
+                        )),
+                        SizedBox(width: width, child: TextField(
+                          controller: _maxPurchasesController,
+                          keyboardType: TextInputType.number,
+                          decoration: decoration('حداکثر تعداد خرید'),
+                        )),
+                        SizedBox(width: width, child: TextField(
+                          controller: _minSpendController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: decoration('حداقل مبلغ خرید (تومان)'),
+                        )),
+                        SizedBox(width: width, child: TextField(
+                          controller: _maxSpendController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: decoration('حداکثر مبلغ خرید (تومان)'),
+                        )),
+                        SizedBox(width: width, child: DropdownButtonFormField<String>(
+                          initialValue: provider.lastVisitFilter,
+                          isExpanded: true,
+                          decoration: decoration('آخرین مراجعه'),
+                          items: const [
+                            DropdownMenuItem(value: 'all', child: Text('همه زمان‌ها')),
+                            DropdownMenuItem(value: '7d', child: Text('۷ روز اخیر')),
+                            DropdownMenuItem(value: '30d', child: Text('۳۰ روز اخیر')),
+                            DropdownMenuItem(value: '90d', child: Text('۹۰ روز اخیر')),
+                            DropdownMenuItem(value: 'never', child: Text('بدون خرید تکمیل‌شده')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              provider.setPurchaseFilters(
+                                minPurchases: provider.minPurchases,
+                                maxPurchases: provider.maxPurchases,
+                                minSpend: provider.minSpend,
+                                maxSpend: provider.maxSpend,
+                                lastVisitFilter: value,
+                                sortBy: provider.sortBy,
+                              );
+                            }
+                          },
+                        )),
+                        SizedBox(width: width, child: DropdownButtonFormField<String>(
+                          initialValue: provider.sortBy,
+                          isExpanded: true,
+                          decoration: decoration('مرتب‌سازی'),
+                          items: const [
+                            DropdownMenuItem(value: 'recent', child: Text('آخرین مراجعه؛ جدیدتر')),
+                            DropdownMenuItem(value: 'oldest_visit', child: Text('آخرین مراجعه؛ قدیمی‌تر')),
+                            DropdownMenuItem(value: 'count', child: Text('بیشترین تعداد خرید')),
+                            DropdownMenuItem(value: 'spend', child: Text('بیشترین مبلغ خرید')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              provider.setPurchaseFilters(
+                                minPurchases: provider.minPurchases,
+                                maxPurchases: provider.maxPurchases,
+                                minSpend: provider.minSpend,
+                                maxSpend: provider.maxSpend,
+                                lastVisitFilter: provider.lastVisitFilter,
+                                sortBy: value,
+                              );
+                            }
+                          },
+                        )),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: AppSizes.md),
+                  Wrap(spacing: AppSizes.sm, runSpacing: AppSizes.sm, children: [
+                    FilledButton.icon(
+                      onPressed: provider.isLoading ? null : () => _applyPurchaseFilters(provider),
+                      icon: const Icon(Icons.filter_alt_outlined),
+                      label: const Text('اعمال فیلتر خرید'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: provider.isLoading ? null : () {
+                        _minPurchasesController.clear();
+                        _maxPurchasesController.clear();
+                        _minSpendController.clear();
+                        _maxSpendController.clear();
+                        provider.resetPurchaseFilters();
+                      },
+                      icon: const Icon(Icons.filter_alt_off_outlined),
+                      label: const Text('پاک‌کردن فیلتر خرید'),
+                    ),
+                    Chip(label: Text('تعداد نتایج: ${_persianDigits(provider.totalCount)}')),
+                  ]),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
             if (provider.error != null && provider.customers.isEmpty)
               Expanded(
                 child: Center(
@@ -290,6 +478,18 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                     ),
                                   ),
                                 ],
+                                const SizedBox(height: AppSizes.xs),
+                                Text(
+                                  'تعداد خرید: ${_persianDigits(customer.purchaseCount)}  ·  مجموع خرید: ${_money(customer.totalPurchaseAmount)} تومان',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'آخرین مراجعه: ${_lastVisitLabel(customer.lastPurchaseAt)}',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.getSecondaryText(context),
+                                  ),
+                                ),
                                 const SizedBox(height: AppSizes.sm),
                                 Wrap(
                                   spacing: AppSizes.xs,
