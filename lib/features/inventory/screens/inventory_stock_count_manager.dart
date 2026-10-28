@@ -55,7 +55,15 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
     finally { if(mounted) setState(()=>_loading=false); }
   }
 
-  num _num(dynamic v)=>v is num?v:num.tryParse('$v')??0;
+  String _normalizeNumber(String value) {
+    const persian='۰۱۲۳۴۵۶۷۸۹', arabic='٠١٢٣٤٥٦٧٨٩', latin='0123456789';
+    var result=value.trim().replaceAll('٬','').replaceAll('٫','.');
+    for(var i=0;i<10;i++) {
+      result=result.replaceAll(persian[i],latin[i]).replaceAll(arabic[i],latin[i]);
+    }
+    return result;
+  }
+  num _num(dynamic v)=>v is num?v:num.tryParse(_normalizeNumber('$v'))??0;
   String _digits(Object? value) {
     const latin='0123456789', persian='۰۱۲۳۴۵۶۷۸۹';
     var s=value?.toString()??'';
@@ -73,7 +81,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
     final entries=<Map<String,dynamic>>[];
     for(final m in _materials) {
       final raw=_countControllers[m['id'].toString()]?.text.trim()??'';
-      final q=double.tryParse(raw.replaceAll('٬','').replaceAll('٫','.'));
+      final q=double.tryParse(_normalizeNumber(raw));
       if(q==null||!q.isFinite||q<0) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('مقدار شمارش «${m['name']}» معتبر نیست.')));
         return;
@@ -105,7 +113,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
   Widget build(BuildContext context) {
     if(_loading&&_materials.isEmpty) return const Center(child:CircularProgressIndicator());
     final visible=_showAll?_materials:_materials.where((m){
-      final actual=double.tryParse(_countControllers[m['id'].toString()]?.text.trim()??'');
+      final actual=double.tryParse(_normalizeNumber(_countControllers[m['id'].toString()]?.text??''));
       return actual!=null&&(actual-_num(m['quantity_on_hand'])).abs()>0.0001;
     }).toList();
     return RefreshIndicator(onRefresh:_load,child:ListView(padding:const EdgeInsets.all(16),children:[
@@ -124,7 +132,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
       ...visible.map((m) {
         final id=m['id'].toString();
         final system=_num(m['quantity_on_hand']);
-        final actual=double.tryParse(_countControllers[id]?.text.trim()??'')??system;
+        final actual=double.tryParse(_normalizeNumber(_countControllers[id]?.text??''))??system;
         final diff=actual-system;
         return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Text(m['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold,fontSize:15)),
@@ -138,7 +146,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
           TextFormField(
             controller:_countControllers[id],
             keyboardType:const TextInputType.numberWithOptions(decimal:true),
-            decoration:InputDecoration(labelText:'موجودی واقعی (${_unit(m['unit'])})',border:const OutlineInputBorder(),suffixIcon:IconButton(tooltip:'کپی موجودی سیستم',onPressed:()=>setState(()=>_countControllers[id]!.text=_qty(system).replaceAll('٬','').replaceAll('٫','.')),icon:const Icon(Icons.copy_outlined))),
+            decoration:InputDecoration(labelText:'موجودی واقعی (${_unit(m['unit'])})',border:const OutlineInputBorder(),suffixIcon:IconButton(tooltip:'کپی موجودی سیستم',onPressed:()=>setState(()=>_countControllers[id]!.text=system.toString()),icon:const Icon(Icons.copy_outlined))),
             onChanged:(_)=>setState((){}),
           ),
         ])));
