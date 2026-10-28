@@ -8,6 +8,9 @@ class UserModel {
   final String role;
   final String status;
   final bool marketingSmsOptIn;
+  final int purchaseCount;
+  final double totalPurchaseAmount;
+  final DateTime? lastPurchaseAt;
   final DateTime createdAt;
 
   UserModel({
@@ -20,6 +23,9 @@ class UserModel {
     this.role = 'customer',
     this.status = 'active',
     this.marketingSmsOptIn = false,
+    this.purchaseCount = 0,
+    this.totalPurchaseAmount = 0,
+    this.lastPurchaseAt,
     required this.createdAt,
   });
 
@@ -62,6 +68,9 @@ class UserModel {
       role: json['role'] as String? ?? 'customer',
       status: json['status'] as String? ?? 'active',
       marketingSmsOptIn: json['marketing_sms_opt_in'] as bool? ?? false,
+      purchaseCount: (json['purchase_count'] as num?)?.toInt() ?? 0,
+      totalPurchaseAmount: (json['total_purchase_amount'] as num?)?.toDouble() ?? 0,
+      lastPurchaseAt: DateTime.tryParse(json['last_purchase_at']?.toString() ?? ''),
       createdAt: DateTime.tryParse(
             json['created_at'] as String? ?? '',
           ) ??
@@ -80,6 +89,9 @@ class UserModel {
       'role': role,
       'status': status,
       'marketing_sms_opt_in': marketingSmsOptIn,
+      'purchase_count': purchaseCount,
+      'total_purchase_amount': totalPurchaseAmount,
+      'last_purchase_at': lastPurchaseAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -94,6 +106,9 @@ class UserModel {
     String? role,
     String? status,
     bool? marketingSmsOptIn,
+    int? purchaseCount,
+    double? totalPurchaseAmount,
+    DateTime? lastPurchaseAt,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -106,6 +121,9 @@ class UserModel {
       role: role ?? this.role,
       status: status ?? this.status,
       marketingSmsOptIn: marketingSmsOptIn ?? this.marketingSmsOptIn,
+      purchaseCount: purchaseCount ?? this.purchaseCount,
+      totalPurchaseAmount: totalPurchaseAmount ?? this.totalPurchaseAmount,
+      lastPurchaseAt: lastPurchaseAt ?? this.lastPurchaseAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
