@@ -33,6 +33,61 @@ class CustomersRepository {
     }
   }
 
+
+  Future<({List<UserModel> customers, int totalCount})> getCustomersWithPurchaseMetrics({
+    int page = 1,
+    int pageSize = 20,
+    String? searchQuery,
+    String statusFilter = 'all',
+    bool? marketingOptInFilter,
+    int? minOrders,
+    int? maxOrders,
+    double? minSpend,
+    double? maxSpend,
+    String lastVisitFilter = 'all',
+    String sortBy = 'recent',
+  }) async {
+    if (page < 1 || pageSize < 1) {
+      throw ArgumentError('page and pageSize must be positive');
+    }
+    DateTime? lastVisitSince;
+    if (lastVisitFilter == '7d') {
+      lastVisitSince = DateTime.now().toUtc().subtract(const Duration(days: 7));
+    } else if (lastVisitFilter == '30d') {
+      lastVisitSince = DateTime.now().toUtc().subtract(const Duration(days: 30));
+    } else if (lastVisitFilter == '90d') {
+      lastVisitSince = DateTime.now().toUtc().subtract(const Duration(days: 90));
+    }
+    try {
+      final response = await _client.rpc('get_customer_purchase_metrics', params: {
+        'p_search': searchQuery,
+        'p_status_filter': statusFilter,
+        'p_marketing_filter': marketingOptInFilter,
+        'p_min_orders': minOrders,
+        'p_max_orders': maxOrders,
+        'p_min_spend': minSpend,
+        'p_max_spend': maxSpend,
+        'p_last_visit_since': lastVisitSince?.toIso8601String(),
+        'p_never_visited': lastVisitFilter == 'never',
+        'p_sort_by': sortBy,
+        'p_page': page,
+        'p_page_size': pageSize,
+      });
+      final payload = Map<String, dynamic>.from(response as Map);
+      final rows = (payload['customers'] as List<dynamic>? ?? const []);
+      return (
+        customers: rows.map((row) => UserModel.fromJson(Map<String, dynamic>.from(row as Map))).toList(growable: false),
+        totalCount: (payload['total_count'] as num?)?.toInt() ?? 0,
+      );
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Fetch customers with purchase metrics failed', error: e, stackTrace: st);
+      if (e.code == 'PGRST202' || e.code == '42883') {
+        throw Exception('فیلترهای خرید مشتریان آماده نیستند؛ مهاجرت 026_customer_purchase_filters.sql را اعمال کنید.');
+      }
+      throw Exception(_friendlyError(e, 'دریافت و فیلتر مشتریان'));
+    }
+  }
+
   Future<UserModel> getCustomerById(String id) async {
     try {
       final row = await _client.from('profiles').select('id,email,first_name,last_name,phone,avatar_url,role,status,marketing_sms_opt_in,created_at').eq('id', id).eq('role', 'customer').single();
