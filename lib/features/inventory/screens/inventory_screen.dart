@@ -8,6 +8,7 @@ import '../../../core/utils/app_error_message.dart';
 import '../../../core/services/logger_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../repositories/inventory_repository.dart';
+import 'inventory_import_manager.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -45,7 +46,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   void initState() {
     super.initState();
     _repository = InventoryRepository(client: SupabaseService.client);
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     unawaited(_loadData());
 
     _channel = SupabaseService.client
@@ -974,6 +975,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                       text: 'دستور مصرف غذا',
                     ),
                     Tab(icon: Icon(Icons.history), text: 'گردش انبار'),
+                    Tab(icon: Icon(Icons.upload_file_outlined), text: 'ایمپورت اکسل'),
                   ],
                 ),
                 Expanded(
@@ -983,6 +985,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                       _buildMaterialsTab(),
                       _buildRecipesTab(),
                       _buildTransactionsTab(),
+                      const InventoryImportManager(),
                     ],
                   ),
                 ),
