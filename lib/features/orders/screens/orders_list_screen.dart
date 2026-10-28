@@ -186,6 +186,17 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
             ],
           ),
           const SizedBox(height: AppSizes.sm),
+          _buildStalledOrdersPanel(context),
+          const SizedBox(height: AppSizes.sm),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ('all', 'همه سفارش‌ها'), ('pending', 'در انتظار'), ('confirmed', 'تأییدشده'),
+            ('preparing', 'در حال آماده‌سازی'), ('ready', 'آماده'), ('out_for_delivery', 'در حال ارسال'),
+            ('completed', 'تکمیل‌شده'), ('cancelled', 'لغوشده'),
+          ].map((item) => ChoiceChip(
+            label: Text(item.$2), selected: context.watch<OrdersProvider>().statusFilter == item.$1,
+            onSelected: (_) => context.read<OrdersProvider>().setStatusFilter(item.$1),
+          )).toList()),
+          const SizedBox(height: AppSizes.sm),
 
           // Search Bar
           AppSearch(
@@ -236,6 +247,10 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                           ],
                           rows: provider.orders.map((order) {
                             return [
+                              Text(
+                                order.dailyQueueNumber == null ? '—' : _persianDigits(order.dailyQueueNumber),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
                               Text(
                                 '#${order.id.substring(0, 8).toUpperCase()}',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -300,6 +315,46 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+
+  Widget _buildStalledOrdersPanel(BuildContext context) {
+    final cutoff = DateTime.now().toUtc().subtract(const Duration(minutes: 15)).toIso8601String();
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: SupabaseService.client.from('orders_view').select('id, customer_name, status, created_at, daily_queue_number, total_amount')
+          .inFilter('status', ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'])
+          .lt('created_at', cutoff).order('created_at', ascending: true).limit(20),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return const SizedBox.shrink();
+        final rows = snapshot.data ?? const <Map<String, dynamic>>[];
+        if (snapshot.connectionState == ConnectionState.waiting || rows.isEmpty) return const SizedBox.shrink();
+        return AppCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.hourglass_top, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(child: Text('سفارش‌های معطل‌مانده (بیش از ۱۵ دقیقه)',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
+              Chip(label: Text(_persianDigits(rows.length))),
+            ]),
+            const SizedBox(height: 4),
+            ...rows.map((row) {
+              final created = DateTime.tryParse((row['created_at'] ?? '').toString());
+              final minutes = created == null ? 0 : DateTime.now().difference(created.toLocal()).inMinutes;
+              final number = row['daily_queue_number'];
+              return ListTile(
+                dense: true,
+                leading: CircleAvatar(child: Text(number == null ? '—' : _persianDigits(number))),
+                title: Text((row['customer_name'] ?? 'مشتری').toString()),
+                subtitle: Text('${_formatStatus((row['status'] ?? '').toString())} • ${_persianDigits(minutes)} دقیقه معطلی'),
+                trailing: IconButton(icon: const Icon(Icons.open_in_new), tooltip: 'نمایش سفارش',
+                  onPressed: () => context.push('/orders/details/${row['id']}')),
+              );
+            }),
+          ]),
+        );
+      },
     );
   }
 
