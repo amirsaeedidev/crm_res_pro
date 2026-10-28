@@ -51,6 +51,7 @@ dependencies:
 
   # File handling and PDF
   file_picker: ^11.0.2
+  excel: ^4.0.6
   pdf: ^3.10.4
   printing: ^5.14.3
 
