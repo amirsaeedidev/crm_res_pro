@@ -119,7 +119,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         TextFormField(controller:notes,decoration:const InputDecoration(labelText:'یادداشت'),maxLines:2),
         const SizedBox(height:8),
         Text('جمع اقلام: ${_money(lines.fold<double>(0,(sum,l)=>sum+((l['quantity'] as num)*(l['unit_cost'] as num))))} تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
-      ]))),
+      ])))),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:(){
         if(lines.isEmpty || lines.any((l)=>(l['quantity'] as num)<=0 || (l['unit_cost'] as num)<0)){_message('حداقل یک قلم با مقدار مثبت و بهای معتبر اضافه کنید.',error:true);return;}
         final d=double.tryParse(discount.text)??0, sh=double.tryParse(shipping.text)??0, p=double.tryParse(paid.text)??0;
@@ -145,6 +145,16 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
   String _money(dynamic v) {
     final n=v is num?v:num.tryParse('$v')??0;
     return n.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(_)=>'٬');
+  }
+
+  String _fa(Object? value) {
+    const latin = '0123456789';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    var result = value?.toString() ?? '';
+    for (var i = 0; i < latin.length; i++) {
+      result = result.replaceAll(latin[i], persian[i]);
+    }
+    return result;
   }
 
   @override
