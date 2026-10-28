@@ -10,6 +10,7 @@ import '../../../models/order_model.dart';
 import '../../../models/user_model.dart';
 import '../../../repositories/customers_repository.dart';
 import '../../../repositories/orders_repository.dart';
+import '../../../repositories/customer_wallet_repository.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   final String customerId;
@@ -21,17 +22,21 @@ class CustomerDetailsScreen extends StatefulWidget {
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   late final CustomersRepository _customersRepository;
   late final OrdersRepository _ordersRepository;
+  late final CustomerWalletRepository _customerWalletRepository;
   late Future<UserModel> _customerFuture;
   late Future<List<OrderModel>> _ordersFuture;
   late Future<List<Map<String, dynamic>>> _addressesFuture;
   late Future<Map<String, dynamic>?> _walletFuture;
   late Future<List<Map<String, dynamic>>> _transactionsFuture;
+  late Future<List<Map<String, dynamic>>> _cashWalletTransactionsFuture;
+  late Future<Map<String, dynamic>?> _cashWalletFuture;
 
   @override
   void initState() {
     super.initState();
     _customersRepository = CustomersRepository();
     _ordersRepository = OrdersRepository();
+    _customerWalletRepository = CustomerWalletRepository();
     _reloadFutures();
   }
 
@@ -41,6 +46,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     _addressesFuture = _customersRepository.getCustomerAddresses(widget.customerId);
     _walletFuture = _customersRepository.getCustomerWallet(widget.customerId);
     _transactionsFuture = _customersRepository.getCustomerWalletTransactions(widget.customerId);
+    _cashWalletFuture = _loadCashWallet();
+    _cashWalletTransactionsFuture = _loadCashWalletTransactions();
   }
 
   void _refresh() => setState(_reloadFutures);
@@ -95,6 +102,34 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           (_) => '٬',
         ),
       );
+
+
+  Future<Map<String, dynamic>?> _loadCashWallet() async {
+    final rows = await SupabaseService.client
+        .from('customer_wallets_view')
+        .select('*')
+        .eq('user_id', widget.customerId)
+        .maybeSingle();
+    return rows == null ? null : Map<String, dynamic>.from(rows);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadCashWalletTransactions() async {
+    final rows = await SupabaseService.client
+        .from('customer_wallet_transactions')
+        .select('id,amount_delta,balance_after,transaction_type,reason,created_at,order_id')
+        .eq('user_id', widget.customerId)
+        .order('created_at', ascending: false)
+        .limit(30);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  }
+
+  String _cashTypeLabel(String type) => switch (type) {
+    'top_up' => 'شارژ کیف پول',
+    'order_payment' => 'پرداخت سفارش',
+    'refund' => 'بازپرداخت',
+    'adjustment' => 'اصلاح موجودی',
+    _ => type.isEmpty ? 'تراکنش' : type,
+  };
 
   Future<void> _editCustomer(UserModel customer) async {
     final firstName = TextEditingController(text: customer.firstName ?? '');
@@ -231,6 +266,55 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               }),
             ]));
           }),
+
+          const SizedBox(height: AppSizes.lg),
+          Text('کیف پول نقدی مشتری', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: AppSizes.sm),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: _cashWalletFuture,
+            builder: (context, cashSnapshot) {
+              if (cashSnapshot.connectionState == ConnectionState.waiting) return const AppCard(child: LinearProgressIndicator());
+              if (cashSnapshot.hasError) return AppCard(child: Text(AppErrorMessage.from(cashSnapshot.error!, fallback: 'دریافت موجودی کیف پول ناموفق بود.')));
+              final wallet = cashSnapshot.data;
+              if (wallet == null) return const AppCard(child: Text('برای این مشتری کیف پول نقدی ایجاد نشده است.'));
+              final balance = (wallet['balance'] as num? ?? 0).toDouble();
+              return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  const Icon(Icons.account_balance_wallet_outlined, size: 30),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${_money(balance)} تومان', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text('موجودی واقعی کیف پول', style: Theme.of(context).textTheme.bodySmall),
+                  ])),
+                  TextButton.icon(onPressed: () => context.push('/wallets'), icon: const Icon(Icons.open_in_new), label: const Text('مدیریت کیف پول')),
+                ]),
+                const Divider(height: 24),
+                Text('گردش مالی کیف پول', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _cashWalletTransactionsFuture,
+                  builder: (context, txSnapshot) {
+                    if (txSnapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(12), child: LinearProgressIndicator());
+                    if (txSnapshot.hasError) return Text(AppErrorMessage.from(txSnapshot.error!, fallback: 'دریافت گردش کیف پول ناموفق بود.'));
+                    final txs = txSnapshot.data ?? const <Map<String, dynamic>>[];
+                    if (txs.isEmpty) return const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('تراکنش مالی ثبت نشده است.'));
+                    return Column(children: txs.map((tx) {
+                      final delta = (tx['amount_delta'] as num? ?? 0).toDouble();
+                      final positive = delta >= 0;
+                      final orderId = tx['order_id']?.toString();
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(positive ? Icons.add_circle_outline : Icons.remove_circle_outline, color: positive ? Colors.green : Colors.red),
+                        title: Text('${_cashTypeLabel((tx['transaction_type'] ?? '').toString())} · ${positive ? '+' : ''}${_money(delta)} تومان'),
+                        subtitle: Text('${(tx['reason'] ?? '').toString()}\n${_displayDate(tx['created_at'])}${orderId == null ? '' : '\nسفارش: ${orderId.substring(0, orderId.length > 8 ? 8 : orderId.length)}'}'),
+                        isThreeLine: true,
+                        trailing: Text('${_money((tx['balance_after'] as num? ?? 0).toDouble())} ت', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      );
+                    }).toList());
+                  },
+                ),
+              ]));
+            },
+          ),
           const SizedBox(height: AppSizes.lg),
           Text('آدرس‌های ثبت‌شده', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: AppSizes.sm),
