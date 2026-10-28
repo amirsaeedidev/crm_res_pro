@@ -2,11 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/services/supabase_service.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/theme/app_radius.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../providers/reports_provider.dart';
 import '../../../shared/widgets/empty_widget.dart';
