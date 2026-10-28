@@ -69,7 +69,7 @@ class ProductsRepository {
     for (final key in ['discounted_price', 'discountedPrice', 'stock', 'status', 'category_name', 'categories', 'id', 'created_at']) {
       data.remove(key);
     }
-    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','price','image_url','is_active','is_popular','rating','review_count','category_id'}.contains(key));
+    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','price','image_url','is_active','is_available','unavailable_reason','is_popular','rating','review_count','category_id'}.contains(key));
     if (data['price'] is num) data['price'] = (data['price'] as num).round();
     if (data['discount_percent'] is num) data['discount_percent'] = (data['discount_percent'] as num).clamp(0, 100).toDouble();
     if (data['labels'] is List) data['labels'] = (data['labels'] as List).map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toSet().toList();
