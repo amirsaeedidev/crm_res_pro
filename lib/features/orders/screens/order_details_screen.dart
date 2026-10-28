@@ -54,7 +54,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       case 'ready':
         return 'آماده';
       case 'out_for_delivery':
-        return 'در مسیر ارسال';
+        return 'ارسال شده';
       case 'completed':
         return 'تکمیل‌شده';
       case 'cancelled':
