@@ -10,6 +10,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../../repositories/inventory_repository.dart';
 import 'inventory_import_manager.dart';
 import 'supplier_purchase_manager.dart';
+import 'inventory_alerts_manager.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -47,7 +48,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   void initState() {
     super.initState();
     _repository = InventoryRepository(client: SupabaseService.client);
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     unawaited(_loadData());
 
     _channel = SupabaseService.client
@@ -978,6 +979,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     Tab(icon: Icon(Icons.history), text: 'گردش انبار'),
                     Tab(icon: Icon(Icons.upload_file_outlined), text: 'ایمپورت اکسل'),
                     Tab(icon: Icon(Icons.local_shipping_outlined), text: 'تامین‌کنندگان و خرید'),
+                    Tab(icon: Icon(Icons.notifications_active_outlined), text: 'هشدار موجودی'),
                   ],
                 ),
                 Expanded(
@@ -989,6 +991,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                       _buildTransactionsTab(),
                       const InventoryImportManager(),
                       const SupplierPurchaseManager(),
+                      const InventoryAlertsManager(),
                     ],
                   ),
                 ),
