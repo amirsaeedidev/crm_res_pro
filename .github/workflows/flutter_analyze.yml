@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter analyze --machine --no-pub > analyze-results.txt 2>&1
+          dart analyze --format=machine . > analyze-results.txt 2>&1
           analyze_status=$?
           set -e
           python3 - <<'PY'
