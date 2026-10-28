@@ -1,0 +1,498 @@
+--- a/lib/providers/auth_provider.dart
++++ b/lib/providers/auth_provider.dart
+@@ -150,7 +150,10 @@
+     } finally {
+       _authRestoreInProgress = false;
+       if (!_disposed) {
+-        if (!_loginFlowActive) _isLoading = false;
++        // Restoring an AAL1 session may intentionally leave the login flow
++        // active while the MFA form is shown. Loading must still end here;
++        // otherwise LoginRouteGuard keeps displaying its spinner forever.
++        _isLoading = false;
+         _notifyIfAlive();
+       }
+     }
+--- a/lib/providers/products_provider.dart
++++ b/lib/providers/products_provider.dart
+@@ -16,6 +16,9 @@
+   int _totalPages = 1;
+   String _searchQuery = '';
+   final int _pageSize = 15;
++  int _requestVersion = 0;
++  int _searchVersion = 0;
++  bool _disposed = false;
+ 
+   // Getters
+   bool get isLoading => _isLoading;
+@@ -27,37 +30,50 @@
+   String get searchQuery => _searchQuery;
+ 
+   Future<void> fetchProducts() async {
++    if (_disposed) return;
++    final requestVersion = ++_requestVersion;
+     _isLoading = true;
+     _error = null;
+     notifyListeners();
+ 
+     try {
+-      _products = await _repository.getProducts(
++      final products = await _repository.getProducts(
+         page: _currentPage,
+         pageSize: _pageSize,
+         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+       );
+-      
+-      // Basic pagination logic
++      if (_disposed || requestVersion != _requestVersion) return;
++      _products = products;
+       _totalPages = _products.length == _pageSize ? _currentPage + 1 : _currentPage;
+-      
+     } catch (e, st) {
++      if (_disposed || requestVersion != _requestVersion) return;
+       LoggerService.error('Fetch products failed in provider', error: e, stackTrace: st);
+       _error = e.toString();
+     } finally {
+-      _isLoading = false;
+-      notifyListeners();
++      if (!_disposed && requestVersion == _requestVersion) {
++        _isLoading = false;
++        notifyListeners();
++      }
+     }
+   }
+ 
++  /// Debounce keystrokes to avoid one Supabase query per character and ignore
++  /// responses belonging to an older search.
+   Future<void> setSearchQuery(String query) async {
+-    _searchQuery = query;
++    final normalized = query.trim();
++    if (normalized == _searchQuery) return;
++    _searchQuery = normalized;
+     _currentPage = 1;
++    final searchVersion = ++_searchVersion;
++    ++_requestVersion;
++    await Future<void>.delayed(const Duration(milliseconds: 300));
++    if (_disposed || searchVersion != _searchVersion) return;
+     await fetchProducts();
+   }
+ 
+   Future<void> changePage(int page) async {
+     if (page < 1 || page > _totalPages) return;
++    ++_searchVersion;
+     _currentPage = page;
+     await fetchProducts();
+   }
+@@ -146,4 +162,13 @@
+       return false;
+     }
+   }
++
++  @override
++  void dispose() {
++    _disposed = true;
++    ++_searchVersion;
++    ++_requestVersion;
++    super.dispose();
++  }
++
+ }
+\ No newline at end of file
+--- a/lib/providers/orders_provider.dart
++++ b/lib/providers/orders_provider.dart
+@@ -16,6 +16,10 @@
+   String _searchQuery = '';
+   String _statusFilter = 'all';
+   final int _pageSize = 15;
++  int _listRequestVersion = 0;
++  int _detailsRequestVersion = 0;
++  int _searchVersion = 0;
++  bool _disposed = false;
+ 
+   // Details State
+   OrderModel? _selectedOrder;
+@@ -37,52 +41,72 @@
+   String get statusFilter => _statusFilter;
+ 
+   Future<void> fetchOrders() async {
++    if (_disposed) return;
++    final requestVersion = ++_listRequestVersion;
+     _isLoading = true;
+     _error = null;
+     notifyListeners();
+ 
+     try {
+-      _orders = await _repository.getOrders(
++      final orders = await _repository.getOrders(
+         page: _currentPage,
+         pageSize: _pageSize,
+         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+         status: _statusFilter == 'all' ? null : _statusFilter,
+       );
+-      
+-      // Basic pagination logic: if we fetched exactly the page size, assume there might be more
++      if (_disposed || requestVersion != _listRequestVersion) return;
++      _orders = orders;
+       _totalPages = _orders.length == _pageSize ? _currentPage + 1 : _currentPage;
+-      
+     } catch (e) {
++      if (_disposed || requestVersion != _listRequestVersion) return;
+       _error = e.toString();
+     } finally {
+-      _isLoading = false;
+-      notifyListeners();
++      if (!_disposed && requestVersion == _listRequestVersion) {
++        _isLoading = false;
++        notifyListeners();
++      }
+     }
+   }
+ 
+   Future<void> fetchOrderDetails(String id) async {
++    if (_disposed) return;
++    final requestVersion = ++_detailsRequestVersion;
+     _isLoadingDetails = true;
+     _detailsError = null;
+     _selectedOrder = null;
+     notifyListeners();
+ 
+     try {
+-      _selectedOrder = await _repository.getOrderById(id);
++      final order = await _repository.getOrderById(id);
++      if (_disposed || requestVersion != _detailsRequestVersion) return;
++      _selectedOrder = order;
+     } catch (e) {
++      if (_disposed || requestVersion != _detailsRequestVersion) return;
+       _detailsError = e.toString();
+     } finally {
+-      _isLoadingDetails = false;
+-      notifyListeners();
++      if (!_disposed && requestVersion == _detailsRequestVersion) {
++        _isLoadingDetails = false;
++        notifyListeners();
++      }
+     }
+   }
+ 
++  /// Search waits briefly for typing to pause and prevents older requests from
++  /// replacing results for a newer query.
+   Future<void> setSearchQuery(String query) async {
+-    _searchQuery = query;
++    final normalized = query.trim();
++    if (normalized == _searchQuery) return;
++    _searchQuery = normalized;
+     _currentPage = 1;
++    final searchVersion = ++_searchVersion;
++    ++_listRequestVersion;
++    await Future<void>.delayed(const Duration(milliseconds: 300));
++    if (_disposed || searchVersion != _searchVersion) return;
+     await fetchOrders();
+   }
+ 
+   Future<void> setStatusFilter(String status) async {
++    ++_searchVersion;
+     _statusFilter = status;
+     _currentPage = 1;
+     await fetchOrders();
+@@ -90,6 +114,7 @@
+ 
+   Future<void> changePage(int page) async {
+     if (page < 1 || page > _totalPages) return;
++    ++_searchVersion;
+     _currentPage = page;
+     await fetchOrders();
+   }
+@@ -159,4 +184,14 @@
+     }
+   }
+ 
++
++  @override
++  void dispose() {
++    _disposed = true;
++    ++_searchVersion;
++    ++_listRequestVersion;
++    ++_detailsRequestVersion;
++    super.dispose();
++  }
++
+ }
+\ No newline at end of file
+--- a/lib/providers/customers_provider.dart
++++ b/lib/providers/customers_provider.dart
+@@ -1,4 +1,5 @@
+ import 'package:flutter/foundation.dart';
++
+ import '../models/user_model.dart';
+ import '../repositories/customers_repository.dart';
+ 
+@@ -15,6 +16,9 @@
+   String _statusFilter = 'all';
+   String _marketingFilter = 'all';
+   static const int _pageSize = 20;
++  int _requestVersion = 0;
++  int _searchVersion = 0;
++  bool _disposed = false;
+ 
+   bool get isLoading => _isLoading;
+   String? get error => _error;
+@@ -26,24 +30,66 @@
+   String get marketingFilter => _marketingFilter;
+ 
+   Future<void> fetchCustomers() async {
+-    _isLoading = true; _error = null; notifyListeners();
++    if (_disposed) return;
++    final requestVersion = ++_requestVersion;
++    _isLoading = true;
++    _error = null;
++    notifyListeners();
+     try {
+-      _customers = await _repository.getCustomers(
++      final customers = await _repository.getCustomers(
+         page: _page,
+         pageSize: _pageSize,
+         searchQuery: _search.isEmpty ? null : _search,
+         statusFilter: _statusFilter,
+         marketingOptInFilter: _marketingFilter == 'all' ? null : _marketingFilter == 'opted_in',
+       );
++      if (_disposed || requestVersion != _requestVersion) return;
++      _customers = customers;
+       _totalPages = _customers.length == _pageSize ? _page + 1 : _page;
+-    } catch (e) { _error = e.toString(); }
+-    finally { _isLoading = false; notifyListeners(); }
++    } catch (e) {
++      if (_disposed || requestVersion != _requestVersion) return;
++      _error = e.toString();
++    } finally {
++      if (!_disposed && requestVersion == _requestVersion) {
++        _isLoading = false;
++        notifyListeners();
++      }
++    }
++  }
++
++  /// Debounce search input to reduce unnecessary network requests.
++  Future<void> setSearchQuery(String value) async {
++    final normalized = value.trim();
++    if (normalized == _search) return;
++    _search = normalized;
++    _page = 1;
++    final searchVersion = ++_searchVersion;
++    ++_requestVersion;
++    await Future<void>.delayed(const Duration(milliseconds: 300));
++    if (_disposed || searchVersion != _searchVersion) return;
++    await fetchCustomers();
+   }
+ 
+-  Future<void> setSearchQuery(String value) async { _search = value.trim(); _page = 1; await fetchCustomers(); }
+-  Future<void> setStatusFilter(String value) async { _statusFilter = value; _page = 1; await fetchCustomers(); }
+-  Future<void> setMarketingFilter(String value) async { _marketingFilter = value; _page = 1; await fetchCustomers(); }
+-  Future<void> changePage(int value) async { if (value < 1 || value > _totalPages) return; _page = value; await fetchCustomers(); }
++  Future<void> setStatusFilter(String value) async {
++    ++_searchVersion;
++    _statusFilter = value;
++    _page = 1;
++    await fetchCustomers();
++  }
++
++  Future<void> setMarketingFilter(String value) async {
++    ++_searchVersion;
++    _marketingFilter = value;
++    _page = 1;
++    await fetchCustomers();
++  }
++
++  Future<void> changePage(int value) async {
++    if (value < 1 || value > _totalPages) return;
++    ++_searchVersion;
++    _page = value;
++    await fetchCustomers();
++  }
+ 
+   Future<bool> updateCustomerStatus(String id, String status) async {
+     try {
+@@ -52,6 +98,18 @@
+       if (index >= 0) _customers[index] = _customers[index].copyWith(status: status);
+       notifyListeners();
+       return true;
+-    } catch (e) { _error = e.toString(); notifyListeners(); return false; }
++    } catch (e) {
++      _error = e.toString();
++      notifyListeners();
++      return false;
++    }
++  }
++
++  @override
++  void dispose() {
++    _disposed = true;
++    ++_searchVersion;
++    ++_requestVersion;
++    super.dispose();
+   }
+ }
+--- a/lib/repositories/orders_repository.dart
++++ b/lib/repositories/orders_repository.dart
+@@ -45,9 +45,18 @@
+ 
+   Future<OrderModel> getOrderById(String id) async {
+     try {
+-      final row = await _client.from('orders_view').select('*').eq('id', id).single();
+-      final itemRows = await _client.from('order_items').select('*, products(name)').eq('order_id', id).order('created_at');
+-      final json = Map<String, dynamic>.from(row)..['order_items'] = itemRows.map((e) => Map<String, dynamic>.from(e)).toList();
++      // Both requests depend only on the requested ID, so run them in parallel
++      // and save one network round-trip on the order-details screen.
++      final responses = await Future.wait<dynamic>([
++        _client.from('orders_view').select('*').eq('id', id).single(),
++        _client.from('order_items').select('*, products(name)').eq('order_id', id).order('created_at'),
++      ]);
++      final row = responses[0] as Map<String, dynamic>;
++      final itemRows = responses[1] as List<dynamic>;
++      final json = Map<String, dynamic>.from(row)
++        ..['order_items'] = itemRows
++            .map((e) => Map<String, dynamic>.from(e as Map))
++            .toList(growable: false);
+       return OrderModel.fromJson(json);
+     } on PostgrestException catch (e, st) {
+       LoggerService.error('Fetch order detail failed', error: e, stackTrace: st);
+--- a/lib/providers/restaurant_analytics_provider.dart
++++ b/lib/providers/restaurant_analytics_provider.dart
+@@ -335,33 +335,53 @@
+     return result;
+   }
+ 
+-  /// اقلام را در دسته‌های شناسه‌ای می‌خوانیم تا URL فیلتر بیش از حد بزرگ نشود.
++  /// اقلام را با دسته‌های شناسه‌ای می‌خوانیم تا URL فیلتر بیش از حد بزرگ نشود.
++  /// حداکثر سه دسته به‌صورت هم‌زمان واکشی می‌شوند؛ این کار گزارش‌های سالانه
++  /// را سریع‌تر می‌کند، بدون اینکه تعداد زیادی درخواست هم‌زمان به Supabase بفرستیم.
+   Future<List<Map<String, dynamic>>> _fetchItems(List<dynamic> orderIds) async {
+     final table = _schema.orderItemsTable;
+     if (table == null || orderIds.isEmpty) return <Map<String, dynamic>>[];
+ 
+     const idBatchSize = 150;
++    const concurrentBatches = 3;
++    final batches = <List<dynamic>>[];
++    for (var start = 0; start < orderIds.length; start += idBatchSize) {
++      batches.add(orderIds.skip(start).take(idBatchSize).toList(growable: false));
++    }
++
++    final result = <Map<String, dynamic>>[];
++    for (var start = 0; start < batches.length; start += concurrentBatches) {
++      final group = batches.skip(start).take(concurrentBatches);
++      final groupResults = await Future.wait(
++        group.map((batch) => _fetchItemBatch(table, batch)),
++      );
++      for (final rows in groupResults) {
++        result.addAll(rows);
++      }
++    }
++    return result;
++  }
++
++  Future<List<Map<String, dynamic>>> _fetchItemBatch(
++    String table,
++    List<dynamic> batch,
++  ) async {
+     const pageSize = 500;
+     final result = <Map<String, dynamic>>[];
++    var offset = 0;
+ 
+-    for (var batchStart = 0; batchStart < orderIds.length; batchStart += idBatchSize) {
+-      final batch = orderIds.skip(batchStart).take(idBatchSize).toList();
+-      var offset = 0;
+-
+-      while (true) {
+-        final page = await _supabase
+-            .from(table)
+-            .select(_schema.itemSelect)
+-            .inFilter(_schema.itemOrderIdColumn, batch)
+-            // مرتب‌سازی با شناسهٔ قلم باعث می‌شود صفحه‌بندی اقلام پایدار بماند.
+-            .order(_schema.itemRowIdColumn ?? _schema.itemOrderIdColumn)
+-            .range(offset, offset + pageSize - 1);
++    while (true) {
++      final page = await _supabase
++          .from(table)
++          .select(_schema.itemSelect)
++          .inFilter(_schema.itemOrderIdColumn, batch)
++          .order(_schema.itemRowIdColumn ?? _schema.itemOrderIdColumn)
++          .range(offset, offset + pageSize - 1);
+ 
+-        final rows = List<Map<String, dynamic>>.from(page);
+-        result.addAll(rows);
+-        if (rows.length < pageSize) break;
+-        offset += pageSize;
+-      }
++      final rows = List<Map<String, dynamic>>.from(page);
++      result.addAll(rows);
++      if (rows.length < pageSize) break;
++      offset += pageSize;
+     }
+     return result;
+   }
+--- a/lib/features/products/screens/products_list_screen.dart
++++ b/lib/features/products/screens/products_list_screen.dart
+@@ -1,3 +1,4 @@
++import 'package:cached_network_image/cached_network_image.dart';
+ import 'package:crm_panel/core/theme/app_radius.dart';
+ import 'package:flutter/material.dart';
+ import 'package:go_router/go_router.dart';
+@@ -205,12 +206,21 @@
+                 if (product.imageUrl.isNotEmpty)
+                   ClipRRect(
+                     borderRadius: BorderRadius.circular(AppRadius.small),
+-                    child: Image.network(
+-                      product.imageUrl,
++                    child: CachedNetworkImage(
++                      imageUrl: product.imageUrl,
+                       width: 40,
+                       height: 40,
+                       fit: BoxFit.cover,
+-                      errorBuilder: (context, error, stackTrace) => 
++                      fadeInDuration: Duration.zero,
++                      placeholder: (_, __) => const SizedBox(
++                        width: 40,
++                        height: 40,
++                        child: Center(child: SizedBox.square(
++                          dimension: 14,
++                          child: CircularProgressIndicator(strokeWidth: 2),
++                        )),
++                      ),
++                      errorWidget: (_, __, ___) =>
+                           const Icon(Icons.broken_image, size: 40),
+                     ),
+                   )
+@@ -345,12 +355,21 @@
+                   if (product.imageUrl.isNotEmpty)
+                     ClipRRect(
+                       borderRadius: BorderRadius.circular(AppRadius.medium),
+-                      child: Image.network(
+-                        product.imageUrl,
++                      child: CachedNetworkImage(
++                        imageUrl: product.imageUrl,
+                         width: 60,
+                         height: 60,
+                         fit: BoxFit.cover,
+-                        errorBuilder: (context, error, stackTrace) => 
++                        fadeInDuration: Duration.zero,
++                        placeholder: (_, __) => const SizedBox(
++                          width: 60,
++                          height: 60,
++                          child: Center(child: SizedBox.square(
++                            dimension: 16,
++                            child: CircularProgressIndicator(strokeWidth: 2),
++                          )),
++                        ),
++                        errorWidget: (_, __, ___) =>
+                             const Icon(Icons.broken_image, size: 60),
+                       ),
+                     )
+--- a/lib/features/dashboard/widgets/category_pie_chart.dart
++++ b/lib/features/dashboard/widgets/category_pie_chart.dart
+@@ -20,7 +20,7 @@
+   void initState() { super.initState(); _future = _fetchCounts(); }
+ 
+   Future<List<_CategoryCount>> _fetchCounts() async {
+-    final rows = await SupabaseService.client.from('products').select('id,category_id,categories(name)').eq('is_active', true);
++    final rows = await SupabaseService.client.from('products').select('category_id,categories(name)').eq('is_active', true);
+     final grouped = <String, int>{};
+     for (final row in rows) {
+       final dynamic relation = row['categories'];
