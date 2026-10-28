@@ -27,7 +27,7 @@ dependencies:
   go_router: ^17.3.0
 
   # Images and media
-  image: 4.10.2
+  image: 4.3.0
   image_picker: ^1.2.3
   cached_network_image: ^3.4.1
   flutter_svg: ^2.3.0
