@@ -97,6 +97,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         ...lines.asMap().entries.map((entry) {
           final i=entry.key; final line=entry.value;
           final material=_materials.firstWhere((m)=>m['id'].toString()==line['material_id']);
+          final compatibleUnits = (material['unit']=='g' || material['unit']=='kg') ? ['g','kg'] : ((material['unit']=='ml' || material['unit']=='l') ? ['ml','l'] : [material['unit'].toString()]);
+          final unitNames = {'g':'گرم','kg':'کیلوگرم','ml':'میلی‌لیتر','l':'لیتر','unit':'عدد','pack':'بسته','box':'جعبه'};
           return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
             Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const Icon(Icons.delete_outline))]),
             Row(children:[
@@ -131,7 +133,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         await _client.rpc('admin_record_inventory_purchase',params:{
           'p_supplier_id':result['supplier_id'],'p_invoice_number':result['invoice_number'],
           'p_purchase_date':DateTime.now().toIso8601String().substring(0,10),
-          'p_items':result['items'],'p_discount_amount':result['discount'],'p_shipping_amount':result['shipping'],
+          'p_items':(result['items'] as List).map((item) { final copy=Map<String,dynamic>.from(item); copy['purchase_unit'] ??= _materials.firstWhere((m)=>m['id'].toString()==copy['material_id'])['unit']; return copy; }).toList(),'p_discount_amount':result['discount'],'p_shipping_amount':result['shipping'],
           'p_paid_amount':result['paid'],'p_notes':result['notes'],
         });
         await _load(); _message('خرید ثبت شد؛ موجودی و بهای تمام‌شده به‌روزرسانی شد.');
