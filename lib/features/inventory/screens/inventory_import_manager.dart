@@ -85,7 +85,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
       _message('ساخت قالب اکسل ناموفق بود.', error: true);
       return;
     }
-    final path = await FilePicker.platform.saveFile(
+    final path = await FilePicker.saveFile(
       dialogTitle: 'ذخیره قالب اکسل',
       fileName: _type == 'materials' ? 'inventory_materials_template.xlsx' : 'food_recipes_template.xlsx',
       bytes: Uint8List.fromList(bytes),
@@ -95,7 +95,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
 
   Future<void> _pickAndImport() async {
     if (_busy) return;
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['xlsx'],
       withData: true,
