@@ -14,6 +14,8 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? _salesReport;
   ReportModel? _topProductsReport;
   ReportModel? _customerDistributionReport;
+  ReportModel? _financialReport;
+  ReportModel? _inventoryReport;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -21,6 +23,8 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? get salesReport => _salesReport;
   ReportModel? get topProductsReport => _topProductsReport;
   ReportModel? get customerDistributionReport => _customerDistributionReport;
+  ReportModel? get financialReport => _financialReport;
+  ReportModel? get inventoryReport => _inventoryReport;
 
   Future<void> fetchSalesReport({required DateTime startDate, required DateTime endDate}) async {
     _isLoading = true;
@@ -59,4 +63,27 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> fetchFinancialReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _financialReport = await _repository.getFinancialReport(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch financial report failed in provider', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش مالی ناموفق بود. دوباره تلاش کنید.');
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchInventoryReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _inventoryReport = await _repository.getInventoryReport(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch inventory report failed in provider', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش انبار ناموفق بود. دوباره تلاش کنید.');
+      notifyListeners();
+    }
+  }
+
 }
