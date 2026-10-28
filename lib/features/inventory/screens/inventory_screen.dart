@@ -1175,8 +1175,75 @@ class _InventoryScreenState extends State<InventoryScreen>
   }
 
   Widget _buildRecipesTab() {
+    final costsByProduct = <String, Map<String, dynamic>>{};
+    for (final recipe in _recipes) {
+      final product = _relation(recipe['products']);
+      final material = _relation(recipe['inventory_materials']);
+      final productId = (recipe['product_id'] ?? '').toString();
+      if (productId.isEmpty) continue;
+      final entry = costsByProduct.putIfAbsent(productId, () => {
+        'name': (product?['name'] ?? 'غذای حذف‌شده').toString(),
+        'price': _number(product?['price']),
+        'cost': 0.0,
+        'lines': 0,
+      });
+      entry['cost'] = (entry['cost'] as num) +
+          (_number(recipe['quantity_per_product']) * _number(material?['unit_cost']));
+      entry['lines'] = (entry['lines'] as int) + 1;
+    }
+    final dishCosts = costsByProduct.values.toList()
+      ..sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
     return Column(
       children: [
+        if (dishCosts.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('بهای تمام‌شده هر غذا', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    const Text('محاسبه بر اساس مجموع مقدار مصرف هر ماده در دستور غذا × بهای واحد فعلی ماده اولیه؛ هزینه‌های نیروی انسانی، انرژی و بسته‌بندی در این رقم نیست.'),
+                    const SizedBox(height: 10),
+                    ...dishCosts.map((dish) {
+                      final cost = _number(dish['cost']);
+                      final price = _number(dish['price']);
+                      final profit = price - cost;
+                      final foodCostPercent = price > 0 ? cost / price * 100 : null;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(dish['name'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Wrap(spacing: 12, runSpacing: 4, children: [
+                              Text('بهای مواد: ${_money(cost)} تومان'),
+                              Text('قیمت فروش: ${_money(price)} تومان'),
+                              Text('سود ناخالص تخمینی: ${_money(profit)} تومان',
+                                style: TextStyle(color: profit >= 0 ? Colors.green : Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600)),
+                              if (foodCostPercent != null)
+                                Text('سهم مواد از فروش: ${foodCostPercent.toStringAsFixed(1)}٪'),
+                            ]),
+                            const SizedBox(height: 6),
+                            LinearProgressIndicator(
+                              value: foodCostPercent == null ? 0 : (foodCostPercent / 100).clamp(0.0, 1.0),
+                              minHeight: 5,
+                              borderRadius: BorderRadius.circular(8),
+                              color: foodCostPercent != null && foodCostPercent > 40 ? Colors.orange : null,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
