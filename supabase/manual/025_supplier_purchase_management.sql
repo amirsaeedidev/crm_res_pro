@@ -17,7 +17,6 @@ create policy inventory_purchases_admin_all on public.inventory_purchases for al
 drop policy if exists inventory_purchase_items_admin_all on public.inventory_purchase_items;
 create policy inventory_purchase_items_admin_all on public.inventory_purchase_items for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 grant select,insert,update,delete on public.inventory_suppliers, public.inventory_purchases, public.inventory_purchase_items to authenticated;
-grant usage,select on all sequences in schema public to authenticated;
 create or replace function public.admin_record_inventory_purchase(
  p_supplier_id uuid, p_invoice_number text, p_purchase_date date, p_items jsonb,
  p_discount_amount numeric default 0, p_shipping_amount numeric default 0,
@@ -25,7 +24,7 @@ create or replace function public.admin_record_inventory_purchase(
 ) returns uuid language plpgsql security invoker set search_path = '' as $$
 declare
  v_purchase_id uuid; v_item jsonb; v_material_id uuid; v_quantity numeric;
- v_unit_cost numeric; v_subtotal numeric := 0; v_total numeric;
+ v_unit_cost numeric; v_effective_cost numeric; v_subtotal numeric := 0; v_total numeric;
  v_discount numeric := coalesce(p_discount_amount,0); v_shipping numeric := coalesce(p_shipping_amount,0);
  v_paid numeric := coalesce(p_paid_amount,0); v_reason text;
 begin
@@ -48,7 +47,8 @@ begin
    v_material_id := (v_item->>'material_id')::uuid; v_quantity := (v_item->>'quantity')::numeric; v_unit_cost := (v_item->>'unit_cost')::numeric;
    insert into public.inventory_purchase_items(purchase_id,material_id,quantity,unit_cost) values(v_purchase_id,v_material_id,v_quantity,v_unit_cost);
    v_reason := 'خرید تامین‌کننده؛ سند '||coalesce(nullif(trim(p_invoice_number),''),v_purchase_id::text);
-   perform public.admin_receive_inventory(v_material_id,v_quantity,v_unit_cost,v_reason);
+   v_effective_cost := case when v_subtotal > 0 then round(v_unit_cost * (v_total / v_subtotal), 2) else v_unit_cost end;
+   perform public.admin_receive_inventory(v_material_id,v_quantity,v_effective_cost,v_reason);
  end loop;
  return v_purchase_id;
 end; $$;
