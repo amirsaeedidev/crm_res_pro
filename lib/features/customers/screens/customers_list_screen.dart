@@ -23,12 +23,20 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
   final TextEditingController _maxPurchasesController = TextEditingController();
   final TextEditingController _minSpendController = TextEditingController();
   final TextEditingController _maxSpendController = TextEditingController();
+  String _lastVisitFilter = 'all';
+  String _sortBy = 'recent';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<CustomersProvider>().fetchCustomers();
+      if (!mounted) return;
+      final provider = context.read<CustomersProvider>();
+      setState(() {
+        _lastVisitFilter = provider.lastVisitFilter;
+        _sortBy = provider.sortBy;
+      });
+      provider.fetchCustomers();
     });
   }
 
@@ -116,8 +124,8 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       maxPurchases: maxCount,
       minSpend: minSpend,
       maxSpend: maxSpend,
-      lastVisitFilter: provider.lastVisitFilter,
-      sortBy: provider.sortBy,
+      lastVisitFilter: _lastVisitFilter,
+      sortBy: _sortBy,
     );
   }
 
@@ -314,7 +322,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                           decoration: decoration('حداکثر مبلغ خرید (تومان)'),
                         )),
                         SizedBox(width: width, child: DropdownButtonFormField<String>(
-                          initialValue: provider.lastVisitFilter,
+                          initialValue: _lastVisitFilter,
                           isExpanded: true,
                           decoration: decoration('آخرین مراجعه'),
                           items: const [
@@ -325,20 +333,11 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                             DropdownMenuItem(value: 'never', child: Text('بدون خرید تکمیل‌شده')),
                           ],
                           onChanged: (value) {
-                            if (value != null) {
-                              provider.setPurchaseFilters(
-                                minPurchases: provider.minPurchases,
-                                maxPurchases: provider.maxPurchases,
-                                minSpend: provider.minSpend,
-                                maxSpend: provider.maxSpend,
-                                lastVisitFilter: value,
-                                sortBy: provider.sortBy,
-                              );
-                            }
+                            if (value != null) setState(() => _lastVisitFilter = value);
                           },
                         )),
                         SizedBox(width: width, child: DropdownButtonFormField<String>(
-                          initialValue: provider.sortBy,
+                          initialValue: _sortBy,
                           isExpanded: true,
                           decoration: decoration('مرتب‌سازی'),
                           items: const [
@@ -348,16 +347,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                             DropdownMenuItem(value: 'spend', child: Text('بیشترین مبلغ خرید')),
                           ],
                           onChanged: (value) {
-                            if (value != null) {
-                              provider.setPurchaseFilters(
-                                minPurchases: provider.minPurchases,
-                                maxPurchases: provider.maxPurchases,
-                                minSpend: provider.minSpend,
-                                maxSpend: provider.maxSpend,
-                                lastVisitFilter: provider.lastVisitFilter,
-                                sortBy: value,
-                              );
-                            }
+                            if (value != null) setState(() => _sortBy = value);
                           },
                         )),
                       ],
@@ -376,6 +366,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                         _maxPurchasesController.clear();
                         _minSpendController.clear();
                         _maxSpendController.clear();
+                        setState(() {
+                          _lastVisitFilter = 'all';
+                          _sortBy = 'recent';
+                        });
                         provider.resetPurchaseFilters();
                       },
                       icon: const Icon(Icons.filter_alt_off_outlined),
