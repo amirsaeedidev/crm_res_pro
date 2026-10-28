@@ -10,6 +10,7 @@ import '../../../models/product_model.dart';
 import '../../../providers/categories_provider.dart';
 import '../../../providers/products_provider.dart';
 import '../../../repositories/products_repository.dart';
+import 'product_recipe_manager.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final String? productId;
@@ -32,6 +33,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   String? _categoryId;
   bool _popular = false;
   bool _active = true;
+  bool _available = true;
+  final _unavailableReason = TextEditingController();
   bool _discountEnabled = false;
   bool _saving = false;
   bool _loadingProduct = false;
@@ -65,6 +68,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _categoryId = product.categoryId;
       _popular = product.isPopular;
       _active = product.status == 'active';
+      _available = product.isAvailable;
       setState(() {});
     } catch (e) {
       if (mounted) _message(AppErrorMessage.from(e, fallback: 'دریافت اطلاعات محصول ناموفق بود. دوباره تلاش کنید.'));
@@ -75,7 +79,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   void dispose() {
-    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose();
+    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _unavailableReason.dispose();
     super.dispose();
   }
 
@@ -129,6 +133,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'category_id': _categoryId,
         'is_popular': _popular,
         'is_active': _active,
+        'is_available': _available,
+        'unavailable_reason': _unavailableReason.text.trim(),
       };
       final ok = _editing ? await provider.updateProduct(widget.productId!, data) : await provider.createProduct(data);
       if (!ok) throw Exception(provider.error ?? 'ذخیره محصول انجام نشد.');
@@ -169,7 +175,16 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         if (_imageBytes != null) Padding(padding: const EdgeInsets.only(top: 12), child: Image.memory(_imageBytes!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.')))
         else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست.'))),
         const SizedBox(height: 8),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('محصول فعال باشد'), subtitle: const Text('محصول غیرفعال برای کاربران عمومی نمایش داده نمی‌شود.')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('نمایش محصول در منو'), subtitle: const Text('خاموش باشد، غذا از منوی عمومی حذف می‌شود.')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('قابل سفارش باشد'), subtitle: const Text('برای تمام‌شدن موقت غذا خاموش کنید؛ ثبت سفارش در دیتابیس هم مسدود می‌شود.')),
+        if (!_available) TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجود بودن (اختیاری)', border: OutlineInputBorder())),
+        if (_editing) ...[
+          const SizedBox(height: 20),
+          const Divider(),
+          Text('دستور مصرف و مواد اولیه', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          ProductRecipeManager(productId: widget.productId!),
+        ],
         SwitchListTile(contentPadding: EdgeInsets.zero, value: _popular, onChanged: _saving ? null : (v) => setState(() => _popular = v), title: const Text('محصول پرطرفدار / محبوب')),
         const SizedBox(height: 16),
         FilledButton.icon(onPressed: _saving ? null : _submit, icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_outlined), label: Text(_saving ? 'در حال ذخیره…' : 'ذخیره محصول')),
