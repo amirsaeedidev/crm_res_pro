@@ -15,6 +15,7 @@ import '../../../providers/orders_provider.dart';
 import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
 import '../../../shared/dialogs/invoice_print_dialog.dart';
+import '../widgets/order_refund_manager.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final String orderId;
@@ -265,6 +266,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 _buildItemsList(context, order),
                 const SizedBox(height: AppSizes.lg),
                 _buildSummary(context, order),
+                const SizedBox(height: AppSizes.lg),
+                OrderRefundManager(orderId: order.id, status: order.status, totalAmount: order.totalAmount),
               ],
             ),
           );
