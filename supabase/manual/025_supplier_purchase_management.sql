@@ -22,7 +22,7 @@ create or replace function public.admin_record_inventory_purchase(
  p_supplier_id uuid, p_invoice_number text, p_purchase_date date, p_items jsonb,
  p_discount_amount numeric default 0, p_shipping_amount numeric default 0,
  p_paid_amount numeric default 0, p_notes text default ''
-) returns uuid language plpgsql security invoker set search_path = '' as $
+) returns uuid language plpgsql security invoker set search_path = '' as $$
 declare
  v_purchase_id uuid; v_item jsonb; v_material_id uuid; v_quantity numeric;
  v_unit_cost numeric; v_subtotal numeric := 0; v_total numeric;
@@ -51,7 +51,7 @@ begin
    perform public.admin_receive_inventory(v_material_id,v_quantity,v_unit_cost,v_reason);
  end loop;
  return v_purchase_id;
-end; $;
+end; $$;
 revoke all on function public.admin_record_inventory_purchase(uuid,text,date,jsonb,numeric,numeric,numeric,text) from public,anon;
 grant execute on function public.admin_record_inventory_purchase(uuid,text,date,jsonb,numeric,numeric,numeric,text) to authenticated;
 commit;
