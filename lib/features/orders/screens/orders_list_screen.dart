@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../core/widgets/app_search.dart';
@@ -26,19 +28,53 @@ class OrdersListScreen extends StatefulWidget {
 class _OrdersListScreenState extends State<OrdersListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _currencyFormatter = NumberFormat.decimalPattern('en_US');
+  RealtimeChannel? _ordersChannel;
+  bool _realtimeConnected = false;
+  bool _refreshQueued = false;
 
   @override
   void initState() {
     super.initState();
     // Fetch initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<OrdersProvider>().fetchOrders();
+      _subscribeToLiveOrders();
     });
+  }
+
+  void _subscribeToLiveOrders() {
+    _ordersChannel = SupabaseService.client
+        .channel('crm-live-orders-screen')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'orders',
+          callback: (_) {
+            if (!mounted || _refreshQueued) return;
+            _refreshQueued = true;
+            // Coalesce bursts (e.g. order creation followed by trigger updates).
+            Future<void>.delayed(const Duration(milliseconds: 250), () {
+              _refreshQueued = false;
+              if (mounted) context.read<OrdersProvider>().fetchOrders();
+            });
+          },
+        )
+        .subscribe((status, error) {
+          if (!mounted) return;
+          setState(() {
+            _realtimeConnected = status == RealtimeSubscribeStatus.subscribed;
+          });
+        });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    final channel = _ordersChannel;
+    if (channel != null) {
+      SupabaseService.client.removeChannel(channel);
+    }
     super.dispose();
   }
 
@@ -124,7 +160,32 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: AppSizes.lg),
+          const SizedBox(height: AppSizes.sm),
+          Row(
+            children: [
+              Icon(
+                Icons.circle,
+                size: 10,
+                color: _realtimeConnected ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _realtimeConnected
+                    ? 'سفارش‌های زنده فعال است'
+                    : 'در حال اتصال به بروزرسانی زنده…',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.getSecondaryText(context),
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: 'بروزرسانی دستی سفارش‌ها',
+                onPressed: () => context.read<OrdersProvider>().fetchOrders(),
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
 
           // Search Bar
           AppSearch(
