@@ -14,19 +14,74 @@ jobs:
   analyze:
     name: Analyze Flutter
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Analyze project
-        run: flutter analyze --no-pub
+      - name: Analyze and publish report
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --machine --no-pub > analyze-results.txt 2>&1
+          analyze_status=$?
+          set -e
+          python3 - <<'PY'
+          import os, pathlib, collections
+          issues = []
+          source = pathlib.Path("analyze-results.txt").read_text(errors="replace")
+          for raw in source.splitlines():
+              parts = raw.split("|", 7)
+              if len(parts) != 8 or parts[0] not in {"ERROR", "WARNING", "INFO"}:
+                  continue
+              severity, issue_type, code, file_path, line, column, length, message = parts
+              try:
+                  line_num, col_num = int(line), int(column)
+              except ValueError:
+                  line_num, col_num = 1, 1
+              issues.append({"severity": severity, "type": issue_type, "code": code,
+                             "file": file_path, "line": line_num, "column": col_num,
+                             "message": message})
+          counts = collections.Counter(i["severity"] for i in issues)
+          def esc(value):
+              return str(value).replace("|", "\\|").replace("\n", " ")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("# Flutter Analyze report\n\n")
+              out.write(f"- **Errors:** {counts['ERROR']}\n")
+              out.write(f"- **Warnings:** {counts['WARNING']}\n")
+              out.write(f"- **Info:** {counts['INFO']}\n")
+              out.write(f"- **Total issues:** {len(issues)}\n\n")
+              if issues:
+                  out.write("| Severity | Issue | File | Line | Message |\n|---|---|---|---:|---|\n")
+                  for i in issues:
+                      out.write(f"| {esc(i['severity'])} | {esc(i['code'] or i['type'])} | {esc(i['file'])} | {i['line']} | {esc(i['message'])} |\n")
+              else:
+                  out.write("No analyzer issues were parsed. Check the raw log for tool or dependency errors.\n")
+          def command_escape(value):
+              return str(value).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          for i in issues:
+              level = "error" if i["severity"] == "ERROR" else ("warning" if i["severity"] == "WARNING" else "notice")
+              print(f"::{level} file={i['file']},line={i['line']},col={i['column']}::{command_escape(i['message'])}")
+          print(f"Flutter Analyze: {counts['ERROR']} errors, {counts['WARNING']} warnings, {counts['INFO']} info; {len(issues)} total.")
+          pathlib.Path("analyze-report.md").write_text(
+              "# Flutter Analyze report\n\n"
+              f"- Errors: {counts['ERROR']}\n- Warnings: {counts['WARNING']}\n"
+              f"- Info: {counts['INFO']}\n- Total: {len(issues)}\n",
+              encoding="utf-8")
+          PY
+          exit "$analyze_status"
+      - name: Upload analysis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-analyze-report
+          path: |
+            analyze-results.txt
+            analyze-report.md
+          if-no-files-found: ignore
+          retention-days: 14
