@@ -58,8 +58,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
       content:SizedBox(width:480,child:SingleChildScrollView(child:Form(key:key,child:Column(mainAxisSize:MainAxisSize.min,children:[
         TextFormField(controller:name,decoration:const InputDecoration(labelText:'نام تامین‌کننده *'),validator:(v)=>(v?.trim().isNotEmpty??false)?null:'نام الزامی است'),
         TextFormField(controller:contact,decoration:const InputDecoration(labelText:'نام رابط')),
-        TextFormField(controller:phone,decoration:const InputDecoration(labelText:'تلفن')),
-        TextFormField(controller:email,decoration:const InputDecoration(labelText:'ایمیل')),
+        TextFormField(controller:phone,decoration:const InputDecoration(labelText:'تلفن'),keyboardType:TextInputType.phone),
+        TextFormField(controller:email,decoration:const InputDecoration(labelText:'ایمیل'),keyboardType:TextInputType.emailAddress),
         TextFormField(controller:address,decoration:const InputDecoration(labelText:'آدرس')),
         TextFormField(controller:notes,decoration:const InputDecoration(labelText:'یادداشت'),maxLines:2),
       ])))),
@@ -68,7 +68,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
     if(save==true && mounted) {
       try {
         final payload={'name':name.text.trim(),'contact_name':contact.text.trim(),'phone':phone.text.trim(),'email':email.text.trim(),'address':address.text.trim(),'notes':notes.text.trim(),'updated_at':DateTime.now().toUtc().toIso8601String()};
-        if(supplier==null) { payload['created_by']=_client.auth.currentUser?.id ?? ''; await _client.from('inventory_suppliers').insert(payload); }
+        if(supplier==null) { await _client.from('inventory_suppliers').insert(payload); }
         else { await _client.from('inventory_suppliers').update(payload).eq('id',supplier['id']); }
         await _load(); _message('اطلاعات تامین‌کننده ذخیره شد.');
       } catch(e) { _message('ذخیره تامین‌کننده ناموفق بود: $e',error:true); }
@@ -111,12 +111,12 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           if(available.isEmpty){_message('همه مواد اولیه به فاکتور اضافه شده‌اند.');return;}
           setDialog(()=>lines.add({'material_id':available.first['id'].toString(),'quantity':1.0,'unit_cost':double.tryParse('${available.first['unit_cost']}')??0.0}));
         },icon:const Icon(Icons.add),label:const Text('افزودن ماده اولیه'))),
-        TextFormField(controller:discount,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'تخفیف فاکتور (تومان)')),
-        TextFormField(controller:shipping,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'هزینه حمل (تومان)')),
-        TextFormField(controller:paid,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'مبلغ پرداخت‌شده (تومان)')),
+        TextFormField(controller:discount,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'تخفیف فاکتور (تومان)')),
+        TextFormField(controller:shipping,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'هزینه حمل (تومان)')),
+        TextFormField(controller:paid,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مبلغ پرداخت‌شده (تومان)')),
         TextFormField(controller:notes,decoration:const InputDecoration(labelText:'یادداشت'),maxLines:2),
         const SizedBox(height:8),
-        Text('جمع اقلام: ${lines.fold<double>(0,(sum,l)=>sum+((l['quantity'] as num)*(l['unit_cost'] as num))).toStringAsFixed(0)} تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
+        Text('جمع اقلام: ${_money(lines.fold<double>(0,(sum,l)=>sum+((l['quantity'] as num)*(l['unit_cost'] as num))))} تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
       ]))),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:(){
         if(lines.isEmpty || lines.any((l)=>(l['quantity'] as num)<=0 || (l['unit_cost'] as num)<0)){_message('حداقل یک قلم با مقدار مثبت و بهای معتبر اضافه کنید.',error:true);return;}
@@ -173,7 +173,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         final itemText=items.map((i){final rel=i['inventory_materials']; final name=rel is Map?rel['name']??'ماده':'ماده';return '$name: ${i['quantity']} × ${_money(i['unit_cost'])}';}).join('، ');
         return Card(child:ExpansionTile(
           leading:const Icon(Icons.receipt_long_outlined),
-          title:Text('فاکتور ${p['invoice_number'].toString().isEmpty?'#${p['purchase_number']}':p['invoice_number']} · ${_money(p['total_amount'])} تومان'),
+          title:Text('فاکتور ${p['invoice_number'].toString().isEmpty?'شماره ${_fa(p['purchase_number'])}':'${p['invoice_number']}'} · ${_money(p['total_amount'])} تومان'),
           subtitle:Text('$supplier · ${p['purchase_date']} · پرداخت: ${p['payment_status']}'),
           children:[Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Text(itemText.isEmpty?'اقلام خرید در دسترس نیستند':itemText),
