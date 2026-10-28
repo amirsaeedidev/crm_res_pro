@@ -114,7 +114,7 @@ begin
         'order_id', '',
         'daily_queue_number', null,
         'customer_name', coalesce(max(o.customer_name), 'مشتری نامشخص'),
-        'customer_phone', coalesce(max(nullif(trim(o.customer_phone), '')), o.user_id::text, ''),
+        'customer_phone', coalesce(max(nullif(trim(o.customer_phone), '')), max(o.user_id::text), ''),
         'status', 'repeat_customer',
         'amount', coalesce(sum(o.total_amount), 0),
         'reason', '',
