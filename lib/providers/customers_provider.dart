@@ -16,6 +16,13 @@ class CustomersProvider extends ChangeNotifier {
   String _search = '';
   String _statusFilter = 'all';
   String _marketingFilter = 'all';
+  int? _minPurchases;
+  int? _maxPurchases;
+  double? _minSpend;
+  double? _maxSpend;
+  String _lastVisitFilter = 'all';
+  String _sortBy = 'recent';
+  int _totalCount = 0;
   static const int _pageSize = 20;
   int _requestVersion = 0;
   int _searchVersion = 0;
@@ -29,6 +36,13 @@ class CustomersProvider extends ChangeNotifier {
   String get searchQuery => _search;
   String get statusFilter => _statusFilter;
   String get marketingFilter => _marketingFilter;
+  int get totalCount => _totalCount;
+  int? get minPurchases => _minPurchases;
+  int? get maxPurchases => _maxPurchases;
+  double? get minSpend => _minSpend;
+  double? get maxSpend => _maxSpend;
+  String get lastVisitFilter => _lastVisitFilter;
+  String get sortBy => _sortBy;
 
   Future<void> fetchCustomers() async {
     if (_disposed) return;
@@ -37,16 +51,24 @@ class CustomersProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final customers = await _repository.getCustomers(
+      final result = await _repository.getCustomersWithPurchaseMetrics(
         page: _page,
         pageSize: _pageSize,
         searchQuery: _search.isEmpty ? null : _search,
         statusFilter: _statusFilter,
         marketingOptInFilter: _marketingFilter == 'all' ? null : _marketingFilter == 'opted_in',
+        minOrders: _minPurchases,
+        maxOrders: _maxPurchases,
+        minSpend: _minSpend,
+        maxSpend: _maxSpend,
+        lastVisitFilter: _lastVisitFilter,
+        sortBy: _sortBy,
       );
       if (_disposed || requestVersion != _requestVersion) return;
-      _customers = customers;
-      _totalPages = _customers.length == _pageSize ? _page + 1 : _page;
+      _customers = result.customers;
+      _totalCount = result.totalCount;
+      _totalPages = _totalCount == 0 ? 1 : (_totalCount + _pageSize - 1) ~/ _pageSize;
+      if (_page > _totalPages) _page = _totalPages;
     } catch (e) {
       if (_disposed || requestVersion != _requestVersion) return;
       _error = AppErrorMessage.from(e);
@@ -81,6 +103,46 @@ class CustomersProvider extends ChangeNotifier {
   Future<void> setMarketingFilter(String value) async {
     ++_searchVersion;
     _marketingFilter = value;
+    _page = 1;
+    await fetchCustomers();
+  }
+
+
+  Future<void> setPurchaseFilters({
+    int? minPurchases,
+    int? maxPurchases,
+    double? minSpend,
+    double? maxSpend,
+    required String lastVisitFilter,
+    required String sortBy,
+  }) async {
+    if (minPurchases != null && maxPurchases != null && minPurchases > maxPurchases) {
+      _error = 'حداقل تعداد خرید نمی‌تواند از حداکثر بیشتر باشد.';
+      notifyListeners();
+      return;
+    }
+    if (minSpend != null && maxSpend != null && minSpend > maxSpend) {
+      _error = 'حداقل مبلغ خرید نمی‌تواند از حداکثر بیشتر باشد.';
+      notifyListeners();
+      return;
+    }
+    _minPurchases = minPurchases;
+    _maxPurchases = maxPurchases;
+    _minSpend = minSpend;
+    _maxSpend = maxSpend;
+    _lastVisitFilter = lastVisitFilter;
+    _sortBy = sortBy;
+    _page = 1;
+    await fetchCustomers();
+  }
+
+  Future<void> resetPurchaseFilters() async {
+    _minPurchases = null;
+    _maxPurchases = null;
+    _minSpend = null;
+    _maxSpend = null;
+    _lastVisitFilter = 'all';
+    _sortBy = 'recent';
     _page = 1;
     await fetchCustomers();
   }
