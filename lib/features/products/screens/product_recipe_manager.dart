@@ -111,23 +111,13 @@ class _ProductRecipeManagerState extends State<ProductRecipeManager> {
         ])));
       }),
       if(available.isNotEmpty) Align(alignment:Alignment.centerRight,child:TextButton.icon(
-        onPressed:_saving?null:() => setState(()=>_recipe.add({'material_id':available.first['id'].toString(),'quantity_per_product':1.0,'notes':''}),
+        onPressed: _saving ? null : () => setState(() => _recipe.add({'material_id': available.first['id'].toString(), 'quantity_per_product': 1.0, 'notes': ''})),
         icon:const Icon(Icons.add),label:const Text('افزودن ماده اولیه'),
       )),
       const SizedBox(height:8),
       Text('بهای مواد اولیه هر پرس (برآورد): ${_money(cost)} تومان',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.bold)),
       const SizedBox(height:8),
       if(_materials.isEmpty) const Text('ابتدا در بخش انبارداری مواد اولیه را تعریف کنید.'),
-      if(_materials.isNotEmpty && _recipe.isNotEmpty) DropdownButtonFormField<String>(
-        value:_recipe.any((r)=>!_materials.any((m)=>m['id'].toString()==r['material_id'].toString()))?null:null,
-        decoration:const InputDecoration(labelText:'افزودن ماده مشخص (از فهرست مواد اولیه)'),
-        items:available.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']} (${_unit(m['unit']?.toString())})'))).toList(),
-        onChanged:_saving||available.isEmpty?null:(id){
-          if(id==null)return;
-          final m=_materials.firstWhere((m)=>m['id'].toString()==id);
-          setState(()=>_recipe.add({'material_id':id,'quantity_per_product':1.0,'notes':''}));
-        },
-      ),
       const SizedBox(height:12),
       FilledButton.icon(onPressed:_saving?null:_save,icon:_saving?const SizedBox(width:16,height:16,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.save_outlined),label:Text(_saving?'در حال ذخیره…':'ذخیره دستور مصرف')),
     ]);
