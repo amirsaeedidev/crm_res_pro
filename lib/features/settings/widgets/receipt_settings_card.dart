@@ -115,7 +115,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) throw const FormatException('برای تغییر لوگو ابتدا وارد حساب مدیر شوید.');
       final safeExt = ext == 'jpeg' ? 'jpg' : ext;
-      final path = userId + '/receipt-logo.' + safeExt;
+      final path = '$userId/receipt-logo.$safeExt';
       final contentType = safeExt == 'png' ? 'image/png' : safeExt == 'webp' ? 'image/webp' : 'image/jpeg';
       await SupabaseService.client.storage.from('receipt-logos').uploadBinary(
         path, bytes,
