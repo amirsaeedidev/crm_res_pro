@@ -1075,8 +1075,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     onSelected: (value) => setState(() => _showLowStockOnly = value),
                   ),
                   Text(
-                    'کم‌موجود: ' + _persianDigits(lowStockCount) +
-                        ' · ارزش موجودی: ' + _money(stockValue) + ' تومان',
+                    'کم‌موجود: ${_persianDigits(lowStockCount)} · ارزش موجودی: ${_money(stockValue)} تومان',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
