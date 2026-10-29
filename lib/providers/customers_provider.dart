@@ -22,6 +22,7 @@ class CustomersProvider extends ChangeNotifier {
   double? _maxSpend;
   String _lastVisitFilter = 'all';
   String _sortBy = 'recent';
+  String _customerSegment = 'all';
   int _totalCount = 0;
   static const int _pageSize = 20;
   int _requestVersion = 0;
@@ -43,6 +44,7 @@ class CustomersProvider extends ChangeNotifier {
   double? get maxSpend => _maxSpend;
   String get lastVisitFilter => _lastVisitFilter;
   String get sortBy => _sortBy;
+  String get customerSegment => _customerSegment;
 
   Future<void> fetchCustomers() async {
     if (_disposed) return;
@@ -63,6 +65,7 @@ class CustomersProvider extends ChangeNotifier {
         maxSpend: _maxSpend,
         lastVisitFilter: _lastVisitFilter,
         sortBy: _sortBy,
+        segment: _customerSegment,
       );
       if (_disposed || requestVersion != _requestVersion) return;
       _customers = result.customers;
@@ -115,6 +118,7 @@ class CustomersProvider extends ChangeNotifier {
     double? maxSpend,
     required String lastVisitFilter,
     required String sortBy,
+    String segment = 'all',
   }) async {
     if (minPurchases != null && maxPurchases != null && minPurchases > maxPurchases) {
       _error = 'حداقل تعداد خرید نمی‌تواند از حداکثر بیشتر باشد.';
@@ -132,6 +136,7 @@ class CustomersProvider extends ChangeNotifier {
     _maxSpend = maxSpend;
     _lastVisitFilter = lastVisitFilter;
     _sortBy = sortBy;
+    _customerSegment = segment;
     _page = 1;
     await fetchCustomers();
   }
@@ -143,6 +148,7 @@ class CustomersProvider extends ChangeNotifier {
     _maxSpend = null;
     _lastVisitFilter = 'all';
     _sortBy = 'recent';
+    _customerSegment = 'all';
     _page = 1;
     await fetchCustomers();
   }
