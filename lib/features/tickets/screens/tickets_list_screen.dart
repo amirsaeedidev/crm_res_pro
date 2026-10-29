@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
-import '../../../core/theme/app_radius.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../providers/tickets_provider.dart';
 
