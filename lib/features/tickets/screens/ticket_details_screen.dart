@@ -200,7 +200,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             initialValue: currentStatus,
                             decoration: const InputDecoration(
                               labelText: 'وضعیت تیکت',
-                              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
                             ),
                             items: const [
                               DropdownMenuItem(
