@@ -625,9 +625,11 @@ class _ReportsScreenState extends State<ReportsScreen>
               });
               if (dialogContext.mounted) { Navigator.pop(dialogContext, true); }
             } catch (e) {
-              if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(
+              if (dialogContext.mounted) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
                 const SnackBar(content: Text('ثبت هزینه ناموفق بود. اجرای SQL گزارش مالی و دسترسی مدیر را بررسی کنید.')),
               );
+              }
             }
           }, child: const Text('ثبت هزینه')),
         ],
@@ -745,7 +747,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             const SizedBox(height: 3),
             Text(subtitle, style: const TextStyle(color: Color(0xFF8792A8), fontSize: 11)),
           ])),
-          trailing?,
+          ?trailing,
         ]),
         const SizedBox(height: 20),
         child,
