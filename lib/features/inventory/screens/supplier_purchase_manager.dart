@@ -117,9 +117,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         ...lines.asMap().entries.map((entry) {
           final i=entry.key; final line=entry.value;
           final material=_materials.firstWhere((m)=>m['id'].toString()==line['material_id']);
-          final compatibleUnits = (material['unit']=='g' || material['unit']=='kg') ? ['g','kg'] : ((material['unit']=='ml' || material['unit']=='l') ? ['ml','l'] : [material['unit'].toString()]);
-          final unitNames = {'g':'گرم','kg':'کیلوگرم','ml':'میلی‌لیتر','l':'لیتر','unit':'عدد','pack':'بسته','box':'جعبه'};
-          return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
+          final compatibleUnits = _compatibleUnits(material['unit'].toString());
+                    return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
             Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const Icon(Icons.delete_outline))]),
             Row(children:[
               Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>line['quantity']=double.tryParse(v.replaceAll('٬','').replaceAll('٫','.'))??0)),
@@ -130,8 +129,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
             DropdownButtonFormField<String>(
               key: ValueKey('purchase-unit-${material['id']}-${line['purchase_unit']}'),
               initialValue: compatibleUnits.contains(line['purchase_unit']) ? line['purchase_unit'] as String : material['unit'].toString(),
-              decoration: InputDecoration(labelText: 'واحد خرید (موجودی انبار به ${unitNames[material['unit']] ?? material['unit']} ثبت می‌شود)'),
-              items: compatibleUnits.map((unit) => DropdownMenuItem<String>(value: unit, child: Text(unitNames[unit] ?? unit))).toList(),
+              decoration: InputDecoration(labelText: 'واحد خرید (موجودی انبار به ${_unitName(material['unit'].toString())} ثبت می‌شود)'),
+              items: compatibleUnits.map((unit) => DropdownMenuItem<String>(value: unit, child: Text(_unitName(unit)))).toList(),
               onChanged: (unit) {
                 if (unit == null) return;
                 setDialog(() {
