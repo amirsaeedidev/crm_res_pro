@@ -124,7 +124,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
             Row(children:[
               Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>line['quantity']=double.tryParse(v.replaceAll('٬','').replaceAll('٫','.'))??0)),
               const SizedBox(width:8),
-              Expanded(child:TextFormField(initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>line['unit_cost']=double.tryParse(v.replaceAll('٬','').replaceAll('٫','.'))??-1)),
+              Expanded(child:TextFormField(key:ValueKey('purchase-price-$i-${line['purchase_unit']}'),initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>line['unit_cost']=double.tryParse(v.replaceAll('٬','').replaceAll('٫','.'))??-1)),
             ]),
             const SizedBox(height:8),
             DropdownButtonFormField<String>(
