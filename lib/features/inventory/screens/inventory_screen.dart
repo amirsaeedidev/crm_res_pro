@@ -36,6 +36,8 @@ class _InventoryScreenState extends State<InventoryScreen>
   late final InventoryRepository _repository;
   late final TabController _tabController;
   RealtimeChannel? _channel;
+  final TextEditingController _materialSearchController = TextEditingController();
+  bool _showLowStockOnly = false;
 
   List<Map<String, dynamic>> _materials = [];
   List<Map<String, dynamic>> _products = [];
@@ -126,6 +128,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _materialSearchController.dispose();
     final channel = _channel;
     if (channel != null) {
       unawaited(SupabaseService.client.removeChannel(channel));
@@ -1009,6 +1012,18 @@ class _InventoryScreenState extends State<InventoryScreen>
   }
 
   Widget _buildMaterialsTab() {
+    final query = _materialSearchController.text.trim().toLowerCase();
+    final lowStockCount = _materials.where((material) =>
+        _number(material['quantity_on_hand']) <= _number(material['reorder_level'])).length;
+    final stockValue = _materials.fold<double>(0, (sum, material) =>
+        sum + _number(material['quantity_on_hand']) * _number(material['unit_cost']));
+    final visibleMaterials = _materials.where((material) {
+      final name = (material['name'] ?? '').toString().toLowerCase();
+      final sku = (material['sku'] ?? '').toString().toLowerCase();
+      final isLow = _number(material['quantity_on_hand']) <= _number(material['reorder_level']);
+      return (query.isEmpty || name.contains(query) || sku.contains(query)) &&
+          (!_showLowStockOnly || isLow);
+    }).toList(growable: false);
     return Column(
       children: [
         Padding(
@@ -1028,16 +1043,67 @@ class _InventoryScreenState extends State<InventoryScreen>
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            children: [
+              TextField(
+                controller: _materialSearchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'جست‌وجوی نام ماده یا کد انبار',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: query.isEmpty ? null : IconButton(
+                    tooltip: 'پاک‌کردن جست‌وجو',
+                    onPressed: () { _materialSearchController.clear(); setState(() {}); },
+                    icon: const Icon(Icons.close),
+                  ),
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  FilterChip(
+                    selected: _showLowStockOnly,
+                    avatar: const Icon(Icons.warning_amber_rounded, size: 18),
+                    label: const Text('فقط مواد کم‌موجود'),
+                    onSelected: (value) => setState(() => _showLowStockOnly = value),
+                  ),
+                  Text(
+                    'کم‌موجود: ' + _persianDigits(lowStockCount) +
+                        ' · ارزش موجودی: ' + _money(stockValue) + ' تومان',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
         Expanded(
-          child: _materials.isEmpty
-              ? const Center(child: Text('هنوز ماده اولیه‌ای ثبت نشده است.'))
+          child: visibleMaterials.isEmpty
+              ? Center(
+                  child: Text(
+                    _materials.isEmpty
+                        ? 'هنوز ماده اولیه‌ای ثبت نشده است.'
+                        : 'ماده‌ای با جست‌وجو یا فیلتر انتخاب‌شده پیدا نشد.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  itemCount: _materials.length,
+                  itemCount: visibleMaterials.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final material = _materials[index];
+                    final material = visibleMaterials[index];
                     final stock = _number(material['quantity_on_hand']);
                     final minimum = _number(material['reorder_level']);
                     final unit = _unitLabel(material['unit']);
