@@ -25,6 +25,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
   final TextEditingController _maxSpendController = TextEditingController();
   String _lastVisitFilter = 'all';
   String _sortBy = 'recent';
+  String _customerSegment = 'all';
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       setState(() {
         _lastVisitFilter = provider.lastVisitFilter;
         _sortBy = provider.sortBy;
+        _customerSegment = provider.customerSegment;
       });
       provider.fetchCustomers();
     });
@@ -126,6 +128,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       maxSpend: maxSpend,
       lastVisitFilter: _lastVisitFilter,
       sortBy: _sortBy,
+      segment: _customerSegment,
     );
   }
 
@@ -337,6 +340,18 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                           },
                         )),
                         SizedBox(width: width, child: DropdownButtonFormField<String>(
+                          initialValue: _customerSegment,
+                          isExpanded: true,
+                          decoration: decoration('گروه مشتری'),
+                          items: const [
+                            DropdownMenuItem(value: 'all', child: Text('همه مشتریان')),
+                            DropdownMenuItem(value: 'loyal', child: Text('مشتریان وفادار')),
+                            DropdownMenuItem(value: 'inactive', child: Text('مشتریان غیرفعال')),
+                            DropdownMenuItem(value: 'new', child: Text('مشتریان جدید')),
+                          ],
+                          onChanged: (value) { if (value != null) setState(() => _customerSegment = value); },
+                        )),
+                        SizedBox(width: width, child: DropdownButtonFormField<String>(
                           initialValue: _sortBy,
                           isExpanded: true,
                           decoration: decoration('مرتب‌سازی'),
@@ -369,6 +384,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                         setState(() {
                           _lastVisitFilter = 'all';
                           _sortBy = 'recent';
+                          _customerSegment = 'all';
                         });
                         provider.resetPurchaseFilters();
                       },
