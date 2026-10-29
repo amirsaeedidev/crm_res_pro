@@ -27,7 +27,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         _client.from('inventory_suppliers').select('*').order('name').limit(300),
         _client.from('inventory_materials').select('id,name,unit,unit_cost,quantity_on_hand').order('name').limit(300),
         _client.from('inventory_purchases').select('id,purchase_number,supplier_id,invoice_number,purchase_date,total_amount,paid_amount,payment_status,notes,created_at,inventory_suppliers(name)').order('created_at', ascending: false).limit(100),
-        _client.from('inventory_purchase_items').select('id,purchase_id,material_id,quantity,unit_cost,line_total,entered_quantity,entered_unit,conversion_factor,inventory_materials(name,unit)').order('created_at', ascending: false).limit(500),
+        _client.from('inventory_purchase_items').select('id,purchase_id,material_id,quantity,unit_cost,line_total,entered_quantity,entered_unit,conversion_factor,entered_unit_cost,inventory_materials(name,unit)').order('created_at', ascending: false).limit(500),
       ]);
       if (!mounted) return;
       setState(() {
@@ -231,7 +231,8 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           final unitCost = enteredQuantity is num && enteredQuantity > 0
               ? lineTotal / enteredQuantity
               : (i['unit_cost'] as num? ?? 0);
-          return '$name: $quantity \${_unitName(unit)} × \${_money(unitCost)} تومان';
+          final invoiceUnitCost = i['entered_unit_cost'] is num ? i['entered_unit_cost'] as num : unitCost;
+          return '$name: $quantity ${_unitName(unit)} × ${_money(invoiceUnitCost)} تومان برای هر واحد خرید · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
         }).join('، ');
         return Card(child:ExpansionTile(
           leading:const Icon(Icons.receipt_long_outlined),
