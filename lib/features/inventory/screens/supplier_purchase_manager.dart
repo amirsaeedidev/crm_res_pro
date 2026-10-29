@@ -128,9 +128,9 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
             ]),
             const SizedBox(height:8),
             DropdownButtonFormField<String>(
-              key: ValueKey('purchase-unit-\${material['id']}-\${line['purchase_unit']}'),
+              key: ValueKey('purchase-unit-${material['id']}-${line['purchase_unit']}'),
               initialValue: compatibleUnits.contains(line['purchase_unit']) ? line['purchase_unit'] as String : material['unit'].toString(),
-              decoration: InputDecoration(labelText: 'واحد خرید (موجودی انبار به \${unitNames[material['unit']] ?? material['unit']} ثبت می‌شود)'),
+              decoration: InputDecoration(labelText: 'واحد خرید (موجودی انبار به ${unitNames[material['unit']] ?? material['unit']} ثبت می‌شود)'),
               items: compatibleUnits.map((unit) => DropdownMenuItem<String>(value: unit, child: Text(unitNames[unit] ?? unit))).toList(),
               onChanged: (unit) {
                 if (unit == null) return;
@@ -221,7 +221,18 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
       ..._purchases.map((p) {
         final supplier=p['inventory_suppliers'] is Map ? (p['inventory_suppliers'] as Map)['name']?.toString()??'تامین‌کننده' : 'تامین‌کننده';
         final items=_items.where((i)=>i['purchase_id'].toString()==p['id'].toString()).toList();
-        final itemText=items.map((i){final rel=i['inventory_materials']; final name=rel is Map?rel['name']??'ماده':'ماده';return '$name: ${i['quantity']} × ${_money(i['unit_cost'])}';}).join('، ');
+        final itemText=items.map((i) {
+          final rel = i['inventory_materials'];
+          final name = rel is Map ? rel['name'] ?? 'ماده اولیه' : 'ماده اولیه';
+          final quantity = i['entered_quantity'] ?? i['quantity'];
+          final unit = (i['entered_unit'] ?? (rel is Map ? rel['unit'] : null) ?? '').toString();
+          final enteredQuantity = i['entered_quantity'];
+          final lineTotal = i['line_total'] is num ? (i['line_total'] as num).toDouble() : 0.0;
+          final unitCost = enteredQuantity is num && enteredQuantity > 0
+              ? lineTotal / enteredQuantity
+              : (i['unit_cost'] as num? ?? 0);
+          return '$name: $quantity \${_unitName(unit)} × \${_money(unitCost)} تومان';
+        }).join('، ');
         return Card(child:ExpansionTile(
           leading:const Icon(Icons.receipt_long_outlined),
           title:Text('فاکتور ${p['invoice_number'].toString().isEmpty?'شماره ${_fa(p['purchase_number'])}':'${p['invoice_number']}'} · ${_money(p['total_amount'])} تومان'),
