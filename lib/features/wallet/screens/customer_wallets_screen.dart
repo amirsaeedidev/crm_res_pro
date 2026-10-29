@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-import '../../../core/utils/app_error_message.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../core/utils/app_error_message.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../models/customer_wallet_model.dart';
