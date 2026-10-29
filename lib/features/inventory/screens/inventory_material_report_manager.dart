@@ -41,7 +41,7 @@ class _InventoryMaterialReportManagerState extends State<InventoryMaterialReport
     if(_error!=null) Padding(padding:const EdgeInsets.all(12),child:Text('گزارش بارگذاری نشد: $_error',style:TextStyle(color:Theme.of(context).colorScheme.error))),
     Expanded(child:_rows.isEmpty && !_loading ? const Center(child:Text('در این بازه اطلاعاتی وجود ندارد.')) : ListView.separated(
       padding:const EdgeInsets.all(12),itemCount:_rows.length,
-      separatorBuilder:(_,__)=>const SizedBox(height:8),
+      separatorBuilder:(_, _) =>const SizedBox(height:8),
       itemBuilder:(context,index){final r=_rows[index];final unit=_unit(r['stock_unit']);
         Widget metric(String label,String value)=>Expanded(child:Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha:.35),borderRadius:BorderRadius.circular(10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label,style:Theme.of(context).textTheme.labelSmall),const SizedBox(height:4),Text(value,style:const TextStyle(fontWeight:FontWeight.w700))])));
         return Card(child:ExpansionTile(
