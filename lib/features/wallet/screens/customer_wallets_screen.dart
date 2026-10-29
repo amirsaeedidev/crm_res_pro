@@ -105,8 +105,9 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
     ));
     amountController.dispose(); reasonController.dispose();
     if (result == null || !mounted) return;
+    final adminId = SupabaseService.client.auth.currentUser?.id ?? 'unknown-admin';
     final fingerprint = sha256.convert(utf8.encode(
-      '${wallet.userId}|${result.delta.toStringAsFixed(2)}|${result.reason.trim()}',
+      '$adminId|${wallet.userId}|${result.delta.toStringAsFixed(2)}|${result.reason.trim()}',
     )).toString();
     final preferenceKey = 'wallet_adjust_pending_$fingerprint';
     try {
