@@ -86,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: AppSizes.sm),
 
                   Text(
-                    'در اینجا خلاصه عملکرد فروشگاه شما در ۳۰ روز گذشته آمده است.',
+                    'مدیریت کامل رستوران شما با چند کلیک',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.getSecondaryText(context),
                     ),
@@ -110,29 +110,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ? stats.salesGrowthPercentage.toStringAsFixed(1)
                             : '0',
                       ),
-                      _buildStatCard(
-                        width: cardWidth,
-                        title: 'سفارشات جدید',
-                        value: stats != null
-                            ? stats.totalOrders.toString()
-                            : 'ناموجود',
-                        icon: Icons.shopping_cart_checkout,
-                        iconColor: AppColors.primary,
-                        changePercentage: stats != null
-                            ? stats.ordersGrowthPercentage.toStringAsFixed(1)
-                            : '0',
-                      ),
-                      _buildStatCard(
-                        width: cardWidth,
-                        title: 'کاربران فعال',
-                        value: stats != null
-                            ? stats.totalCustomers.toString()
-                            : 'ناموجود',
-                        icon: Icons.people_alt_outlined,
-                        iconColor: AppColors.accent,
-                        changePercentage: stats != null
-                            ? stats.customersGrowthPercentage.toStringAsFixed(1)
-                            : '0',
+                      Row(
+                        children: [
+                          _buildStatCard(
+                            width: cardWidth,
+                            title: 'سفارشات جدید',
+                            value: stats != null
+                                ? stats.totalOrders.toString()
+                                : 'ناموجود',
+                            icon: Icons.shopping_cart_checkout,
+                            iconColor: AppColors.primary,
+                            changePercentage: stats != null
+                                ? stats.ordersGrowthPercentage.toStringAsFixed(1)
+                                : '0',
+                          ),
+                          _buildStatCard(
+                            width: cardWidth,
+                            title: 'کاربران فعال',
+                            value: stats != null
+                                ? stats.totalCustomers.toString()
+                                : 'ناموجود',
+                            icon: Icons.people_alt_outlined,
+                            iconColor: AppColors.accent,
+                            changePercentage: stats != null
+                                ? stats.customersGrowthPercentage.toStringAsFixed(1)
+                                : '0',
+                          ),
+                        ],
                       ),
                     ],
                   ),
