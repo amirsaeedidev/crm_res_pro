@@ -132,6 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ? stats.totalOrders.toString()
                                 : 'ناموجود',
                             imageAssetPath: 'assets/images/dashboard_orders.webp',
+                            
                             iconColor: AppColors.primary,
                             changePercentage: stats != null
                                 ? stats.ordersGrowthPercentage.toStringAsFixed(1)
