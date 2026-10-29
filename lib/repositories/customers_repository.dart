@@ -46,6 +46,7 @@ class CustomersRepository {
     double? maxSpend,
     String lastVisitFilter = 'all',
     String sortBy = 'recent',
+    String segment = 'all',
   }) async {
     if (page < 1 || pageSize < 1) {
       throw ArgumentError('page and pageSize must be positive');
@@ -72,6 +73,7 @@ class CustomersRepository {
         'p_sort_by': sortBy,
         'p_page': page,
         'p_page_size': pageSize,
+        'p_segment': segment,
       });
       final payload = Map<String, dynamic>.from(response as Map);
       final rows = (payload['customers'] as List<dynamic>? ?? const []);
