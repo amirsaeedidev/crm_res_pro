@@ -246,7 +246,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
       }).eq('id', batchId);
       await _loadBatches();
       if (mounted) {
-        _message('ایمپورت تمام شد؛ موفق: $success، ناموفق: $failed${errors.isEmpty ? '' : '\n' + errors.join('\n')}', error: failed > 0);
+        _message('ایمپورت تمام شد؛ موفق: $success، ناموفق: $failed${errors.isEmpty ? '' : '\n${errors.join('\n')}'}', error: failed > 0);
       }
     } catch (e) {
       if (batchId != null) {
