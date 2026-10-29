@@ -114,7 +114,7 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
       const SizedBox(height:8),
       TextField(controller:_reason, minLines:2, maxLines:3, decoration:const InputDecoration(labelText:'علت بازپرداخت',border:OutlineInputBorder())),
       const SizedBox(height:8),
-      DropdownButtonFormField<String>(value:_method, decoration:const InputDecoration(labelText:'روش بازپرداخت',border:OutlineInputBorder()), items:const [
+      DropdownButtonFormField<String>(initialValue:_method, decoration:const InputDecoration(labelText:'روش بازپرداخت',border:OutlineInputBorder()), items:const [
         DropdownMenuItem(value:'wallet',child:Text('کیف پول مشتری')),
         DropdownMenuItem(value:'original_payment',child:Text('روش پرداخت اولیه (نیازمند فرایند جداگانه)')),
       ], onChanged:_busy ? null : (v) { if(v != null) setState(()=>_method=v); }),
