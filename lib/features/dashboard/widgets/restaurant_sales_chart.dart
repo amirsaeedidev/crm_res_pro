@@ -169,7 +169,7 @@ class _RestaurantSalesChartState extends State<RestaurantSalesChart> {
     return Row(
       children: [
         Image.asset(
-          'assets/images/dashboard_reports.png',
+          'assets/images/dashboard_reports.webp',
           width: 64,
           height: 64,
           fit: BoxFit.contain,
