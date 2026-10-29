@@ -4,10 +4,6 @@ begin;
 alter table public.inventory_purchase_items
   add column if not exists entered_unit_cost numeric(14,2);
 
-update public.inventory_purchase_items
-set entered_unit_cost = round(unit_cost * coalesce(conversion_factor, 1), 2)
-where entered_unit_cost is null;
-
 create or replace function public.admin_record_inventory_purchase(
   p_supplier_id uuid,
   p_invoice_number text,
