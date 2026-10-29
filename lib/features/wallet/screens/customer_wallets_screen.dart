@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/utils/app_error_message.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -102,27 +105,38 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
     ));
     amountController.dispose(); reasonController.dispose();
     if (result == null || !mounted) return;
-    final fingerprint = '${wallet.userId}|${result.delta.toStringAsFixed(2)}|${result.reason.trim()}';
-    final idempotencyKey = _pendingWalletOperationKeys.putIfAbsent(
-      fingerprint,
-      () => const Uuid().v4(),
-    );
+    final fingerprint = sha256.convert(utf8.encode(
+      '${wallet.userId}|${result.delta.toStringAsFixed(2)}|${result.reason.trim()}',
+    )).toString();
+    final preferenceKey = 'wallet_adjust_pending_$fingerprint';
     try {
+      final preferences = await SharedPreferences.getInstance();
+      final idempotencyKey = _pendingWalletOperationKeys[fingerprint] ??
+          preferences.getString(preferenceKey) ??
+          const Uuid().v4();
+      _pendingWalletOperationKeys[fingerprint] = idempotencyKey;
+
+      // Persist before sending: retry after refresh/restart reuses this key.
+      await preferences.setString(preferenceKey, idempotencyKey);
       await _repository.adjustBalance(
         userId: wallet.userId,
         amountDelta: result.delta,
         reason: result.reason,
         idempotencyKey: idempotencyKey,
       );
+
       _pendingWalletOperationKeys.remove(fingerprint);
+      await preferences.remove(preferenceKey);
       if (!mounted) return;
       _reload();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تغییر موجودی ثبت شد. درخواست‌های تکراری با همان شناسه دوباره اعمال نمی‌شوند.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('تغییر موجودی ثبت شد. درخواست تکراری دوباره اعمال نمی‌شود.'),
+      ));
     } catch (e) {
-      // Retain the key: the server may have committed even if the response was lost.
+      // Keep both memory and local-storage keys if the result is uncertain.
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${AppErrorMessage.from(e)} اگر نتیجه به‌دلیل قطعی اینترنت نامشخص بود، همان مبلغ و دلیل را دوباره ارسال کنید تا دوباره اعمال نشود.'),
+        content: Text('${AppErrorMessage.from(e)} اگر نتیجه به‌دلیل قطعی اینترنت نامشخص بود، همان مبلغ و دلیل را دوباره ارسال کنید تا تراکنش تکراری نشود.'),
       ));
     }
   }
