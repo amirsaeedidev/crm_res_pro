@@ -230,8 +230,10 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           final unitCost = enteredQuantity is num && enteredQuantity > 0
               ? lineTotal / enteredQuantity
               : (i['unit_cost'] as num? ?? 0);
-          final invoiceUnitCost = i['entered_unit_cost'] is num ? i['entered_unit_cost'] as num : unitCost;
-          return '$name: $quantity ${_unitName(unit)} × ${_money(invoiceUnitCost)} تومان برای هر واحد خرید · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
+          final hasInvoiceUnitCost = i['entered_unit_cost'] is num;
+          final displayedUnitCost = hasInvoiceUnitCost ? i['entered_unit_cost'] as num : unitCost;
+          final unitCostLabel = hasInvoiceUnitCost ? 'بهای واحد فاکتور' : 'بهای واحد ثبت‌شده';
+          return '$name: $quantity ${_unitName(unit)} × ${_money(displayedUnitCost)} تومان ($unitCostLabel) · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
         }).join('، ');
         return Card(child:ExpansionTile(
           leading:const Icon(Icons.receipt_long_outlined),
