@@ -264,7 +264,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           final details = category == 'cancelled'
             ? '$orderLabelعلت: ${(item['reason'] ?? '').toString().isEmpty ? 'ثبت نشده' : item['reason']}'
             : category == 'delayed'
-              ? '${orderLabel}تأخیر: ${_digits(delay)} دقیقه · ${(item['status'] ?? '').toString()}'
+              ? '$orderLabelتأخیر: ${_digits(delay)} دقیقه · ${(item['status'] ?? '').toString()}'
               : '${_digits(count)} سفارش · ${_number(amount)} تومان مجموع خرید';
           return ListTile(
             contentPadding: EdgeInsets.zero,
