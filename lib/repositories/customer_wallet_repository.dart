@@ -53,7 +53,7 @@ class CustomerWalletRepository {
     }
   }
 
-  Future<double> adjustBalance({required String userId, required double amountDelta, required String reason}) async {
+  Future<double> adjustBalance({required String userId, required double amountDelta, required String reason, required String idempotencyKey}) async {
     if (amountDelta == 0 || !amountDelta.isFinite) throw ArgumentError('مبلغ باید غیرصفر و معتبر باشد.');
     if (reason.trim().isEmpty) throw ArgumentError('دلیل تراکنش الزامی است.');
     try {
@@ -62,6 +62,7 @@ class CustomerWalletRepository {
         'p_amount_delta': amountDelta,
         'p_reason': reason.trim(),
         'p_transaction_type': amountDelta > 0 ? 'top_up' : 'adjustment',
+        'p_idempotency_key': idempotencyKey,
       });
       if (result is Map && result['balance'] is num) return (result['balance'] as num).toDouble();
       throw const FormatException('پاسخ سرور برای تغییر موجودی کیف پول معتبر نیست.');
