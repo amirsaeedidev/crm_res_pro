@@ -262,7 +262,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           final delay = _num(item, 'delay_minutes');
           final amount = _num(item, 'amount');
           final details = category == 'cancelled'
-            ? '${orderLabel}علت: ${(item['reason'] ?? '').toString().isEmpty ? 'ثبت نشده' : item['reason']}'
+            ? '$orderLabelعلت: ${(item['reason'] ?? '').toString().isEmpty ? 'ثبت نشده' : item['reason']}'
             : category == 'delayed'
               ? '${orderLabel}تأخیر: ${_digits(delay)} دقیقه · ${(item['status'] ?? '').toString()}'
               : '${_digits(count)} سفارش · ${_number(amount)} تومان مجموع خرید';
@@ -623,7 +623,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                 'notes': notesController.text.trim(),
                 'created_by': userId,
               });
-              if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+              if (dialogContext.mounted) { Navigator.pop(dialogContext, true); }
             } catch (e) {
               if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(
                 const SnackBar(content: Text('ثبت هزینه ناموفق بود. اجرای SQL گزارش مالی و دسترسی مدیر را بررسی کنید.')),
@@ -745,7 +745,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             const SizedBox(height: 3),
             Text(subtitle, style: const TextStyle(color: Color(0xFF8792A8), fontSize: 11)),
           ])),
-          if (trailing != null) trailing,
+          trailing?,
         ]),
         const SizedBox(height: 20),
         child,
