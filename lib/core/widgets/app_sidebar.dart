@@ -106,8 +106,8 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
-                  icon: Icons.bar_chart,
-                  imageAssetPath: 'assets/images/dashboard_reports.webp',
+                  icon: Icons.analytics_outlined,
+                  imageAssetPath: 'assets/images/dashboard_reports.png',
                   label: AppStrings.reports,
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {

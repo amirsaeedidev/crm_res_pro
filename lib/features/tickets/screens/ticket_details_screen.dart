@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../providers/tickets_provider.dart';
 
 class TicketDetailsScreen extends StatefulWidget {
@@ -198,7 +200,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             initialValue: currentStatus,
                             decoration: const InputDecoration(
                               labelText: 'وضعیت تیکت',
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium))),
                             ),
                             items: const [
                               DropdownMenuItem(
@@ -307,49 +309,95 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                   ),
                   const SizedBox(height: AppSizes.sm),
                   if (ticket.status != 'closed')
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: TextField(
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.10),
+                                  borderRadius: AppRadius.mediumAll,
+                                ),
+                                child: const Icon(
+                                  Icons.reply_rounded,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: AppSizes.sm),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'پاسخ به مشتری',
+                                      style: Theme.of(context).textTheme.titleMedium
+                                          ?.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      'پاسخ شما در همین گفت‌وگو ثبت می‌شود.',
+                                      style: Theme.of(context).textTheme.bodySmall
+                                          ?.copyWith(
+                                        color: AppColors.getSecondaryText(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                          TextField(
                             controller: _replyController,
-                            minLines: 1,
-                            maxLines: 4,
+                            minLines: 3,
+                            maxLines: 6,
                             textInputAction: TextInputAction.newline,
+                            textCapitalization: TextCapitalization.sentences,
                             decoration: const InputDecoration(
-                              labelText: 'پاسخ مدیر',
-                              hintText: 'متن پاسخ را بنویسید…',
-                              border: OutlineInputBorder(),
+                              labelText: 'متن پاسخ',
+                              hintText: 'پاسخ واضح و کامل خود را بنویسید…',
+                              alignLabelWithHint: true,
+                              prefixIcon: Icon(Icons.edit_note_rounded),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: AppSizes.sm),
-                        IconButton.filled(
-                          tooltip: 'ارسال پاسخ',
-                          onPressed: provider.isWorking
-                              ? null
-                              : () => _sendReply(
-                                    context,
-                                    provider,
-                                    ticket.id,
-                                  ),
-                          icon: provider.isWorking
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                        ),
-                      ],
+                          const SizedBox(height: AppSizes.md),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: FilledButton.icon(
+                              onPressed: provider.isWorking
+                                  ? null
+                                  : () => _sendReply(context, provider, ticket.id),
+                              icon: provider.isWorking
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.send_rounded),
+                              label: Text(
+                                provider.isWorking ? 'در حال ارسال…' : 'ارسال پاسخ',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   else
-                    const Padding(
-                      padding: EdgeInsets.all(AppSizes.sm),
-                      child: Text(
-                        'این تیکت بسته شده است. برای پاسخ‌گویی دوباره، ابتدا وضعیت آن را به «باز» تغییر دهید.',
+                    AppCard(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.lock_outline, color: AppColors.getSecondaryText(context)),
+                          const SizedBox(width: AppSizes.sm),
+                          const Expanded(
+                            child: Text(
+                              'این تیکت بسته شده است. برای پاسخ‌گویی دوباره، ابتدا وضعیت آن را به «باز» تغییر دهید.',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],
