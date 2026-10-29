@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/utils/app_error_message.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +17,8 @@ class CustomerWalletsScreen extends StatefulWidget {
 }
 
 class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
+  // Keep uncertain requests keyed to the exact operation so retrying after a network timeout reuses the same server idempotency key.
+  final Map<String, String> _pendingWalletOperationKeys = <String, String>{};
   final _search = TextEditingController();
   late final CustomerWalletRepository _repository;
   late Future<List<CustomerWalletModel>> _future;
@@ -99,14 +102,28 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
     ));
     amountController.dispose(); reasonController.dispose();
     if (result == null || !mounted) return;
+    final fingerprint = '${wallet.userId}|${result.delta.toStringAsFixed(2)}|${result.reason.trim()}';
+    final idempotencyKey = _pendingWalletOperationKeys.putIfAbsent(
+      fingerprint,
+      () => const Uuid().v4(),
+    );
     try {
-      await _repository.adjustBalance(userId: wallet.userId, amountDelta: result.delta, reason: result.reason);
+      await _repository.adjustBalance(
+        userId: wallet.userId,
+        amountDelta: result.delta,
+        reason: result.reason,
+        idempotencyKey: idempotencyKey,
+      );
+      _pendingWalletOperationKeys.remove(fingerprint);
       if (!mounted) return;
       _reload();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تغییر موجودی و دفتر گردش مالی با موفقیت ثبت شد.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تغییر موجودی ثبت شد. درخواست‌های تکراری با همان شناسه دوباره اعمال نمی‌شوند.')));
     } catch (e) {
+      // Retain the key: the server may have committed even if the response was lost.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('${AppErrorMessage.from(e)} اگر نتیجه به‌دلیل قطعی اینترنت نامشخص بود، همان مبلغ و دلیل را دوباره ارسال کنید تا دوباره اعمال نشود.'),
+      ));
     }
   }
 
