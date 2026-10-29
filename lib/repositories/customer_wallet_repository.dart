@@ -41,6 +41,18 @@ class CustomerWalletRepository {
     }
   }
 
+
+  Future<List<Map<String, dynamic>>> getAllTransactions({int limit = 500}) async {
+    try {
+      final rows = await _client.from('customer_wallet_transactions').select('*')
+          .order('created_at', ascending: false).limit(limit.clamp(1, 1000).toInt());
+      return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Fetch global wallet ledger failed', error: e, stackTrace: st);
+      throw Exception('دریافت دفتر کل کیف پول ناموفق بود: ${e.message}');
+    }
+  }
+
   Future<double> adjustBalance({required String userId, required double amountDelta, required String reason}) async {
     if (amountDelta == 0 || !amountDelta.isFinite) throw ArgumentError('مبلغ باید غیرصفر و معتبر باشد.');
     if (reason.trim().isEmpty) throw ArgumentError('دلیل تراکنش الزامی است.');
