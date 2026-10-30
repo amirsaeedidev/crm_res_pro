@@ -125,7 +125,7 @@ grant execute on function public.get_inventory_material_activity_report(timestam
 
 
 -- Keep the CRM's global-alert preferences synchronized while the inventory tab is open.
-do $
+do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
      and not exists (
@@ -137,6 +137,6 @@ begin
     execute 'alter publication supabase_realtime add table public.inventory_alert_settings';
   end if;
 end;
-$;
+$$;
 
 commit;
