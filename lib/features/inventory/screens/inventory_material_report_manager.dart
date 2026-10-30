@@ -29,7 +29,7 @@ class _InventoryMaterialReportManagerState extends State<InventoryMaterialReport
   }
   String _digits(Object? v){var s=v?.toString()??'0';const a='0123456789',p='۰۱۲۳۴۵۶۷۸۹';for(var i=0;i<10;i++){s=s.replaceAll(a[i],p[i]);}return s;}
   num _n(dynamic v)=>v is num?v:num.tryParse('$v')??0;
-  String _qty(dynamic v)=>_digits(_n(v).toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+,''));
+  String _qty(dynamic v) => _digits(_n(v).toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), ''));
   String _money(dynamic v)=>_digits(_n(v).toStringAsFixed(0).replaceAllMapped(RegExp(r'\\B(?=(\\d{3})+(?!\\d))'),(_)=>'٬'));
   String _unit(dynamic v)=>({'g':'گرم','kg':'کیلوگرم','ml':'میلی‌لیتر','l':'لیتر','unit':'عدد','pack':'بسته','box':'جعبه'}[v?.toString()]??v?.toString()??'واحد');
   @override Widget build(BuildContext context)=>Column(children:[
