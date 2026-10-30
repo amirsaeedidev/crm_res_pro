@@ -13,6 +13,7 @@ import 'supplier_purchase_manager.dart';
 import 'inventory_alerts_manager.dart';
 import 'inventory_stock_count_manager.dart';
 import 'inventory_material_report_manager.dart';
+import '../utils/inventory_unit_converter.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -190,7 +191,7 @@ class _InventoryScreenState extends State<InventoryScreen>
       _units[unit?.toString()] ?? 'واحد نامشخص';
 
   num _number(dynamic value) =>
-      value is num ? value : num.tryParse('$value') ?? 0;
+      value is num ? value : InventoryUnitConverter.parseLocalizedNumber('$value') ?? 0;
 
   Map<String, dynamic>? _relation(dynamic value) =>
       value is Map ? Map<String, dynamic>.from(value) : null;
@@ -386,8 +387,8 @@ class _InventoryScreenState extends State<InventoryScreen>
                       name: nameController.text.trim(),
                       sku: skuController.text.trim(),
                       unit: selectedUnit,
-                      cost: double.parse(costController.text.trim()),
-                      minimum: double.parse(minimumController.text.trim()),
+                      cost: InventoryUnitConverter.parseLocalizedNumber(costController.text)!,
+                      minimum: InventoryUnitConverter.parseLocalizedNumber(minimumController.text)!,
                       notes: notesController.text.trim(),
                     ));
                   },
@@ -453,7 +454,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                         border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        final parsed = double.tryParse((value ?? '').trim());
+                        final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                         if (parsed == null || !parsed.isFinite || parsed <= 0) {
                           return 'مقدار باید بیشتر از صفر باشد.';
                         }
@@ -471,7 +472,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        final parsed = double.tryParse((value ?? '').trim());
+                        final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                         if (parsed == null || !parsed.isFinite || parsed < 0) {
                           return 'قیمت معتبر وارد کنید.';
                         }
@@ -504,8 +505,8 @@ class _InventoryScreenState extends State<InventoryScreen>
                 onPressed: () {
                   if (!formKey.currentState!.validate()) return;
                   Navigator.pop(dialogContext, (
-                    quantity: double.parse(quantityController.text.trim()),
-                    cost: double.parse(costController.text.trim()),
+                    quantity: InventoryUnitConverter.parseLocalizedNumber(quantityController.text)!,
+                    cost: InventoryUnitConverter.parseLocalizedNumber(costController.text)!,
                     reason: reasonController.text.trim(),
                   ));
                 },
@@ -564,7 +565,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    final parsed = double.tryParse((value ?? '').trim());
+                    final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                     if (parsed == null || !parsed.isFinite || parsed == 0) {
                       return 'تغییر مقدار نباید صفر باشد.';
                     }
@@ -600,7 +601,7 @@ class _InventoryScreenState extends State<InventoryScreen>
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
               Navigator.pop(dialogContext, (
-                delta: double.parse(deltaController.text.trim()),
+                delta: InventoryUnitConverter.parseLocalizedNumber(deltaController.text)!,
                 reason: reasonController.text.trim(),
               ));
             },
@@ -665,7 +666,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    final parsed = double.tryParse((value ?? '').trim());
+                    final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                     if (parsed == null || !parsed.isFinite || parsed <= 0) {
                       return 'مقدار معتبر بزرگ‌تر از صفر وارد کنید.';
                     }
@@ -702,7 +703,7 @@ class _InventoryScreenState extends State<InventoryScreen>
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
               Navigator.pop(dialogContext, (
-                quantity: double.parse(quantityController.text.trim()),
+                quantity: InventoryUnitConverter.parseLocalizedNumber(quantityController.text)!,
                 reason: reasonController.text.trim(),
               ));
             },
@@ -852,7 +853,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                               'واحد آن همان واحد ماده اولیه انتخاب‌شده است.',
                         ),
                         validator: (value) {
-                          final parsed = double.tryParse((value ?? '').trim());
+                          final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                           if (parsed == null ||
                               !parsed.isFinite ||
                               parsed <= 0) {
@@ -894,7 +895,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     Navigator.pop(dialogContext, (
                       productId: productId,
                       materialId: materialId,
-                      quantity: double.parse(quantityController.text.trim()),
+                      quantity: InventoryUnitConverter.parseLocalizedNumber(quantityController.text)!,
                       notes: notesController.text.trim(),
                     ));
                   },
