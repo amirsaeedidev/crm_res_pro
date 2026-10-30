@@ -170,7 +170,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
                   final oldUnit = (line['purchase_unit'] ?? material['unit']).toString();
                   final ratio = InventoryUnitConverter.quantityRatio(purchaseUnit: unit, stockUnit: material['unit'].toString());
                   final oldRatio = InventoryUnitConverter.quantityRatio(purchaseUnit: oldUnit, stockUnit: material['unit'].toString());
-                  line['unit_cost'] = ((line['unit_cost'] as num).toDouble() * oldRatio / ratio);
+                  line['unit_cost'] = ((line['unit_cost'] as num).toDouble() * ratio / oldRatio);
                   line['purchase_unit'] = unit;
                 });
               },
