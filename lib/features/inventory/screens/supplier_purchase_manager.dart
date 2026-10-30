@@ -154,9 +154,9 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
               },
             ),
             Row(children:[
-              Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>setDialog(()=>line['quantity']=InventoryUnitConverter.parseLocalizedNumber(v)??0))),
+              Expanded(child:TextFormField(key:ValueKey('purchase-qty-$i-${line['material_id']}'),initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>setDialog(()=>line['quantity']=InventoryUnitConverter.parseLocalizedNumber(v)??0))),
               const SizedBox(width:8),
-              Expanded(child:TextFormField(key:ValueKey('purchase-price-$i-${line['purchase_unit']}'),initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>setDialog(()=>line['unit_cost']=InventoryUnitConverter.parseLocalizedNumber(v)??-1))),
+              Expanded(child:TextFormField(key:ValueKey('purchase-price-$i-${line['material_id']}-${line['purchase_unit']}'),initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>setDialog(()=>line['unit_cost']=InventoryUnitConverter.parseLocalizedNumber(v)??-1))),
             ]),
             const SizedBox(height:8),
             DropdownButtonFormField<String>(
