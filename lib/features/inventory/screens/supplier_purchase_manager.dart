@@ -179,8 +179,12 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
   double _itemsSubtotal(List<Map<String, dynamic>> lines) => lines.fold<double>(0, (sum, line) => sum + ((line['quantity'] as num) * (line['unit_cost'] as num)));
 
   String _money(dynamic v) {
-    final n=v is num?v:num.tryParse('$v')??0;
-    return n.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(_)=>'٬');
+    final n = v is num ? v : num.tryParse('$v') ?? 0;
+    final formatted = n.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '٬',
+    );
+    return _fa(formatted);
   }
 
   String _fa(Object? value) {
