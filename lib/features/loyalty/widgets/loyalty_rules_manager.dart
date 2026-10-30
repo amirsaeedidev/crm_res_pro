@@ -11,7 +11,7 @@ class _LoyaltyRulesManagerState extends State<LoyaltyRulesManager>{
  @override void initState(){super.initState();_load();}
  @override void dispose(){for(final c in [_earnAmount,_earnPoints,_pointValue,_minimum,_maxPercent,_expiryDays]){c.dispose();}super.dispose();}
  Future<void> _load() async {try{final row=await _client.from('loyalty_program_settings').select().eq('id',true).maybeSingle();if(row!=null&&mounted){setState((){
- _enabled=row['is_enabled']==true;_earnAmount.text='\${row['earn_amount_toman']}';_earnPoints.text='\${row['earn_points']}';_pointValue.text='\${row['point_value_toman']}';_minimum.text='\${row['minimum_redeem_points']}';_maxPercent.text='\${row['maximum_discount_percent']}';_expiryDays.text='\${row['expiry_days']}';
+ _enabled=row['is_enabled']==true;_earnAmount.text='${row['earn_amount_toman']}';_earnPoints.text='${row['earn_points']}';_pointValue.text='${row['point_value_toman']}';_minimum.text='${row['minimum_redeem_points']}';_maxPercent.text='${row['maximum_discount_percent']}';_expiryDays.text='${row['expiry_days']}';
  });}}catch(e){if(mounted)_notify('بارگذاری قوانین وفاداری ناموفق بود: $e',true);}finally{if(mounted)setState(()=>_loading=false);}}
  void _notify(String m,[bool error=false])=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(m),backgroundColor:error?Theme.of(context).colorScheme.error:null));
  int? _int(TextEditingController c)=>int.tryParse(c.text.trim()); double? _double(TextEditingController c)=>double.tryParse(c.text.trim());
