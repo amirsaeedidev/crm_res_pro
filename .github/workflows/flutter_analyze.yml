@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          dart analyze --format=machine . > analyze-results.txt 2>&1
+          flutter analyze --no-pub --machine . > analyze-results.txt 2>&1
           analyze_status=$?
           set -e
           python3 - <<'PY'
@@ -75,6 +75,8 @@ jobs:
               encoding="utf-8")
           PY
           exit "$analyze_status"
+      - name: Run Flutter tests
+        run: flutter test --reporter expanded
       - name: Upload analysis report
         if: always()
         uses: actions/upload-artifact@v4
