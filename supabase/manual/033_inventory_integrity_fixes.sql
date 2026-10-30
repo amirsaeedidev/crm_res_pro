@@ -18,6 +18,7 @@ begin
   if new.unit is distinct from old.unit
      and (
        old.quantity_on_hand <> 0
+       or old.unit_cost <> 0
        or old.reorder_level <> 0
        or exists (select 1 from public.inventory_transactions t where t.material_id = old.id)
        or exists (select 1 from public.product_recipes r where r.material_id = old.id)
