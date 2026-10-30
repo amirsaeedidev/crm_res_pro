@@ -327,9 +327,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            final parsed = double.tryParse(
-                              (value ?? '').trim(),
-                            );
+                            final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                             if (parsed == null ||
                                 !parsed.isFinite ||
                                 parsed < 0) {
@@ -350,9 +348,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            final parsed = double.tryParse(
-                              (value ?? '').trim(),
-                            );
+                            final parsed = InventoryUnitConverter.parseLocalizedNumber(value ?? '');
                             if (parsed == null ||
                                 !parsed.isFinite ||
                                 parsed < 0) {
