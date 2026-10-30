@@ -23,6 +23,27 @@ void main() {
       expect(InventoryUnitConverter.areCompatible('pack', 'box'), isFalse);
     });
 
+    test('converts bulk purchase quantity and unit price without changing invoice total', () {
+      final stockQuantity = InventoryUnitConverter.convertQuantity(
+        quantity: 3,
+        purchaseUnit: 'kg',
+        stockUnit: 'g',
+      );
+      final stockUnitCost = InventoryUnitConverter.convertUnitCost(
+        costPerPurchaseUnit: 180000,
+        purchaseUnit: 'kg',
+        stockUnit: 'g',
+      );
+      expect(stockQuantity, 3000);
+      expect(stockUnitCost, 60);
+      expect(stockQuantity * stockUnitCost, 180000);
+    });
+
+    test('keeps volume and mass conversions separate', () {
+      expect(InventoryUnitConverter.areCompatible('kg', 'l'), isFalse);
+      expect(InventoryUnitConverter.areCompatible('ml', 'g'), isFalse);
+    });
+
     test('parses Persian and Arabic numerals', () {
       expect(InventoryUnitConverter.parseLocalizedNumber('۱٬۲۵۰٫۵'), 1250.5);
       expect(InventoryUnitConverter.parseLocalizedNumber('١٢٣٫٧'), 123.7);
