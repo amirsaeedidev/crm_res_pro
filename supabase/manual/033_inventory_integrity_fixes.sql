@@ -35,6 +35,9 @@ create trigger inventory_material_unit_immutable
 before update of unit on public.inventory_materials
 for each row execute function public.prevent_inventory_material_unit_change();
 
+-- Trigger execution does not require exposing direct RPC execution to API roles.
+revoke all on function public.prevent_inventory_material_unit_change() from public, anon, authenticated;
+
 -- Purchase metrics are read from the inventory ledger so manual stock receipts
 -- and supplier invoices are counted once, using real timestamp boundaries.
 create or replace function public.get_inventory_material_activity_report(
