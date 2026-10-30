@@ -5,6 +5,7 @@ import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../models/loyalty_models.dart';
 import '../../../repositories/loyalty_repository.dart';
+import '../widgets/loyalty_rules_manager.dart';
 
 class LoyaltyScreen extends StatefulWidget {
   const LoyaltyScreen({super.key});
@@ -204,6 +205,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               Expanded(child: Text('باشگاه مشتریان و امتیازها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))),
               IconButton(tooltip: 'به‌روزرسانی', onPressed: _reload, icon: const Icon(Icons.refresh)),
             ]),
+            const SizedBox(height: AppSizes.md),
+            const LoyaltyRulesManager(),
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: _searchController,
