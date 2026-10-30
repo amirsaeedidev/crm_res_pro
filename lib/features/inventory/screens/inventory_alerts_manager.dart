@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
+import '../utils/inventory_unit_converter.dart';
 
 class InventoryAlertsManager extends StatefulWidget {
   const InventoryAlertsManager({super.key});
@@ -19,6 +20,10 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
   String _digits(Object? value){var s=value.toString();const en='0123456789',fa='۰۱۲۳۴۵۶۷۸۹';for(var i=0;i<10;i++){s=s.replaceAll(en[i],fa[i]);}return s;}
   String _money(dynamic v)=>_digits(_num(v).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(_)=>'٬'));
   String _unit(dynamic u)=>const {'g':'گرم','kg':'کیلوگرم','ml':'میلی‌لیتر','l':'لیتر','unit':'عدد','pack':'بسته','box':'جعبه'}[u?.toString()]??'واحد';
+  double _threshold(Map<String,dynamic> m) {
+    final override=_num(m['reorder_level']).toDouble();
+    return override>0 ? override : _defaultLevel;
+  }
   Future<void> _load() async {
     setState((){_loading=true;_error=null;});
     try{
@@ -39,8 +44,8 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
     }catch(e){if(mounted)setState(()=>_error=e.toString());}
     finally{if(mounted)setState(()=>_loading=false);}
   }
-  List<Map<String,dynamic>> get _low=>_materials.where((m){final q=_num(m['quantity_on_hand']),l=_num(m['reorder_level'],_defaultLevel);return _lowEnabled&&(_zeroEnabled?q<=l:q>0&&q<=l);}).toList();
-  List<Map<String,dynamic>> get _near=>_materials.where((m){final q=_num(m['quantity_on_hand']),l=_num(m['reorder_level'],_defaultLevel);return _nearEnabled&&q>l&&q<=l*_multiplier;}).toList();
+  List<Map<String,dynamic>> get _low=>_materials.where((m){final q=_num(m['quantity_on_hand']),l=_threshold(m);return _lowEnabled&&(_zeroEnabled?q<=l:q>0&&q<=l);}).toList();
+  List<Map<String,dynamic>> get _near=>_materials.where((m){final q=_num(m['quantity_on_hand']),l=_threshold(m);return _nearEnabled&&q>l&&q<=l*_multiplier;}).toList();
   Future<void> _saveSettings() async {
     setState(()=>_saving=true);
     try{
@@ -50,11 +55,11 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
     finally{if(mounted)setState(()=>_saving=false);}
   }
   Future<void> _editThreshold(Map<String,dynamic> m) async {
-    final c=TextEditingController(text:_num(m['reorder_level'],_defaultLevel).toString());
+    final c=TextEditingController(text:_threshold(m).toString());
     final v=await showDialog<double>(context:context,builder:(ctx)=>AlertDialog(
       title:Text('حد هشدار: ${m['name']}'),
-      content:TextField(controller:c,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:'حداقل موجودی (${_unit(m['unit'])})')),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:(){final n=double.tryParse(c.text);if(n!=null&&n>=0)Navigator.pop(ctx,n);},child:const Text('ذخیره'))]));
+      content:TextField(controller:c,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:'حداقل موجودی (${_unit(m['unit'])})',helperText:'۰ = استفاده از حد پیش‌فرض')),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('انصراف')),FilledButton(onPressed:(){final n=InventoryUnitConverter.parseLocalizedNumber(c.text);if(n!=null&&n>=0)Navigator.pop(ctx,n);},child:const Text('ذخیره'))]));
     c.dispose();if(v==null)return;
     try{await _client.from('inventory_materials').update({'reorder_level':v}).eq('id',m['id']);await _load();if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('حد هشدار این ماده به‌روزرسانی شد.')));}
     catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('به‌روزرسانی ناموفق بود: $e')));}
@@ -62,7 +67,7 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
   Widget _section(String title,IconData icon,List<Map<String,dynamic>> rows,Color color)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Row(children:[Icon(icon,color:color),const SizedBox(width:8),Expanded(child:Text('$title (${_digits(rows.length)})',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)))]),
     if(rows.isEmpty)const Padding(padding:EdgeInsets.all(12),child:Text('موردی برای نمایش وجود ندارد.')),
-    ...rows.map((m){final q=_num(m['quantity_on_hand']),l=_num(m['reorder_level'],_defaultLevel);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundColor:color.withValues(alpha:.12),child:Icon(icon,color:color)),title:Text(m['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text('موجودی: ${_digits(q)} ${_unit(m['unit'])} · حد هشدار: ${_digits(l)} ${_unit(m['unit'])}\nبهای واحد: ${_money(m['unit_cost'])} تومان'),isThreeLine:true,trailing:IconButton(tooltip:'تنظیم حد هشدار',onPressed:()=>_editThreshold(m),icon:const Icon(Icons.tune)));}),
+    ...rows.map((m){final q=_num(m['quantity_on_hand']),l=_threshold(m);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundColor:color.withValues(alpha:.12),child:Icon(icon,color:color)),title:Text(m['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text('موجودی: ${_digits(q)} ${_unit(m['unit'])} · حد هشدار: ${_digits(l)} ${_unit(m['unit'])}\nبهای واحد: ${_money(m['unit_cost'])} تومان'),isThreeLine:true,trailing:IconButton(tooltip:'تنظیم حد هشدار',onPressed:()=>_editThreshold(m),icon:const Icon(Icons.tune)));}),
   ])));
   @override
   Widget build(BuildContext context){
@@ -75,7 +80,7 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
         SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('هشدار نزدیک به اتمام'),subtitle:Text('وقتی موجودی تا ${_digits(_multiplier.toStringAsFixed(1))} برابر حد هشدار باشد.'),value:_nearEnabled,onChanged:(v)=>setState(()=>_nearEnabled=v)),
         SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('نمایش مواد با موجودی صفر'),value:_zeroEnabled,onChanged:(v)=>setState(()=>_zeroEnabled=v)),
         Text('حد پیش‌فرض هشدار: ${_digits(_defaultLevel)} واحد',style:const TextStyle(fontWeight:FontWeight.w600)),
-        Slider(value:_defaultLevel.clamp(0,100).toDouble(),min:0,max:100,divisions:100,label:_digits(_defaultLevel),onChanged:(v)=>setState(()=>_defaultLevel=v)),
+        Slider(value:_defaultLevel.clamp(0,10000).toDouble(),min:0,max:10000,divisions:1000,label:_digits(_defaultLevel),onChanged:(v)=>setState(()=>_defaultLevel=v)),
         Text('آستانه نزدیک به اتمام: ${_digits(_multiplier.toStringAsFixed(1))} برابر حد هشدار',style:const TextStyle(fontWeight:FontWeight.w600)),
         Slider(value:_multiplier,min:1.1,max:3,divisions:19,label:_digits(_multiplier.toStringAsFixed(1)),onChanged:(v)=>setState(()=>_multiplier=v)),
         Align(alignment:Alignment.centerRight,child:FilledButton.icon(onPressed:_saving?null:_saveSettings,icon:_saving?const SizedBox(width:16,height:16,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.save_outlined),label:const Text('ذخیره تنظیمات'))),
