@@ -83,7 +83,7 @@ class _InventoryMaterialReportManagerState
 
   String _money(dynamic value) => _digits(
         _number(value).toStringAsFixed(0).replaceAllMapped(
-              RegExp(r'\\B(?=(\\d{3})+(?!\\d))'),
+              RegExp(r'\B(?=(\d{3})+(?!\d))'),
               (_) => '٬',
             ),
       );
