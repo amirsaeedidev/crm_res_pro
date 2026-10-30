@@ -38,6 +38,9 @@ class _InventoryScreenState extends State<InventoryScreen>
   RealtimeChannel? _channel;
   final TextEditingController _materialSearchController = TextEditingController();
   bool _showLowStockOnly = false;
+  double _defaultReorderLevel = 1;
+  bool _showLowStockAlerts = true;
+  bool _includeZeroStock = true;
 
   List<Map<String, dynamic>> _materials = [];
   List<Map<String, dynamic>> _products = [];
@@ -75,6 +78,12 @@ class _InventoryScreenState extends State<InventoryScreen>
           table: 'inventory_transactions',
           callback: (_) => unawaited(_loadData()),
         )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'inventory_alert_settings',
+          callback: (_) => unawaited(_loadData()),
+        )
         .subscribe();
   }
 
@@ -91,12 +100,18 @@ class _InventoryScreenState extends State<InventoryScreen>
     });
 
     try {
+      final settingsFuture = SupabaseService.client
+          .from('inventory_alert_settings')
+          .select('default_reorder_level,show_low_stock_alerts,include_zero_stock')
+          .eq('id', true)
+          .maybeSingle();
       final results = await Future.wait<List<Map<String, dynamic>>>([
         _repository.getMaterials(),
         _repository.getProducts(),
         _repository.getRecipes(),
         _repository.getTransactions(),
       ]);
+      final alertSettings = await settingsFuture;
 
       if (!mounted) return;
       setState(() {
@@ -104,6 +119,9 @@ class _InventoryScreenState extends State<InventoryScreen>
         _products = results[1];
         _recipes = results[2];
         _transactions = results[3];
+        _defaultReorderLevel = _number(alertSettings?['default_reorder_level'] ?? 1).toDouble();
+        _showLowStockAlerts = alertSettings?['show_low_stock_alerts'] as bool? ?? true;
+        _includeZeroStock = alertSettings?['include_zero_stock'] as bool? ?? true;
       });
     } catch (error, stackTrace) {
       LoggerService.error(
@@ -176,6 +194,19 @@ class _InventoryScreenState extends State<InventoryScreen>
 
   Map<String, dynamic>? _relation(dynamic value) =>
       value is Map ? Map<String, dynamic>.from(value) : null;
+
+  double _effectiveReorderLevel(Map<String, dynamic> material) {
+    final override = _number(material['reorder_level']).toDouble();
+    // A zero per-material threshold means inherit the global inventory setting.
+    return override > 0 ? override : _defaultReorderLevel;
+  }
+
+  bool _isLowStock(Map<String, dynamic> material) {
+    if (!_showLowStockAlerts) return false;
+    final stock = _number(material['quantity_on_hand']);
+    if (stock == 0 && !_includeZeroStock) return false;
+    return stock <= _effectiveReorderLevel(material);
+  }
 
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
@@ -314,6 +345,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                           ),
                           decoration: const InputDecoration(
                             labelText: 'حداقل موجودی برای هشدار',
+                            helperText: '۰ = استفاده از حد پیش‌فرض تنظیمات هشدار',
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
@@ -792,7 +824,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                                       '${_quantity(_number(material['quantity_on_hand']))} '
                                       '${_unitLabel(material['unit'])}\n'
                                       'بهای واحد: ${_money(_number(material['unit_cost']))} تومان\n'
-                                      'حد هشدار: ${_quantity(_number(material['reorder_level']))}',
+                                      'حد هشدار: ${_quantity(_effectiveReorderLevel(material))}',
                                   child: Text(
                                     '${material['name']} (${_unitLabel(material['unit'])})',
                                     overflow: TextOverflow.ellipsis,
@@ -1013,14 +1045,13 @@ class _InventoryScreenState extends State<InventoryScreen>
 
   Widget _buildMaterialsTab() {
     final query = _materialSearchController.text.trim().toLowerCase();
-    final lowStockCount = _materials.where((material) =>
-        _number(material['quantity_on_hand']) <= _number(material['reorder_level'])).length;
+    final lowStockCount = _materials.where(_isLowStock).length;
     final stockValue = _materials.fold<double>(0, (sum, material) =>
         sum + _number(material['quantity_on_hand']) * _number(material['unit_cost']));
     final visibleMaterials = _materials.where((material) {
       final name = (material['name'] ?? '').toString().toLowerCase();
       final sku = (material['sku'] ?? '').toString().toLowerCase();
-      final isLow = _number(material['quantity_on_hand']) <= _number(material['reorder_level']);
+      final isLow = _isLowStock(material);
       return (query.isEmpty || name.contains(query) || sku.contains(query)) &&
           (!_showLowStockOnly || isLow);
     }).toList(growable: false);
@@ -1104,7 +1135,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                   itemBuilder: (context, index) {
                     final material = visibleMaterials[index];
                     final stock = _number(material['quantity_on_hand']);
-                    final minimum = _number(material['reorder_level']);
+                    final minimum = _effectiveReorderLevel(material);
                     final unit = _unitLabel(material['unit']);
                     final unitCost = _number(material['unit_cost']);
                     final lowStock = stock <= minimum;
