@@ -76,10 +76,11 @@ begin
    order by t.expires_at
    for update
  loop
-   v_points:=greatest(r.points,0);
+   select total_points into v_points from public.loyalty_wallets where id=r.wallet_id for update;
+   v_points:=least(greatest(coalesce(r.points,0),0),greatest(coalesce(v_points,0),0));
    if v_points>0 then
      update public.loyalty_wallets
-       set total_points=greatest(0,total_points-v_points),updated_at=now()
+       set total_points=total_points-v_points,updated_at=now()
        where id=r.wallet_id;
      insert into public.loyalty_transactions(wallet_id,order_id,points,transaction_type,description)
        values(r.wallet_id,null,-v_points,'expired','انقضای امتیازهای استفاده‌نشده');
