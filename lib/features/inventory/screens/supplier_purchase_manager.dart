@@ -70,6 +70,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
     final email=TextEditingController(text:'${supplier?['email'] ?? ''}');
     final address=TextEditingController(text:'${supplier?['address'] ?? ''}');
     final notes=TextEditingController(text:'${supplier?['notes'] ?? ''}');
+    final taxNumber=TextEditingController(text:'${supplier?['tax_number'] ?? ''}');
     final key=GlobalKey<FormState>();
     final save=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
       title:Text(supplier==null?'ثبت تامین‌کننده':'ویرایش تامین‌کننده'),
@@ -79,19 +80,28 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         TextFormField(controller:phone,decoration:const InputDecoration(labelText:'تلفن'),keyboardType:TextInputType.phone),
         TextFormField(controller:email,decoration:const InputDecoration(labelText:'ایمیل'),keyboardType:TextInputType.emailAddress),
         TextFormField(controller:address,decoration:const InputDecoration(labelText:'آدرس')),
+        TextFormField(controller:taxNumber,decoration:const InputDecoration(labelText:'شناسه / کد مالیاتی')),
         TextFormField(controller:notes,decoration:const InputDecoration(labelText:'یادداشت'),maxLines:2),
       ])))),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('انصراف')),FilledButton(onPressed:(){if(key.currentState!.validate()) Navigator.pop(ctx,true);},child:const Text('ذخیره'))],
     ));
     if(save==true && mounted) {
       try {
-        final payload={'name':name.text.trim(),'contact_name':contact.text.trim(),'phone':phone.text.trim(),'email':email.text.trim(),'address':address.text.trim(),'notes':notes.text.trim(),'updated_at':DateTime.now().toUtc().toIso8601String()};
+        final payload={'name':name.text.trim(),'contact_name':contact.text.trim(),'phone':phone.text.trim(),'email':email.text.trim(),'address':address.text.trim(),'tax_number':taxNumber.text.trim(),'notes':notes.text.trim(),'updated_at':DateTime.now().toUtc().toIso8601String()};
         if(supplier==null) { await _client.from('inventory_suppliers').insert(payload); }
         else { await _client.from('inventory_suppliers').update(payload).eq('id',supplier['id']); }
         await _load(); _message('اطلاعات تامین‌کننده ذخیره شد.');
       } catch(e) { _message('ذخیره تامین‌کننده ناموفق بود: $e',error:true); }
     }
-    for(final c in [name,contact,phone,email,address,notes]) { c.dispose(); }
+    for(final c in [name,contact,phone,email,address,notes,taxNumber]) { c.dispose(); }
+  }
+
+  Future<void> _setSupplierActive(Map<String,dynamic> supplier, bool active) async {
+    try {
+      await _client.from('inventory_suppliers').update({'is_active':active,'updated_at':DateTime.now().toUtc().toIso8601String()}).eq('id',supplier['id']);
+      await _load();
+      _message(active ? 'تأمین‌کننده فعال شد.' : 'تأمین‌کننده غیرفعال شد.');
+    } catch(e) { _message('تغییر وضعیت تأمین‌کننده ناموفق بود: $e',error:true); }
   }
 
   Future<void> _purchaseDialog() async {
@@ -104,6 +114,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
     final shipping=TextEditingController(text:'0');
     final paid=TextEditingController(text:'0');
     final notes=TextEditingController();
+    DateTime purchaseDate=DateTime.now();
     final lines=<Map<String,dynamic>>[];
     final key=GlobalKey<FormState>();
     final result=await showDialog<Map<String,dynamic>>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
@@ -111,6 +122,10 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
       content:SizedBox(width:620,child:SingleChildScrollView(child:Form(key:key,child:Column(mainAxisSize:MainAxisSize.min,children:[
         DropdownButtonFormField<String>(initialValue:supplierId,isExpanded:true,decoration:const InputDecoration(labelText:'تأمین‌کننده'),items:_suppliers.where((s)=>s['is_active']==true).map((s)=>DropdownMenuItem(value:s['id'].toString(),child:Text(s['name'].toString()))).toList(),onChanged:(v){if(v!=null)setDialog(()=>supplierId=v);}),
         TextFormField(controller:invoice,decoration:const InputDecoration(labelText:'شماره فاکتور')),
+        Align(alignment:Alignment.centerRight,child:TextButton.icon(onPressed:() async {
+          final picked=await showDatePicker(context:ctx,initialDate:purchaseDate,firstDate:DateTime(2020),lastDate:DateTime.now(),helpText:'انتخاب تاریخ خرید');
+          if(picked!=null)setDialog(()=>purchaseDate=picked);
+        },icon:const Icon(Icons.date_range),label:Text('تاریخ خرید: ${_fa(purchaseDate.toIso8601String().substring(0,10))}'))),
         const SizedBox(height:12),
         ...lines.asMap().entries.map((entry) {
           final i=entry.key; final line=entry.value;
@@ -119,9 +134,9 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
                     return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
             Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const Icon(Icons.delete_outline))]),
             Row(children:[
-              Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>line['quantity']=InventoryUnitConverter.parseLocalizedNumber(v)??0)),
+              Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>setDialog(()=>line['quantity']=InventoryUnitConverter.parseLocalizedNumber(v)??0))),
               const SizedBox(width:8),
-              Expanded(child:TextFormField(key:ValueKey('purchase-price-$i-${line['purchase_unit']}'),initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>line['unit_cost']=InventoryUnitConverter.parseLocalizedNumber(v)??-1)),
+              Expanded(child:TextFormField(key:ValueKey('purchase-price-$i-${line['purchase_unit']}'),initialValue:line['unit_cost'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'بهای هر واحد (تومان)'),onChanged:(v)=>setDialog(()=>line['unit_cost']=InventoryUnitConverter.parseLocalizedNumber(v)??-1))),
             ]),
             const SizedBox(height:8),
             DropdownButtonFormField<String>(
@@ -158,15 +173,15 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         if(lines.isEmpty || lines.any((l)=>(l['quantity'] as num)<=0 || (l['unit_cost'] as num)<0)){_message('حداقل یک قلم با مقدار مثبت و بهای معتبر اضافه کنید.',error:true);return;}
         final d=InventoryUnitConverter.parseLocalizedNumber(discount.text)??0, sh=InventoryUnitConverter.parseLocalizedNumber(shipping.text)??0, p=InventoryUnitConverter.parseLocalizedNumber(paid.text)??0;
         final total=lines.fold<double>(0,(sum,l)=>sum+((l['quantity'] as num)*(l['unit_cost'] as num)))-d+sh;
-        if(d<0||sh<0||p<0||p>total){_message('تخفیف، حمل یا مبلغ پرداختی معتبر نیست.',error:true);return;}
-        Navigator.pop(ctx,{'supplier_id':supplierId,'invoice_number':invoice.text.trim(),'discount':d,'shipping':sh,'paid':p,'notes':notes.text.trim(),'items':lines.map((l)=>Map<String,dynamic>.from(l)).toList()});
+        if(d<0||d>_itemsSubtotal(lines)||sh<0||p<0||p>total){_message('تخفیف، هزینه حمل یا مبلغ پرداختی معتبر نیست.',error:true);return;}
+        Navigator.pop(ctx,{'supplier_id':supplierId,'invoice_number':invoice.text.trim(),'purchase_date':purchaseDate,'discount':d,'shipping':sh,'paid':p,'notes':notes.text.trim(),'items':lines.map((l)=>Map<String,dynamic>.from(l)).toList()});
       },child:const Text('ثبت خرید و ورود موجودی'))],
     )));
     if(result!=null && mounted) {
       try {
         await _client.rpc('admin_record_inventory_purchase',params:{
           'p_supplier_id':result['supplier_id'],'p_invoice_number':result['invoice_number'],
-          'p_purchase_date':DateTime.now().toIso8601String().substring(0,10),
+          'p_purchase_date':(result['purchase_date'] as DateTime).toIso8601String().substring(0,10),
           'p_items':(result['items'] as List).map((item) { final copy=Map<String,dynamic>.from(item); copy['purchase_unit'] ??= _materials.firstWhere((m)=>m['id'].toString()==copy['material_id'])['unit']; return copy; }).toList(),'p_discount_amount':result['discount'],'p_shipping_amount':result['shipping'],
           'p_paid_amount':result['paid'],'p_notes':result['notes'],
         });
@@ -180,7 +195,13 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
 
   String _money(dynamic v) {
     final n=v is num?v:num.tryParse('$v')??0;
-    return n.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(_)=>'٬');
+    final formatted=n.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(_)=>'٬');
+    return _fa(formatted);
+  }
+
+  String _quantityLabel(dynamic value) {
+    final n=value is num?value:num.tryParse('$value')??0;
+    return _fa(n.toStringAsFixed(n.toDouble()==n?0:3).replaceAll('.', '٫'));
   }
 
   String _fa(Object? value) {
@@ -209,8 +230,11 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
       ..._suppliers.map((s)=>Card(child:ListTile(
         leading:const CircleAvatar(child:Icon(Icons.storefront_outlined)),
         title:Text(s['name'].toString()),
-        subtitle:Text(['${s['contact_name']??''}','${s['phone']??''}','${s['email']??''}'].where((x)=>x.trim().isNotEmpty).join(' · ')),
-        trailing:IconButton(tooltip:'ویرایش',onPressed:()=>_supplierDialog(s),icon:const Icon(Icons.edit_outlined)),
+        subtitle:Text(['${s['contact_name']??''}','${s['phone']??''}','${s['email']??''}',s['is_active']==true?'فعال':'غیرفعال'].where((x)=>x.trim().isNotEmpty).join(' · ')),
+        trailing:PopupMenuButton<String>(tooltip:'مدیریت تأمین‌کننده',onSelected:(action){if(action=='edit')unawaited(_supplierDialog(s));if(action=='toggle')unawaited(_setSupplierActive(s,s['is_active']!=true));},itemBuilder:(ctx)=>[
+          const PopupMenuItem(value:'edit',child:Text('ویرایش اطلاعات')),
+          PopupMenuItem(value:'toggle',child:Text(s['is_active']==true?'غیرفعال کردن':'فعال کردن')),
+        ]),
       ))),
       const SizedBox(height:16),
       Text('سوابق خرید (${_fa(_purchases.length)})',style:Theme.of(context).textTheme.titleLarge),
@@ -231,7 +255,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           final hasInvoiceUnitCost = i['entered_unit_cost'] is num;
           final displayedUnitCost = hasInvoiceUnitCost ? i['entered_unit_cost'] as num : unitCost;
           final unitCostLabel = hasInvoiceUnitCost ? 'بهای واحد فاکتور' : 'بهای واحد ثبت‌شده';
-          return '$name: $quantity ${_unitName(unit)} × ${_money(displayedUnitCost)} تومان ($unitCostLabel) · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
+          return '$name: ${_quantityLabel(quantity)} ${_unitName(unit)} × ${_money(displayedUnitCost)} تومان ($unitCostLabel) · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
         }).join('، ');
         return Card(child:ExpansionTile(
           leading:const Icon(Icons.receipt_long_outlined),
