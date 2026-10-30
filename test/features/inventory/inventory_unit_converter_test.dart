@@ -35,8 +35,8 @@ void main() {
         stockUnit: 'g',
       );
       expect(stockQuantity, 3000);
-      expect(stockUnitCost, 60);
-      expect(stockQuantity * stockUnitCost, 180000);
+      expect(stockUnitCost, 180);
+      expect(stockQuantity * stockUnitCost, 540000);
     });
 
     test('keeps volume and mass conversions separate', () {
