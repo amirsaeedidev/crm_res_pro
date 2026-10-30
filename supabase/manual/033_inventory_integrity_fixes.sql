@@ -120,4 +120,20 @@ $$;
 revoke all on function public.get_inventory_material_activity_report(timestamptz, timestamptz) from public, anon;
 grant execute on function public.get_inventory_material_activity_report(timestamptz, timestamptz) to authenticated;
 
+
+-- Keep the CRM's global-alert preferences synchronized while the inventory tab is open.
+do $
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'inventory_alert_settings'
+     ) then
+    execute 'alter publication supabase_realtime add table public.inventory_alert_settings';
+  end if;
+end;
+$;
+
 commit;
