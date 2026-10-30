@@ -133,6 +133,26 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           final compatibleUnits = _compatibleUnits(material['unit'].toString());
                     return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
             Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const Icon(Icons.delete_outline))]),
+            DropdownButtonFormField<String>(
+              key: ValueKey('purchase-material-$i-${line['material_id']}'),
+              initialValue: material['id'].toString(),
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'انتخاب ماده اولیه'),
+              items: _materials.where((m) => !lines.any((other) => !identical(other, line) && other['material_id'] == m['id'].toString())).map((m) => DropdownMenuItem<String>(
+                value: m['id'].toString(),
+                child: Text(m['name'].toString(), overflow: TextOverflow.ellipsis),
+              )).toList(),
+              onChanged: (selectedId) {
+                if (selectedId == null) return;
+                final selected = _materials.firstWhere((m) => m['id'].toString() == selectedId);
+                setDialog(() {
+                  line['material_id'] = selectedId;
+                  line['purchase_unit'] = selected['unit'].toString();
+                  line['unit_cost'] = (selected['unit_cost'] as num? ?? 0).toDouble();
+                  line['quantity'] = 1.0;
+                });
+              },
+            ),
             Row(children:[
               Expanded(child:TextFormField(initialValue:line['quantity'].toString(),keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مقدار خرید'),onChanged:(v)=>setDialog(()=>line['quantity']=InventoryUnitConverter.parseLocalizedNumber(v)??0))),
               const SizedBox(width:8),
