@@ -76,6 +76,26 @@ class LoyaltyRepository {
     }
   }
 
+
+  Future<Map<String, dynamic>> quoteDiscount({
+    required String userId,
+    required int points,
+    required int orderAmountToman,
+  }) async {
+    try {
+      final result = await _client.rpc('admin_quote_loyalty_discount', params: {
+        'p_user_id': userId,
+        'p_points': points,
+        'p_order_amount_toman': orderAmountToman,
+      });
+      if (result is Map) return Map<String, dynamic>.from(result);
+      throw const FormatException('پاسخ محاسبه تخفیف معتبر نیست.');
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Quote loyalty discount failed', error: e, stackTrace: st);
+      throw Exception(_friendlyError(e, 'محاسبه تخفیف امتیازی'));
+    }
+  }
+
   String _friendlyError(PostgrestException e, String action) {
     if (e.code == '42501' || e.code == 'PGRST301') return 'برای $action باید با حساب مدیر فعال وارد شوید.';
     if (e.code == '23503') return 'رکورد وابسته در دیتابیس پیدا نشد.';
