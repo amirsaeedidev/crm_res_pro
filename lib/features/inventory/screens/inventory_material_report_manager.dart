@@ -15,7 +15,8 @@ class _InventoryMaterialReportManagerState extends State<InventoryMaterialReport
   List<Map<String,dynamic>> _rows=[];
   @override void initState(){super.initState();unawaited(_load());}
   Future<void> _load() async {
-    setState(()=>_loading=true); 
+    if (!mounted) return;
+    setState(() { _loading=true; _error=null; }); 
     try {
       final raw=await _client.rpc('get_inventory_material_activity_report',params:{
         'p_start_date':DateTime(_range.start.year,_range.start.month,_range.start.day).toUtc().toIso8601String(),
