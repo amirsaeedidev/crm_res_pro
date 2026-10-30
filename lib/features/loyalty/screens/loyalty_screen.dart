@@ -117,6 +117,66 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
     );
   }
 
+
+  Future<void> _quoteDiscount(LoyaltyWalletModel wallet) async {
+    final points = TextEditingController();
+    final amount = TextEditingController();
+    Map<String, dynamic>? quote;
+    String? error;
+    var loading = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('محاسبه تبدیل امتیاز به تخفیف'),
+          content: SizedBox(width: 420, child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('موجودی امتیاز مشتری: ${_number(wallet.totalPoints)}'),
+            const SizedBox(height: 12),
+            TextField(controller: points, keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'امتیاز مورد استفاده', suffixText: 'امتیاز', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: amount, keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'مبلغ سفارش', suffixText: 'تومان', border: OutlineInputBorder())),
+            if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            if (quote != null) Padding(padding: const EdgeInsets.only(top: 14), child: Container(
+              width: double.infinity, padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('تخفیف قابل اعمال: ${_number((quote!['discount_toman'] as num).toInt())} تومان',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text('امتیاز مصرفی: ${_number((quote!['points'] as num).toInt())}'),
+                Text('مانده امتیاز: ${_number((quote!['balance'] as num).toInt() - (quote!['points'] as num).toInt())}'),
+              ]),
+            )),
+          ])),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن')),
+            FilledButton(
+              onPressed: loading ? null : () async {
+                final p = int.tryParse(points.text.trim());
+                final a = int.tryParse(amount.text.trim());
+                if (p == null || a == null || p <= 0 || a <= 0) {
+                  setDialogState(() { error = 'امتیاز و مبلغ سفارش را به‌درستی وارد کنید.'; quote = null; });
+                  return;
+                }
+                setDialogState(() { loading = true; error = null; quote = null; });
+                try {
+                  final result = await _repository.quoteDiscount(userId: wallet.userId, points: p, orderAmountToman: a);
+                  if (dialogContext.mounted) setDialogState(() { quote = result; loading = false; });
+                } catch (e) {
+                  if (dialogContext.mounted) setDialogState(() { error = AppErrorMessage.forDisplay(e.toString(), fallback: 'محاسبه تخفیف ناموفق بود.'); loading = false; });
+                }
+              },
+              child: Text(loading ? 'در حال محاسبه...' : 'محاسبه تخفیف'),
+            ),
+          ],
+        ),
+      ),
+    );
+    points.dispose();
+    amount.dispose();
+  }
+
   Future<void> _adjustPoints(LoyaltyWalletModel wallet) async {
     final pointsController = TextEditingController();
     final descriptionController = TextEditingController();
@@ -245,6 +305,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         const SizedBox(height: AppSizes.sm),
                         Wrap(spacing: AppSizes.sm, runSpacing: AppSizes.sm, children: [
                           OutlinedButton.icon(onPressed: () => _showTransactions(wallet), icon: const Icon(Icons.history), label: const Text('گردش امتیاز')),
+                          OutlinedButton.icon(onPressed: () => _quoteDiscount(wallet), icon: const Icon(Icons.discount_outlined), label: const Text('محاسبه تخفیف')),
                           FilledButton.tonalIcon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح امتیاز')),
                         ]),
                       ])));
