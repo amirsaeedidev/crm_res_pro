@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/supabase_service.dart';
@@ -693,7 +694,10 @@ class _ReportsScreenState extends State<ReportsScreen>
       ]),
       const SizedBox(height: 18),
       _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: Icons.account_balance_outlined,
-        trailing: TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت هزینه')),
+        trailing: Wrap(spacing: 4, children: [
+          TextButton.icon(onPressed: () => context.push('/expenses'), icon: const Icon(Icons.list_alt_outlined, size: 18), label: const Text('مدیریت هزینه‌ها')),
+          TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت سریع')),
+        ]),
         child: Column(children: [
           _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
           _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
