@@ -105,7 +105,7 @@ async function sendToMelipayamak(
   if (isPattern) {
     const bodyId = row.pattern_body_id || String(settings.default_body_id ?? "");
     if (!bodyId.trim()) return { ok: false, code: "CONFIG", error: "Pattern Body ID is not configured.", durationMs: Date.now() - started };
-    fields.text = (row.pattern_args ?? []).join(";");
+    fields.text = (row.pattern_args ?? []).map((arg) => arg.replaceAll('{{track_url}}', row.tracking_url ?? '')).join(';');
     fields.bodyId = bodyId;
   } else {
     const sender = String(settings.sender_number ?? "").trim();
