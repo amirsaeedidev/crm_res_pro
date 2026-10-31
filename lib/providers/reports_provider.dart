@@ -17,7 +17,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? _financialReport;
   ReportModel? _inventoryReport;
   ReportModel? _orderHealthReport;
-  ReportModel? _tableUsageReport;
+  ReportModel? _tableUsageReport;\n  ReportModel? _dishProfitReport;\n  ReportModel? _paymentReconciliationReport;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -28,7 +28,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? get financialReport => _financialReport;
   ReportModel? get inventoryReport => _inventoryReport;
   ReportModel? get orderHealthReport => _orderHealthReport;
-  ReportModel? get tableUsageReport => _tableUsageReport;
+  ReportModel? get tableUsageReport => _tableUsageReport;\n  ReportModel? get dishProfitReport => _dishProfitReport;\n  ReportModel? get paymentReconciliationReport => _paymentReconciliationReport;
 
   Future<void> fetchSalesReport({required DateTime startDate, required DateTime endDate}) async {
     _isLoading = true;
