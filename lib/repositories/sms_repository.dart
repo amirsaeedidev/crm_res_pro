@@ -132,7 +132,7 @@ class SmsRepository {
 
   Future<List<Map<String, dynamic>>> getOutbox({int limit = 200}) async {
     final rows = await _client.from('sms_outbox').select(
-      'id,event_key,recipient_phone,send_mode,normal_message,pattern_body_id,status,attempts,max_attempts,last_error,provider_message_id,created_at,sent_at,related_order_id,related_ticket_id,campaign_id',
+      'id,event_key,recipient_phone,send_mode,normal_message,pattern_body_id,status,attempts,max_attempts,last_error,provider_message_id,delivery_status,delivered_at,delivery_code,delivery_error,created_at,sent_at,related_order_id,related_ticket_id,campaign_id',
     ).order('created_at', ascending: false).limit(limit);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
   }
