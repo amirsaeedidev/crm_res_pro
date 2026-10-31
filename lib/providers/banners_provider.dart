@@ -11,6 +11,7 @@ import '../repositories/banners_repository.dart';
 class BannersProvider extends ChangeNotifier {
   RealtimeChannel? _realtimeChannel;
   bool _realtimeWasConnected = false;
+  bool _disposed = false;
 
   void _ensureRealtimeSubscription() {
     if (_realtimeChannel != null) return;
@@ -49,6 +50,7 @@ class BannersProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   Future<void> fetchBanners() async {
+    if (_disposed) return;
     _ensureRealtimeSubscription();
     _isLoading = true;
     _error = null;
@@ -164,6 +166,7 @@ class BannersProvider extends ChangeNotifier {
   
   @override
   void dispose() {
+    _disposed = true;
     final channel = _realtimeChannel;
     _realtimeChannel = null;
     if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
