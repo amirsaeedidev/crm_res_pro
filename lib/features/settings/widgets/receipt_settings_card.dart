@@ -159,6 +159,13 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       _error = null;
     });
     try {
+      final orderDigits = int.tryParse(_orderDigits.text.trim());
+      if (orderDigits == null || orderDigits < 2 || orderDigits > 8) {
+        throw const FormatException('تعداد رقم شماره سفارش باید بین ۲ تا ۸ باشد.');
+      }
+      if (_orderPrefix.text.trim().length > 12) {
+        throw const FormatException('پیش‌شماره سفارش نمی‌تواند بیشتر از ۱۲ نویسه باشد.');
+      }
       final logo = _logoUrl.text.trim();
       if (logo.isNotEmpty) {
         final uri = Uri.tryParse(logo);
@@ -175,7 +182,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
         'receipt_header_text': _header.text.trim(),
         'receipt_footer_text': _footer.text.trim(),
         'order_number_prefix': _orderPrefix.text.trim(),
-        'order_number_digits': int.tryParse(_orderDigits.text.trim()) ?? 4,
+        'order_number_digits': orderDigits,
         'receipt_paper_size': _paperSize,
         'receipt_show_logo': _showLogo,
         'receipt_show_date': _showDate,
