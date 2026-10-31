@@ -303,6 +303,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         ),
       ),
     );
+    _saving = false;
+    if (mounted) setState(() {});
     title.dispose();
     amount.dispose();
     notes.dispose();
