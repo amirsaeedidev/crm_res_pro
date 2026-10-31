@@ -50,6 +50,42 @@ class _OrderPaymentPanelState extends State<OrderPaymentPanel> {
     )));
     amountCtrl.dispose();refCtrl.dispose();if(ok==true)await load();
   }
+  Future<void> payFromWallet() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('پرداخت از کیف پول'),
+        content: const Text('مانده سفارش به‌صورت کامل از کیف پول مشتری کسر و در سوابق پرداخت ثبت می‌شود. ادامه می‌دهید؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأیید پرداخت')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final result = await SupabaseService.client.rpc(
+        'pay_order_from_customer_wallet',
+        params: {'p_order_id': widget.orderId},
+      );
+      await load();
+      if (mounted) {
+        final data = Map<String, dynamic>.from(result as Map);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(data['already_paid'] == true
+              ? 'این سفارش قبلاً تسویه شده است.'
+              : 'پرداخت کیف پول با موفقیت ثبت شد.'),
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('پرداخت کیف پول انجام نشد؛ موجودی، اتصال حساب مشتری و دسترسی مدیر را بررسی کنید.')),
+        );
+      }
+    }
+  }
+
   Future<void> voidPayment(String id) async {
     try {await SupabaseService.client.rpc('void_order_payment',params:{'p_payment_id':id});await load();}
     catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('ابطال پرداخت ناموفق بود.')));}
@@ -65,6 +101,12 @@ class _OrderPaymentPanelState extends State<OrderPaymentPanel> {
       Text('مانده: '+money(due)+' تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
       const SizedBox(height:8),
       FilledButton.icon(onPressed:loading||due<=0?null:addPayment,icon:const Icon(Icons.add),label:const Text('ثبت دریافت وجه')),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        onPressed: loading || due <= 0 ? null : payFromWallet,
+        icon: const Icon(Icons.account_balance_wallet_outlined),
+        label: const Text('تسویه از کیف پول مشتری'),
+      ),
       ...rows.map((r)=>ListTile(contentPadding:EdgeInsets.zero,title:Text(money(amount(r))+' تومان · '+(methods[r['payment_method']]??'سایر')),subtitle:Text(r['status']=='received'?'ثبت‌شده':'باطل‌شده'),trailing:r['status']=='received'?IconButton(icon:const Icon(Icons.undo,color:Colors.red),onPressed:()=>voidPayment(r['id'].toString())):null)),
       const Text('پرداخت‌های قدیمی تا زمان ثبت دستی، دریافت‌شده محسوب نمی‌شوند.',style:TextStyle(fontSize:11,color:Colors.grey)),
     ])));
