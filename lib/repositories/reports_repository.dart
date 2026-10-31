@@ -23,7 +23,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch sales report failed', error: e);
-      throw Exception('خطا در دریافت گزارش فروش: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش فروش ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected fetch sales report error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در دریافت گزارش فروش');
@@ -41,7 +41,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch top products report failed', error: e);
-      throw Exception('خطا در دریافت گزارش محصولات پرفروش: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش محصولات پرفروش ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected fetch top products error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در دریافت گزارش محصولات');
@@ -56,7 +56,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch customer distribution failed', error: e);
-      throw Exception('خطا در دریافت توزیع مشتریان: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش مشتریان ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected fetch customer distribution error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در دریافت توزیع مشتریان');
@@ -76,7 +76,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch financial report failed', error: e);
-      throw Exception('خطا در دریافت گزارش مالی: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش مالی ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected financial report error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در دریافت گزارش مالی');
@@ -96,7 +96,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch inventory report failed', error: e);
-      throw Exception('خطا در دریافت گزارش انبار: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش انبار ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected inventory report error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در دریافت گزارش انبار');
@@ -113,7 +113,7 @@ class ReportsRepository {
       return ReportModel.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (e) {
       LoggerService.error('Fetch order health report failed', error: e);
-      throw Exception('خطا در دریافت گزارش لغو و تأخیر سفارش‌ها: ${e.message}');
+      throw Exception(e.code == '42501' ? 'حساب فعلی مجوز مشاهده گزارش‌ها را ندارد. با حساب مدیر فعال وارد شوید.' : 'دریافت گزارش لغو و تأخیر سفارش‌ها ناموفق بود. دوباره تلاش کنید.');
     } catch (e, st) {
       LoggerService.error('Unexpected order health report error', error: e, stackTrace: st);
       throw Exception('خطای ناشناخته در گزارش وضعیت سفارش‌ها');
