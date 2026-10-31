@@ -1,9 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils/app_error_message.dart';
+import '../core/services/realtime_service.dart';
 import '../models/ticket_model.dart';
 import '../repositories/tickets_repository.dart';
 
 class TicketsProvider extends ChangeNotifier {
+  RealtimeChannel? _realtimeChannel;
+  bool _realtimeWasConnected = false;
+
+  void _ensureRealtimeSubscription() {
+    if (_realtimeChannel != null) return;
+    _realtimeChannel = RealtimeService.subscribeToTable(
+      table: 'tickets',
+      onInsert: (_) => unawaited(fetchTickets()),
+      onUpdate: (_) => unawaited(fetchTickets()),
+      onDelete: (_) => unawaited(fetchTickets()),
+      onStatus: (status, message) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          if (_realtimeWasConnected) unawaited(fetchTickets());
+          _realtimeWasConnected = true;
+        }
+      },
+    );
+  }
+
   final TicketsRepository _repository;
   TicketsProvider(this._repository);
   bool _isLoading = false;
@@ -30,6 +53,7 @@ class TicketsProvider extends ChangeNotifier {
   Map<String, int> get counts => Map.unmodifiable(_counts);
 
   Future<void> fetchTickets() async {
+    _ensureRealtimeSubscription();
     _isLoading = true; _error = null; notifyListeners();
     try { _tickets = await _repository.getTickets(page: _page, pageSize: _pageSize, search: _search, status: _status); _totalPages = _tickets.length == _pageSize ? _page + 1 : _page; _counts = await _repository.getTicketCounts(); }
     catch (e) { _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست تیکت‌ها ناموفق بود. دوباره تلاش کنید.'); }
@@ -75,4 +99,13 @@ class TicketsProvider extends ChangeNotifier {
     } catch (e) { _error = AppErrorMessage.from(e, fallback: 'تغییر وضعیت تیکت ناموفق بود. دوباره تلاش کنید.'); return false; }
     finally { _isWorking = false; notifyListeners(); }
   }
+  
+  @override
+  void dispose() {
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
+    super.dispose();
+  }
+
 }
