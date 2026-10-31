@@ -52,6 +52,8 @@ class NavigationProvider extends ChangeNotifier {
         return 15;
       case AppRoutes.wallets:
         return 16;
+      case AppRoutes.notifications:
+        return 17;
       case '/banners':
         return 9;
       case '/discounts':
@@ -101,6 +103,8 @@ class NavigationProvider extends ChangeNotifier {
         return AppRoutes.inventory;
       case 16:
         return AppRoutes.wallets;
+      case 17:
+        return AppRoutes.notifications;
       default:
         return AppRoutes.dashboard;
     }
