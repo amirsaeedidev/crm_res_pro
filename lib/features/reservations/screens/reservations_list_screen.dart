@@ -30,7 +30,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final tablesProvider = context.read<TablesProvider>();
     await reservationsProvider.setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
     if (!mounted) return;
-    await tablesProvider.fetchTables();
+    await tablesProvider.fetchTables(reservationDate: _selectedDate.toGregorian().toDateTime());
   }); }
   @override
   void dispose() { _search.dispose(); super.dispose(); }
@@ -74,6 +74,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       _showWholeMonth = false;
     });
     await context.read<ReservationsProvider>().setDateRange(from: _monthStart(next), to: _monthEnd(next));
+    await context.read<TablesProvider>().fetchTables(reservationDate: _selectedDate.toGregorian().toDateTime());
   }
 
   Future<void> _selectDate(Jalali date) async {
@@ -86,6 +87,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     if (monthChanged) {
       await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
     }
+    await context.read<TablesProvider>().fetchTables(reservationDate: date.toGregorian().toDateTime());
   }
 
   Future<void> _goToToday() async {
@@ -96,6 +98,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       _showWholeMonth = false;
     });
     await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
+    await context.read<TablesProvider>().fetchTables(reservationDate: today.toGregorian().toDateTime());
   }
   Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
 
@@ -130,7 +133,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       title: Text(current == null ? 'ثبت رزرو جدید' : 'ویرایش رزرو'),
       content: SizedBox(width: 520, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         DropdownButtonFormField<String>(initialValue: customerId, isExpanded: true, decoration: const InputDecoration(labelText: 'مشتری', border: OutlineInputBorder()), items: customers.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.fullName} • ${c.phone ?? 'بدون تلفن'}', overflow: TextOverflow.ellipsis))).toList(), onChanged: current == null ? (value) => setDialogState(() => customerId = value) : null),
-        const SizedBox(height: 12), DropdownButtonFormField<String>(initialValue: tableId, isExpanded: true, decoration: const InputDecoration(labelText: 'میز', border: OutlineInputBorder()), items: tables.map((t) => DropdownMenuItem(value: t.id, child: Text('میز ${_persianDigits(t.tableNumber)} • ظرفیت ${_persianDigits(t.capacity)}${t.status == TableStatus.occupied ? ' • اشغال' : ''}'))).toList(), onChanged: (value) => setDialogState(() => tableId = value)),
+        const SizedBox(height: 12), DropdownButtonFormField<String>(initialValue: tableId, isExpanded: true, decoration: const InputDecoration(labelText: 'میز', border: OutlineInputBorder()), items: tables.map((t) => DropdownMenuItem(value: t.id, child: Text('میز ${_persianDigits(t.tableNumber)} • ظرفیت ${_persianDigits(t.capacity)}${t.status == TableStatus.occupied ? ' • اشغال' : t.status == TableStatus.reserved ? ' • رزروشده' : ' • خالی'}'))).toList(), onChanged: (value) => setDialogState(() => tableId = value)),
         const SizedBox(height: 12), TextFormField(controller: guestController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'تعداد نفرات', border: OutlineInputBorder())),
         const SizedBox(height: 12), Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () async { final selected = await showDatePicker(context: dialogContext, initialDate: date, firstDate: DateTime.now().subtract(const Duration(days: 365)), lastDate: DateTime.now().add(const Duration(days: 730))); if (selected != null) setDialogState(() => date = selected); }, icon: const Icon(Icons.calendar_today), label: Text(_formatDate(date)))), const SizedBox(width: 8), Expanded(child: OutlinedButton.icon(onPressed: () async { final selected = await showTimePicker(context: dialogContext, initialTime: time); if (selected != null) setDialogState(() => time = selected); }, icon: const Icon(Icons.schedule), label: Text(time.format(dialogContext))))]),
         const SizedBox(height: 12), TextField(controller: noteController, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)', border: OutlineInputBorder()))
@@ -156,7 +159,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       }, child: Text(current == null ? 'ثبت رزرو' : 'ذخیره تغییرات'))]
     )));
     guestController.dispose(); noteController.dispose();
-    if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
+    if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(reservationDate: date); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
   }
 
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
@@ -165,7 +168,38 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final ok = await provider.updateReservationStatus(reservation.id, status);
     if (!mounted) return;
     if (!ok) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error ?? 'تغییر وضعیت رزرو ناموفق بود.')));
-    await tablesProvider.fetchTables();
+    await tablesProvider.fetchTables(reservationDate: reservation.date);
+  }
+
+  Widget _tableStatusPanel(BuildContext context) {
+    return Consumer<TablesProvider>(builder: (context, provider, _) {
+      final activeTables = provider.tables.where((table) => table.isActive).toList();
+      final occupied = activeTables.where((table) => table.status == TableStatus.occupied).length;
+      final reserved = activeTables.where((table) => table.status == TableStatus.reserved).length;
+      final free = activeTables.where((table) => table.status == TableStatus.free).length;
+      final theme = Theme.of(context);
+      final scheme = theme.colorScheme;
+      Widget stat(String label, int count, Color color, IconData icon) => Container(
+        constraints: const BoxConstraints(minWidth: 112),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(color: color.withValues(alpha: .08), borderRadius: BorderRadius.circular(14), border: Border.all(color: color.withValues(alpha: .22))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 18, color: color), const SizedBox(width: 8), Text('میز های $label: ${_persianDigits(count)}', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: scheme.onSurface))]),
+      );
+      return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .65))),
+        child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [Expanded(child: Text('وضعیت میزها برای ${_formatDate(_selectedDate.toGregorian().toDateTime())}', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))), IconButton(tooltip: 'بازنشانی وضعیت میزها', onPressed: provider.isLoading ? null : () => provider.fetchTables(reservationDate: _selectedDate.toGregorian().toDateTime()), icon: const Icon(Icons.refresh_rounded))]),
+          if (provider.isLoading && activeTables.isEmpty) const LinearProgressIndicator(minHeight: 2),
+          if (provider.error != null && activeTables.isEmpty) Text(provider.error!, style: TextStyle(color: scheme.error)),
+          Wrap(spacing: 8, runSpacing: 8, children: [stat('خالی', free, const Color(0xFF16A34A), Icons.event_available_rounded), stat('رزروشده', reserved, const Color(0xFF3B82F6), Icons.bookmark_added_rounded), stat('اشغال', occupied, const Color(0xFFEF4444), Icons.restaurant_rounded)]),
+          const SizedBox(height: 12),
+          if (activeTables.isEmpty && !provider.isLoading) Text('میز فعالی ثبت نشده است.', style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant))
+          else Wrap(spacing: 8, runSpacing: 8, children: activeTables.map((table) {
+            final color = switch (table.status) { TableStatus.free => const Color(0xFF16A34A), TableStatus.reserved => const Color(0xFF3B82F6), TableStatus.occupied => const Color(0xFFEF4444) };
+            final label = switch (table.status) { TableStatus.free => 'خالی', TableStatus.reserved => 'رزروشده', TableStatus.occupied => 'اشغال' };
+            return Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8), decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: color.withValues(alpha: .09), border: Border.all(color: color.withValues(alpha: .28))), child: Text('میز ${_persianDigits(table.tableNumber)} • $label', style: theme.textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.w700)));
+          }).toList()),
+        ])));
+    });
   }
 
   @override
@@ -233,6 +267,8 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                       _summaryCard(context, 'لغوشده', cancelledCount, Icons.event_busy_rounded, scheme.error),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  _tableStatusPanel(context),
                   const SizedBox(height: 16),
                   ReservationsCalendar(
                     visibleMonth: _visibleMonth,
