@@ -29,6 +29,7 @@ import '../features/loyalty/screens/loyalty_screen.dart';
 import '../features/sms/screens/sms_center_screen.dart';
 import '../features/inventory/screens/inventory_screen.dart';
 import '../features/wallet/screens/customer_wallets_screen.dart';
+import '../features/notifications/screens/notifications_center_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -71,6 +72,7 @@ class AppRouter {
           GoRoute(path: AppRoutes.sms, name: AppRoutes.sms, pageBuilder: (context, state) => const NoTransitionPage(child: SmsCenterScreen())),
           GoRoute(path: AppRoutes.inventory, name: AppRoutes.inventory, pageBuilder: (context, state) => const NoTransitionPage(child: InventoryScreen())),
           GoRoute(path: AppRoutes.wallets, name: AppRoutes.wallets, pageBuilder: (context, state) => const NoTransitionPage(child: CustomerWalletsScreen())),
+          GoRoute(path: AppRoutes.notifications, name: AppRoutes.notifications, pageBuilder: (context, state) => const NoTransitionPage(child: NotificationsCenterScreen())),
         ],
       ),
       
