@@ -240,3 +240,56 @@ end;
 $;
 revoke all on function public.admin_create_sms_campaign_scheduled(text,uuid[],text,text,text[],jsonb,uuid,numeric,numeric,integer,timestamptz) from public,anon;
 grant execute on function public.admin_create_sms_campaign_scheduled(text,uuid[],text,text,text[],jsonb,uuid,numeric,numeric,integer,timestamptz) to authenticated;
+
+
+-- Finalizer keeps cancelled campaigns terminal and waits for delivery reports
+-- after provider acceptance instead of treating acceptance as delivery.
+create or replace function public.sms_finalize_attempt(
+ p_outbox_id uuid,p_success boolean,p_provider_message_id text default null,
+ p_response_code text default null,p_error_message text default null,p_duration_ms integer default null
+) returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare v_row public.sms_outbox%rowtype; v_status text; v_delay integer; v_campaign_id uuid;
+begin
+ select * into v_row from public.sms_outbox where id=p_outbox_id for update;
+ if not found then raise exception 'SMS outbox row not found'; end if;
+ select retry_delay_seconds into v_delay from public.sms_settings where id=1;
+ v_delay:=coalesce(v_delay,60);
+ if p_success then v_status:='sent';
+ elsif upper(coalesce(p_response_code,''))='UNKNOWN' then v_status:='failed';
+ elsif v_row.attempts < v_row.max_attempts then v_status:='retry';
+ else v_status:='failed'; end if;
+
+ insert into public.sms_attempt_logs(outbox_id,attempt_no,success,provider_message_id,response_code,error_message,duration_ms)
+ values(v_row.id,v_row.attempts,coalesce(p_success,false),p_provider_message_id,left(p_response_code,100),
+   left(p_error_message,500),greatest(coalesce(p_duration_ms,0),0))
+ on conflict(outbox_id,attempt_no) do update set success=excluded.success,
+   provider_message_id=excluded.provider_message_id,response_code=excluded.response_code,
+   error_message=excluded.error_message,duration_ms=excluded.duration_ms;
+
+ update public.sms_outbox set status=v_status,
+   provider_message_id=case when p_success then p_provider_message_id else provider_message_id end,
+   sent_at=case when p_success then now() else sent_at end,
+   delivery_status=case when p_success then 'pending' else delivery_status end,
+   last_error=case when p_success then null else left(p_error_message,500) end,
+   next_attempt_at=case when v_status='retry' then now()+make_interval(secs=>v_delay) else next_attempt_at end,
+   updated_at=now() where id=v_row.id;
+
+ v_campaign_id:=v_row.campaign_id;
+ if v_campaign_id is not null then
+  update public.sms_campaigns c set
+   sent_count=(select count(*) from public.sms_outbox o where o.campaign_id=v_campaign_id and o.status='sent'),
+   failed_count=(select count(*) from public.sms_outbox o where o.campaign_id=v_campaign_id and o.status='failed'),
+   status=case when c.status='cancelled' then 'cancelled'
+     when exists(select 1 from public.sms_outbox o where o.campaign_id=v_campaign_id and o.status in ('queued','retry','sending')) then 'sending'
+     when exists(select 1 from public.sms_outbox o where o.campaign_id=v_campaign_id and o.status='sent') then 'completed'
+     else 'failed' end,
+   started_at=coalesce(c.started_at,now()),
+   completed_at=case when c.status='cancelled' then coalesce(c.completed_at,now())
+     when not exists(select 1 from public.sms_outbox o where o.campaign_id=v_campaign_id and o.status in ('queued','retry','sending')) then now()
+     else null end
+   where c.id=v_campaign_id;
+ end if;
+ return jsonb_build_object('id',v_row.id,'status',v_status,'attempts',v_row.attempts,'max_attempts',v_row.max_attempts);
+end;
+$$;
