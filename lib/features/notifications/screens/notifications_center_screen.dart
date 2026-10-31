@@ -1,0 +1,227 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/services/supabase_service.dart';
+
+class NotificationsCenterScreen extends StatefulWidget {
+  const NotificationsCenterScreen({super.key});
+
+  @override
+  State<NotificationsCenterScreen> createState() => _NotificationsCenterScreenState();
+}
+
+class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _bodyController = TextEditingController();
+
+  String _audience = 'all_customers';
+  String _priority = 'normal';
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    if (!_formKey.currentState!.validate() || _sending) return;
+    setState(() => _sending = true);
+    try {
+      final response = await SupabaseService.client.rpc(
+        'admin_send_notification',
+        params: {
+          'p_title': _titleController.text.trim(),
+          'p_body': _bodyController.text.trim(),
+          'p_audience': _audience,
+          'p_priority': _priority,
+        },
+      );
+      final data = Map<String, dynamic>.from(response as Map);
+      if (!mounted) return;
+      final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            count == 0
+                ? 'اعلان ثبت شد، اما مخاطب فعالی در این گروه پیدا نشد.'
+                : 'اعلان با موفقیت برای $count مخاطب ثبت شد.',
+          ),
+          backgroundColor: count == 0 ? Colors.orange : Colors.green,
+        ),
+      );
+      if (count > 0) {
+        _titleController.clear();
+        _bodyController.clear();
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ارسال اعلان ناموفق بود: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 920),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('مدیریت اعلان‌ها', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'مخاطبان اعلان و میزان اهمیت آن را مشخص کنید. ثبت اعلان‌ها از طریق تابع امن Supabase انجام می‌شود.',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('محتوای اعلان', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _titleController,
+                            maxLength: 160,
+                            decoration: const InputDecoration(labelText: 'عنوان اعلان', border: OutlineInputBorder(), prefixIcon: Icon(Icons.title)),
+                            validator: (value) => value == null || value.trim().isEmpty ? 'عنوان اعلان را وارد کنید.' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _bodyController,
+                            minLines: 4,
+                            maxLines: 7,
+                            maxLength: 4000,
+                            decoration: const InputDecoration(labelText: 'متن اعلان', alignLabelWithHint: true, border: OutlineInputBorder(), prefixIcon: Icon(Icons.notes)),
+                            validator: (value) => value == null || value.trim().isEmpty ? 'متن اعلان را وارد کنید.' : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('تعیین مخاطبان', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          _audienceTile(
+                            value: 'all_customers',
+                            title: 'تمام مشتریان فعال',
+                            subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
+                            icon: Icons.groups_outlined,
+                          ),
+                          _audienceTile(
+                            value: 'inactive_30d',
+                            title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
+                            subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
+                            icon: Icons.person_off_outlined,
+                          ),
+                          _audienceTile(
+                            value: 'admins',
+                            title: 'مدیران CRM',
+                            subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
+                            icon: Icons.admin_panel_settings_outlined,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('سطح اهمیت اعلان', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          RadioListTile<String>(
+                            value: 'normal',
+                            groupValue: _priority,
+                            onChanged: (value) => setState(() => _priority = value!),
+                            title: const Text('عادی'),
+                            subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
+                            secondary: const Icon(Icons.notifications_none, color: Colors.blueGrey),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          RadioListTile<String>(
+                            value: 'high',
+                            groupValue: _priority,
+                            onChanged: (value) => setState(() => _priority = value!),
+                            title: const Text('مهم'),
+                            subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
+                            secondary: const Icon(Icons.priority_high, color: Colors.orange),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          RadioListTile<String>(
+                            value: 'urgent',
+                            groupValue: _priority,
+                            onChanged: (value) => setState(() => _priority = value!),
+                            title: const Text('فوری'),
+                            subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
+                            secondary: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FilledButton.icon(
+                      onPressed: _sending ? null : _send,
+                      icon: _sending
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.send_outlined),
+                      label: Text(_sending ? 'در حال ثبت...' : 'ثبت و ارسال اعلان'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _audienceTile({
+    required String value,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return RadioListTile<String>(
+      value: value,
+      groupValue: _audience,
+      onChanged: (next) => setState(() => _audience = next!),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      secondary: Icon(icon),
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+}
