@@ -27,6 +27,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   List<Map<String, dynamic>> _outbox = [];
   List<Map<String, dynamic>> _attempts = [];
   List<Map<String, dynamic>> _stats = [];
+  List<Map<String, dynamic>> _activeDiscounts = [];
+  String? _selectedDiscountId;
   final Set<String> _selectedCustomers = {};
   final Map<String, TextEditingController> _normalTemplateControllers = {};
   final Map<String, TextEditingController> _patternTemplateControllers = {};
@@ -43,6 +45,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   final _campaignMessage = TextEditingController();
   final _campaignBodyId = TextEditingController();
   final _campaignPatternArgs = TextEditingController();
+  final _smsCostPerMessage = TextEditingController(text: '0');
+  final _otherCampaignCost = TextEditingController(text: '0');
+  final _attributionWindowDays = TextEditingController(text: '7');
   final _customerSearch = TextEditingController();
   final _testPhone = TextEditingController();
   final _testMessage = TextEditingController(
@@ -89,6 +94,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _campaignMessage,
       _campaignBodyId,
       _campaignPatternArgs,
+      _smsCostPerMessage,
+      _otherCampaignCost,
+      _attributionWindowDays,
       _customerSearch,
       _testPhone,
       _testMessage,
@@ -120,6 +128,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
         _repo.getAttemptLogs(),
         _repo.getDeliveryStats(),
         _repo.getMarketingEligibleCustomers(),
+        _repo.getActiveDiscounts(),
       ]);
       if (!mounted) return;
       _settings = Map<String, dynamic>.from(values[0] as Map);
@@ -129,6 +138,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _attempts = List<Map<String, dynamic>>.from(values[4] as List);
       _stats = List<Map<String, dynamic>>.from(values[5] as List);
       _eligibleCustomers = List<Map<String, dynamic>>.from(values[6] as List);
+      _activeDiscounts = List<Map<String, dynamic>>.from(values[7] as List);
       _applySettingsToForm();
       _applyTemplatesToForm();
     } catch (e) {
@@ -311,6 +321,10 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             .split(';')
             .map((e) => e.trim())
             .toList(),
+        discountId: _selectedDiscountId,
+        smsCostPerMessage: double.tryParse(_smsCostPerMessage.text.trim()) ?? 0,
+        otherCampaignCost: double.tryParse(_otherCampaignCost.text.trim()) ?? 0,
+        attributionWindowDays: int.tryParse(_attributionWindowDays.text.trim()) ?? 7,
       );
       _toast(
         'کمپین در صف قرار گرفت؛ تعداد گیرندگان: ${result['recipient_count'] ?? 0}.',
@@ -1081,6 +1095,33 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 maxLines: 2,
               ),
             ],
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              value: _selectedDiscountId,
+              decoration: const InputDecoration(
+                labelText: 'کد تخفیف متصل به کمپین (اختیاری)',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(value: null, child: Text('بدون کد تخفیف')),
+                ..._activeDiscounts.map((d) => DropdownMenuItem<String?>(
+                  value: d['id'].toString(),
+                  child: Text('${d['title']} · ${d['code']}'),
+                )),
+              ],
+              onChanged: (value) => setState(() => _selectedDiscountId = value),
+            ),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(child: _field(_smsCostPerMessage, 'هزینه هر پیامک (تومان)', keyboardType: TextInputType.number)),
+              const SizedBox(width: 10),
+              Expanded(child: _field(_otherCampaignCost, 'هزینه جانبی کمپین (تومان)', keyboardType: TextInputType.number)),
+            ]),
+            const SizedBox(height: 10),
+            _field(_attributionWindowDays, 'پنجره انتساب خرید (روز؛ ۱ تا ۹۰)', keyboardType: TextInputType.number),
+            const SizedBox(height: 5),
+            const Text('برای پیامک عادی لینک رهگیری به انتهای متن افزوده می‌شود. در الگوی پترن باید متغیر {{track_url}} را در قالب و آرگومان‌ها پیش‌بینی کنید. هزینه هر پیامک را مطابق صورتحساب/تعرفه واقعی وارد کنید.',
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
