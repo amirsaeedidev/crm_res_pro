@@ -51,16 +51,37 @@ class SmsRepository {
     required String message,
     required String bodyId,
     required List<String> patternArgs,
+    DateTime? scheduledAt,
   }) async {
-    final result = await _client.rpc('admin_create_sms_campaign', params: {
+    final result = await _client.rpc('admin_create_sms_campaign_scheduled', params: {
       'p_name': name,
       'p_customer_ids': customerIds,
       'p_normal_message': message,
       'p_pattern_body_id': bodyId,
       'p_pattern_args': patternArgs,
       'p_audience_filter': {'customer_ids': customerIds},
+      'p_discount_id': null,
+      'p_sms_cost_per_message': 0,
+      'p_other_campaign_cost': 0,
+      'p_attribution_window_days': 7,
+      'p_scheduled_at': (scheduledAt ?? DateTime.now()).toUtc().toIso8601String(),
     });
     if (result is! Map) throw const FormatException('پاسخ ایجاد کمپین معتبر نیست.');
+    return Map<String, dynamic>.from(result);
+  }
+
+  Future<List<Map<String, dynamic>>> getCampaigns({int limit = 100}) async {
+    final rows = await _client.from('sms_campaigns').select(
+      'id,name,send_mode,status,scheduled_at,recipient_count,sent_count,delivered_count,failed_count,created_at,completed_at,cancelled_at',
+    ).order('created_at', ascending: false).limit(limit);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>> cancelCampaign(String campaignId) async {
+    final result = await _client.rpc('admin_cancel_sms_campaign', params: {
+      'p_campaign_id': campaignId,
+    });
+    if (result is! Map) throw const FormatException('پاسخ لغو کمپین معتبر نیست.');
     return Map<String, dynamic>.from(result);
   }
 
