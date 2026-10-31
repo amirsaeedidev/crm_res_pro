@@ -182,6 +182,12 @@ class AppSidebar extends StatelessWidget {
                   onTap: () { navProvider.updateIndex(16); context.go(AppRoutes.wallets); },
                 ),
                 NavigationItem(
+                  icon: Icons.notifications_active_outlined,
+                  label: 'مدیریت اعلان‌ها',
+                  isActive: navProvider.selectedIndex == 17,
+                  onTap: () { navProvider.updateIndex(17); context.go(AppRoutes.notifications); },
+                ),
+                NavigationItem(
                   icon: Icons.settings_outlined,
                   label: AppStrings.settings,
                   isActive: navProvider.selectedIndex == 6,
