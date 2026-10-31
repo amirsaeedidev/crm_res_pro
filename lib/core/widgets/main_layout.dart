@@ -11,8 +11,13 @@ import '../services/realtime_service.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
+  final String currentRoute;
 
-  const MainLayout({super.key, required this.child});
+  const MainLayout({
+    super.key,
+    required this.child,
+    required this.currentRoute,
+  });
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -25,6 +30,11 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<NavigationProvider>().updateNavigation(widget.currentRoute);
+      }
+    });
     _realtimeErrorSubscription = RealtimeService.connectionErrors.listen((message) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -37,6 +47,18 @@ class _MainLayoutState extends State<MainLayout> {
           ));
       });
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant MainLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentRoute != widget.currentRoute) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<NavigationProvider>().updateNavigation(widget.currentRoute);
+        }
+      });
+    }
   }
 
   @override
@@ -115,7 +137,7 @@ class _MainLayoutState extends State<MainLayout> {
               child: Column(
                 children: [
                   AppTopbar(
-                    title: _getPageTitle(navProvider.currentRoute),
+                    title: _getPageTitle(widget.currentRoute),
                     onMenuTap: () {
                       if (!isDesktop) {
                         _scaffoldKey.currentState?.openDrawer();
