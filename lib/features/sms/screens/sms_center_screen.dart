@@ -1384,6 +1384,10 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                   (_campaignEffectiveness['summary'] as Map?) ?? const {},
                 );
                 final campaigns = (_campaignEffectiveness['campaigns'] as List? ?? const []);
+                final couponOrders = campaigns.fold<int>(
+                  0,
+                  (sum, item) => sum + (((item as Map)['coupon_orders'] as num?) ?? 0).toInt(),
+                );
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1393,7 +1397,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       children: [
                         _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', Icons.ads_click),
                         _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', Icons.shopping_bag_outlined),
-                        _metric('سفارش با کد تخفیف', '${summary['coupon_orders'] ?? 0}', Icons.discount_outlined),
+                        _metric('سفارش با کد تخفیف', couponOrders.toString(), Icons.discount_outlined),
                       ],
                     ),
                     const SizedBox(height: 8),
