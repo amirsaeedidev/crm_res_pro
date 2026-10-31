@@ -1356,10 +1356,14 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 900
+                ? 5
+                : constraints.maxWidth >= 560
+                    ? 3
+                    : 2;
+            final metrics = <Widget>[
             _metric(
               'کل پیام‌ها',
               _outbox.length.toString(),
@@ -1397,7 +1401,17 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               Icons.schedule,
               AppColors.primary,
             ),
-          ],
+            ];
+            return GridView.count(
+              crossAxisCount: columns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: constraints.maxWidth < 420 ? 1.55 : 1.9,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: metrics,
+            );
+          },
         ),
         const SizedBox(height: 14),
         _card(
@@ -1701,9 +1715,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       .toList(growable: false);
 
   Widget _metric(String title, String value, IconData icon, [Color? color]) =>
-      SizedBox(
-        width: 190,
-        child: Card(
+      Card(
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -1726,8 +1738,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               ],
             ),
           ),
-        ),
-      );
+        );
 
   Widget _legend(Color color, String label) => Row(
     mainAxisSize: MainAxisSize.min,
