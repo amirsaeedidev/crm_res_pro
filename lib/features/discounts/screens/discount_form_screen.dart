@@ -219,7 +219,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           return AlertDialog(
             title: const Text('انتخاب مشتریان هدف'),
             content: SizedBox(
-              width: 520,
+              width: MediaQuery.of(dialogContext).size.width < 640
+                  ? MediaQuery.of(dialogContext).size.width * 0.82
+                  : 520,
               height: 460,
               child: Column(
                 children: [
@@ -317,10 +319,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
       }
 
       if (_endDate!.isBefore(_startDate!)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تاریخ پایان باید بعد از تاریخ شروع باشد.'), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.'), backgroundColor: AppColors.error));
         return;
       }
-      final parsedValue = double.tryParse(_valueController.text) ?? 0;
+      final parsedValue = double.tryParse(_latinDigits(_valueController.text.trim())) ?? 0;
       if (_selectedType == 'Percentage' && parsedValue > 100) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('درصد تخفیف نباید بیشتر از ۱۰۰ باشد.'), backgroundColor: AppColors.error));
         return;
@@ -465,6 +467,11 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: AppSizes.sm),
+                    Text(
+                      'تاریخ پایان تا انتهای همان روز معتبر است.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context)),
                     ),
                   ],
                 ),
