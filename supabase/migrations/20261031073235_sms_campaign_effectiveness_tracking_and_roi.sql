@@ -100,16 +100,16 @@ begin
     join lateral (
       select cl.campaign_id,cl.clicked_at from public.sms_campaign_clicks cl
       join selected_campaigns sc on sc.id=cl.campaign_id
-      where cl.recipient_user_id=o.user_id and cl.clicked_at<=coalesce(o.completed_at,o.created_at)
+      where cl.recipient_user_id=o.user_id and cl.clicked_at < p_end and cl.clicked_at<=coalesce(o.completed_at,o.created_at)
         and cl.clicked_at>=coalesce(o.completed_at,o.created_at)-make_interval(days=>sc.attribution_window_days)
       order by cl.clicked_at desc limit 1
-    ) click on true where o.status='completed'
+    ) click on true where o.status='completed' and coalesce(o.completed_at,o.created_at) < p_end
   ),
   coupon_orders as (
     select distinct o.id as order_id,sc.id as campaign_id,'coupon'::text as attribution_type
     from public.orders o join public.discounts d on upper(d.code)=upper(o.discount_code)
     join selected_campaigns sc on sc.discount_id=d.id
-    where o.status='completed' and o.created_at>=sc.created_at
+    where o.status='completed' and coalesce(o.completed_at,o.created_at) < p_end and o.created_at>=sc.created_at
       and o.created_at<=sc.created_at+make_interval(days=>sc.attribution_window_days)
   ),
   all_attributions as (
@@ -152,7 +152,7 @@ begin
     from selected_campaigns sc left join public.discounts d on d.id=sc.discount_id
     left join lateral (select count(*)::integer as total_clicks,
       count(distinct coalesce(cl.recipient_user_id,cl.outbox_id))::integer as unique_clickers
-      from public.sms_campaign_clicks cl where cl.campaign_id=sc.id) clicks on true
+      from public.sms_campaign_clicks cl where cl.campaign_id=sc.id and cl.clicked_at < p_end) clicks on true
     left join order_financials fin on fin.campaign_id=sc.id
   )
   select jsonb_build_object('summary',jsonb_build_object(
