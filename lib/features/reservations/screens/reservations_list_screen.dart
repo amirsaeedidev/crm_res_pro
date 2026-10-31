@@ -460,4 +460,3 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     );
   }
 }
-}
