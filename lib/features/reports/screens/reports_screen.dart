@@ -73,7 +73,9 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
-    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);\n    provider.fetchDishProfitReport(startDate: startDate, endDate: endDate);\n    provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
+    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);
+    provider.fetchDishProfitReport(startDate: startDate, endDate: endDate);
+    provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
   }
 
   Future<void> _pickCustomRange() async {
@@ -199,7 +201,9 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                         Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
-                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),\n                        Tab(icon: Icon(Icons.restaurant_menu_outlined, size: 18), text: 'سود هر غذا'),\n                        Tab(icon: Icon(Icons.point_of_sale_outlined, size: 18), text: 'پرداخت و صندوق'),
+                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),
+                        Tab(icon: Icon(Icons.restaurant_menu_outlined, size: 18), text: 'سود هر غذا'),
+                        Tab(icon: Icon(Icons.point_of_sale_outlined, size: 18), text: 'پرداخت و صندوق'),
                       ],
                     ),
                   ),
@@ -216,7 +220,9 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
-                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),\n                        _dishProfitTab(context, mobile, provider.dishProfitReport?.summary ?? const {}, provider.dishProfitReport?.chartData.isNotEmpty == true ? provider.dishProfitReport!.chartData.first : const {}, provider.isLoading),\n                        _paymentReconciliationTab(context, mobile, provider.paymentReconciliationReport?.summary ?? const {}, provider.paymentReconciliationReport?.chartData.isNotEmpty == true ? provider.paymentReconciliationReport!.chartData.first : const {}, provider.isLoading),
+                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),
+                        _dishProfitTab(context, mobile, provider.dishProfitReport?.summary ?? const {}, provider.dishProfitReport?.chartData.isNotEmpty == true ? provider.dishProfitReport!.chartData.first : const {}, provider.isLoading),
+                        _paymentReconciliationTab(context, mobile, provider.paymentReconciliationReport?.summary ?? const {}, provider.paymentReconciliationReport?.chartData.isNotEmpty == true ? provider.paymentReconciliationReport!.chartData.first : const {}, provider.isLoading),
                       ],
                     ),
                   ),
