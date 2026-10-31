@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:excel/excel.dart' hide Border;
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -272,7 +270,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         ],
       ));
       final (from, to) = _getDateRange();
-      final path = await FilePicker.platform.saveFile(
+      final path = await FilePicker.saveFile(
         fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.pdf',
         bytes: await pdf.save(),
       );
