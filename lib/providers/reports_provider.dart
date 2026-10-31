@@ -20,6 +20,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? _tableUsageReport;
   ReportModel? _dishProfitReport;
   ReportModel? _paymentReconciliationReport;
+  ReportModel? _reportReconciliation;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -33,6 +34,7 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? get tableUsageReport => _tableUsageReport;
   ReportModel? get dishProfitReport => _dishProfitReport;
   ReportModel? get paymentReconciliationReport => _paymentReconciliationReport;
+  ReportModel? get reportReconciliation => _reportReconciliation;
 
   Future<void> fetchSalesReport({required DateTime startDate, required DateTime endDate}) async {
     _isLoading = true;
@@ -130,6 +132,17 @@ class ReportsProvider extends ChangeNotifier {
     } catch (e, st) {
       LoggerService.error('Fetch dish profit report failed', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش سود غذاها ناموفق بود.');
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchReportReconciliation({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _reportReconciliation = await _repository.getReportReconciliation(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch report reconciliation failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'تطبیق سفارش‌ها، پرداخت‌ها و گردش انبار ناموفق بود.');
       notifyListeners();
     }
   }
