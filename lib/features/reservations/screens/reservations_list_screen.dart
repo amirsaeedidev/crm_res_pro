@@ -86,7 +86,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final guestController = TextEditingController(text: (current?.partySize ?? 2).toString());
     final noteController = TextEditingController(text: current?.note ?? '');
     final customerSearchController = TextEditingController();
-    String? customerId = current?.userId ?? customers.first.id;
+    String? customerId = current?.userId;
     UserModel? selectedCustomer;
     for (final customer in customers) {
       if (customer.id == customerId) {
