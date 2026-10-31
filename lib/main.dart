@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'app/app.dart';
+import 'core/services/app_error_handler.dart';
 import 'core/services/logger_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/supabase_service.dart';
@@ -41,9 +42,10 @@ Future<void> main() async {
         stackTrace: st,
       );
 
-      startupError =
-          'اتصال به Supabase برقرار نشد. پارامترهای '
-          'SUPABASE_URL و SUPABASE_PUBLISHABLE_KEY را با --dart-define تنظیم کنید.';
+      startupError = AppErrorHandler.message(
+        e,
+        fallback: 'اتصال به سرور برقرار نشد. تنظیمات اتصال را بررسی کنید.',
+      );
     }
   }
 
