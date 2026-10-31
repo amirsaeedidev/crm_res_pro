@@ -28,6 +28,7 @@ type OutboxRow = {
   pattern_args: string[] | null;
   attempts: number;
   max_attempts: number;
+  campaign_id: string | null;
 };
 
 function json(data: unknown, status = 200) {
@@ -64,6 +65,52 @@ function parseProviderResponse(raw: string): Record<string, unknown> {
     if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
   } catch { /* Provider body is parsed only here and never exposed to the client. */ }
   return { Value: raw.trim() };
+}
+
+
+async function trackCampaignLinks(row: OutboxRow): Promise<OutboxRow> {
+  if (!row.campaign_id) return row;
+  const trackingBase = (Deno.env.get("SMS_TRACKING_BASE_URL") ?? `${SUPABASE_URL}/functions/v1/sms-campaign-click`).replace(/\\/$/, "");
+  const existingResult = await admin.from("sms_campaign_tracking_tokens")
+    .select("token,destination_url").eq("outbox_id", row.id);
+  const existing = (existingResult.data ?? []) as Array<{ token: string; destination_url: string | null }>;
+
+  const rewrite = async (source: string): Promise<string> => {
+    const urlPattern = /https?:\\/\\/[^\\s<>"']+/gi;
+    const matches = [...source.matchAll(urlPattern)];
+    let result = source;
+    for (const match of matches) {
+      const raw = match[0];
+      const suffix = raw.match(/[).,،!?;:]+$/)?.[0] ?? "";
+      const destination = raw.slice(0, raw.length - suffix.length);
+      if (!/^https?:\\/\\//i.test(destination)) continue;
+      let token = existing.find((item) => item.destination_url === destination)?.token;
+      if (!token) {
+        token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+        const { error } = await admin.from("sms_campaign_tracking_tokens").insert({
+          outbox_id: row.id,
+          campaign_id: row.campaign_id,
+          recipient_user_id: row.recipient_user_id,
+          token,
+          destination_url: destination,
+        });
+        if (error) {
+          // Link tracking must never block delivery of a valid campaign message.
+          continue;
+        }
+        existing.push({ token, destination_url: destination });
+      }
+      const tracked = `${trackingBase}?token=${encodeURIComponent(token)}`;
+      result = result.replace(raw, tracked + suffix);
+    }
+    return result;
+  };
+
+  if (row.send_mode === "normal") {
+    return { ...row, normal_message: await rewrite(row.normal_message) };
+  }
+  const args = await Promise.all((row.pattern_args ?? []).map((arg) => rewrite(arg)));
+  return { ...row, pattern_args: args };
 }
 
 async function sendToMelipayamak(
@@ -155,7 +202,8 @@ Deno.serve(async (req: Request) => {
     const summary = { processed: 0, sent: 0, retried: 0, failed: 0 };
     for (const row of (rows ?? []) as OutboxRow[]) {
       summary.processed++;
-      const outcome = await sendToMelipayamak(row, settings, username, apiKey);
+      const trackedRow = await trackCampaignLinks(row);
+      const outcome = await sendToMelipayamak(trackedRow, settings, username, apiKey);
       const { data: finalized, error: finalizeError } = await admin.rpc("sms_finalize_attempt", {
         p_outbox_id: row.id,
         p_success: outcome.ok,
