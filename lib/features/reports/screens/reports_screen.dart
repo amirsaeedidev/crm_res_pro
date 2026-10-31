@@ -681,6 +681,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     }
     final revenue = _asNum(summary['revenue']);
     final stockCost = _asNum(summary['inventory_cost']);
+    final wasteCost = _asNum(summary['waste_cost']);
     final expenses = _asNum(summary['operating_expenses']);
     final ingredientPurchases = _asNum(summary['ingredient_purchase_expenses']);
     final profit = _asNum(summary['estimated_profit']);
@@ -688,9 +689,10 @@ class _ReportsScreenState extends State<ReportsScreen>
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
         _metric('درآمد فروش', '${_number(revenue)} تومان', Icons.payments_outlined, _blue, 'فقط سفارش‌های تکمیل‌شده'),
-        _metric('هزینه مواد اولیه', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مصرف ثبت‌شده انبار'),
-        _metric('هزینه‌های جاری', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده'),
-        _metric('سود تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درآمد منهای هزینه‌های ثبت‌شده'),
+        _metric('مواد مصرف‌شده', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مواد مصرف‌شده طبق دستور پخت و سفارش'),
+        _metric('ضایعات مواد', '${_number(wasteCost)} تومان', Icons.delete_sweep_outlined, const Color(0xFFE45B70), 'ضایعات ثبت‌شده در انبار'),
+        _metric('هزینه‌های عملیاتی', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده به‌جز خرید مواد'),
+        _metric('سود عملیاتی تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'فروش منهای مواد مصرفی، ضایعات و هزینه‌های عملیاتی'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: Icons.account_balance_outlined,
@@ -700,14 +702,17 @@ class _ReportsScreenState extends State<ReportsScreen>
         ]),
         child: Column(children: [
           _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
-          _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
-          _financialLine('هزینه‌های جاری', expenses, const Color(0xFFE9A23B)),
+          _financialLine('مواد مصرف‌شده در سفارش‌ها', stockCost, const Color(0xFF8B72E8)),
+          _financialLine('ضایعات مواد اولیه', wasteCost, const Color(0xFFE45B70)),
+          _financialLine('هزینه‌های عملیاتی', expenses, const Color(0xFFE9A23B)),
           _financialLine('خرید مواد ثبت‌شده (جدا از سود)', ingredientPurchases, const Color(0xFF65C99A)),
           const Divider(height: 24),
           _financialLine('مجموع هزینه‌ها', costs, const Color(0xFFE45B70)),
           _financialLine('سود تخمینی', profit, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
           const SizedBox(height: 12),
-          const Text('توجه: سود قطعی حسابداری نیست؛ به ثبت دقیق بهای مواد اولیه، دستور پخت و هزینه‌های جاری وابسته است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+          Text('حاشیه سود: ${_digits(_asNum(summary['profit_margin_percent']).toStringAsFixed(2))}٪', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          const Text('توجه: سود تخمینی بر اساس مواد مصرف‌شده، ضایعات ثبت‌شده و هزینه‌های عملیاتی است. خرید مواد جداگانه نمایش داده می‌شود تا با مصرف و ضایعات دوباره‌شماری نشود.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
         ])),
       if (chart.isNotEmpty) ...[
         const SizedBox(height: 18),
