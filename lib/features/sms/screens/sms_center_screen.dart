@@ -1331,6 +1331,12 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               AppColors.success,
             ),
             _metric(
+              'تحویل‌شده',
+              _outbox.where((e) => e['delivery_status'] == 'delivered').length.toString(),
+              Icons.mark_email_read_outlined,
+              AppColors.success,
+            ),
+            _metric(
               'ناموفق',
               _outbox.where((e) => e['status'] == 'failed').length.toString(),
               Icons.error_outline,
@@ -1508,6 +1514,21 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                         alignment: Alignment.centerRight,
                         child: Text(
                           'شناسه درگاه: ${row['provider_message_id']}',
+                        ),
+                      ),
+                    if ((row['delivery_status'] ?? 'unknown') != 'unknown')
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'وضعیت تحویل: ${row['delivery_status'] == 'delivered' ? 'تحویل‌شده' : row['delivery_status'] == 'undelivered' ? 'تحویل‌نشده' : 'در انتظار گزارش'}',
+                        ),
+                      ),
+                    if ((row['delivery_error'] ?? '').toString().isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'خطای تحویل: ${row['delivery_error']}',
+                          style: TextStyle(color: AppColors.error),
                         ),
                       ),
                     if ((row['last_error'] ?? '').toString().isNotEmpty)
