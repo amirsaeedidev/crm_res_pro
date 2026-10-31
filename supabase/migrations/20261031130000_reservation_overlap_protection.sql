@@ -14,6 +14,27 @@ alter table public.reservations
   add constraint reservations_duration_minutes_check
   check (duration_minutes between 15 and 480);
 
+create schema if not exists extensions;
+create extension if not exists btree_gist with schema extensions;
+set local search_path = public, extensions;
+
+alter table public.reservations
+  drop constraint if exists reservations_no_overlapping_active_table_time;
+
+alter table public.reservations
+  add constraint reservations_no_overlapping_active_table_time
+  exclude using gist (
+    table_id with =,
+    tsrange(
+      reservation_date + reservation_time,
+      reservation_date + reservation_time + make_interval(mins => duration_minutes),
+      '[)'
+    ) with &&
+  )
+  where (status in ('pending', 'confirmed')
+    and reservation_date is not null
+    and reservation_time is not null);
+
 create or replace function public.enforce_reservation_time_overlap()
 returns trigger
 language plpgsql
