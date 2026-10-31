@@ -11,7 +11,9 @@ import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 
 class AppSidebar extends StatelessWidget {
-  const AppSidebar({super.key});
+  final bool drawerMode;
+
+  const AppSidebar({super.key, this.drawerMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class AppSidebar extends StatelessWidget {
 
     return Container(
       width: AppSizes.sidebarWidth,
-      color: AppColors.surfaceDark,
+      color: drawerMode ? const Color(0xFFA1FAEC) : AppColors.surfaceDark,
       child: Column(
         children: [
           // Logo Header
@@ -38,19 +40,19 @@ class AppSidebar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.dashboard, color: AppColors.primary, size: AppSizes.iconLg),
+                Icon(Icons.dashboard, color: drawerMode ? Colors.white : AppColors.primary, size: AppSizes.iconLg),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   AppStrings.appName,
                   style: AppTypography.headlineMedium.copyWith(
-                    color: AppColors.textPrimaryDark,
+                    color: drawerMode ? Colors.white : AppColors.textPrimaryDark,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          Divider(color: AppColors.borderDark, height: 1),
+          Divider(color: drawerMode ? Colors.white.withValues(alpha: 0.35) : AppColors.borderDark, height: 1),
           
           // Menu Items
           Expanded(
@@ -61,6 +63,7 @@ class AppSidebar extends StatelessWidget {
               ),
               children: [
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.home_outlined,
                   label: AppStrings.dashboard,
                   isActive: navProvider.selectedIndex == 0,
@@ -204,7 +207,7 @@ class AppSidebar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSizes.md),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.borderDark, width: 1)),
+              border: Border(top: BorderSide(color: drawerMode ? Colors.white.withValues(alpha: 0.35) : AppColors.borderDark, width: 1)),
             ),
             child: Row(
               children: [
@@ -219,13 +222,13 @@ class AppSidebar extends StatelessWidget {
                     children: [
                       Text(
                         displayName,
-                        style: AppTypography.titleSmall.copyWith(color: AppColors.textPrimaryDark),
+                        style: AppTypography.titleSmall.copyWith(color: drawerMode ? Colors.white : AppColors.textPrimaryDark),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         displayEmail,
-                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondaryDark),
+                        style: AppTypography.bodySmall.copyWith(color: drawerMode ? Colors.white : AppColors.textSecondaryDark),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -233,7 +236,7 @@ class AppSidebar extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.logout, color: AppColors.textSecondaryDark, size: AppSizes.iconSm),
+                  icon: Icon(Icons.logout, color: drawerMode ? Colors.white : AppColors.textSecondaryDark, size: AppSizes.iconSm),
                   tooltip: 'خروج',
                   onPressed: () {
                     context.read<AuthProvider>().logout();
