@@ -1,10 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/realtime_service.dart';
 import '../models/reservation_model.dart';
 import '../repositories/reservations_repository.dart';
 
 class ReservationsProvider extends ChangeNotifier {
+  RealtimeChannel? _realtimeChannel;
+  bool _realtimeWasConnected = false;
+
+  void _ensureRealtimeSubscription() {
+    if (_realtimeChannel != null) return;
+    _realtimeChannel = RealtimeService.subscribeToTable(
+      table: 'reservations',
+      onInsert: (_) => unawaited(fetchReservations()),
+      onUpdate: (_) => unawaited(fetchReservations()),
+      onDelete: (_) => unawaited(fetchReservations()),
+      onStatus: (status, message) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          if (_realtimeWasConnected) unawaited(fetchReservations());
+          _realtimeWasConnected = true;
+        }
+      },
+    );
+  }
+
   final ReservationsRepository _repository;
   ReservationsProvider(this._repository);
 
@@ -30,6 +53,7 @@ class ReservationsProvider extends ChangeNotifier {
   String get statusFilter => _statusFilter;
 
   Future<void> fetchReservations() async {
+    _ensureRealtimeSubscription();
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -109,6 +133,15 @@ class ReservationsProvider extends ChangeNotifier {
       return true;
     } catch (e) { _error = AppErrorMessage.from(e); return false; }
     finally { _isUpdating = false; notifyListeners(); }
+  }
+
+  
+  @override
+  void dispose() {
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
+    super.dispose();
   }
 
 }
