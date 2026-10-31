@@ -71,7 +71,8 @@ async function getTrackingUrl(row: OutboxRow): Promise<string | undefined> {
     if (error) throw new Error("Unable to create campaign tracking token");
     token = data.token as string;
   }
-  return SUPABASE_URL.replace(/\\/$/, "") + "/functions/v1/sms-track?t=" + encodeURIComponent(token);
+  const baseUrl = SUPABASE_URL.endsWith("/") ? SUPABASE_URL.slice(0, -1) : SUPABASE_URL;
+  return baseUrl + "/functions/v1/sms-track?t=" + encodeURIComponent(token);
 }
 
 function formBody(values: Record<string, string>) {
