@@ -142,7 +142,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: category,
+                    initialValue: category,
                     decoration: const InputDecoration(labelText: 'دسته‌بندی هزینه'),
                     items: _categories.entries
                         .map((entry) => DropdownMenuItem(
@@ -153,7 +153,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: method,
+                    initialValue: method,
                     decoration: const InputDecoration(labelText: 'روش پرداخت'),
                     items: _methods.entries
                         .map((entry) => DropdownMenuItem(
@@ -196,6 +196,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   const SizedBox(height: 14),
                   OutlinedButton.icon(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       final result = await FilePicker.pickFiles(
                         allowMultiple: false,
                         withData: true,
@@ -206,13 +207,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       final file = result.files.single;
                       final bytes = file.bytes;
                       if (bytes == null || bytes.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('خواندن فایل انتخاب‌شده ناموفق بود.')),
                         );
                         return;
                       }
                       if (bytes.length > 10 * 1024 * 1024) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('حداکثر حجم رسید ۱۰ مگابایت است.')),
                         );
                         return;
@@ -389,7 +390,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 onRefresh: _loadExpenses,
                 child: ListView.separated(
                   itemCount: _expenses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final row = _expenses[index];
                     final category = _categories[row['category']] ?? 'سایر';
