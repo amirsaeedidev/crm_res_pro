@@ -73,6 +73,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.shopping_bag_outlined,
                   label: AppStrings.orders,
                   isActive: navProvider.selectedIndex == 1,
@@ -82,6 +83,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.inventory_2_outlined,
                   label: AppStrings.products,
                   isActive: navProvider.selectedIndex == 2,
@@ -91,6 +93,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.people_outline,
                   label: AppStrings.customers,
                   isActive: navProvider.selectedIndex == 3,
@@ -100,6 +103,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.category_outlined,
                   label: AppStrings.categories,
                   isActive: navProvider.selectedIndex == 4,
@@ -109,6 +113,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.analytics_outlined,
                   imageAssetPath: 'assets/images/dashboard_reports.webp',
                   label: AppStrings.reports,
@@ -119,6 +124,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.table_restaurant_outlined,
                   label: 'میزها',
                   isActive: navProvider.selectedIndex == 7,
@@ -128,6 +134,7 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.event_available_outlined,
                   label: 'رزروها',
                   isActive: navProvider.selectedIndex == 8,
@@ -137,60 +144,70 @@ class AppSidebar extends StatelessWidget {
                   },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.campaign_outlined,
                   label: 'بنرها',
                   isActive: navProvider.selectedIndex == 9,
                   onTap: () { navProvider.updateIndex(9); context.go('/banners'); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.discount_outlined,
                   label: 'تخفیف‌ها',
                   isActive: navProvider.selectedIndex == 10,
                   onTap: () { navProvider.updateIndex(10); context.go('/discounts'); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.support_agent_outlined,
                   label: 'تیکت‌ها',
                   isActive: navProvider.selectedIndex == 11,
                   onTap: () { navProvider.updateIndex(11); context.go(AppRoutes.tickets); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.folder_open_outlined,
                   label: 'مدیریت فایل‌ها',
                   isActive: navProvider.selectedIndex == 12,
                   onTap: () { navProvider.updateIndex(12); context.go(AppRoutes.files); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.loyalty_outlined,
                   label: 'باشگاه مشتریان',
                   isActive: navProvider.selectedIndex == 13,
                   onTap: () { navProvider.updateIndex(13); context.go(AppRoutes.loyalty); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.sms_outlined,
                   label: 'مرکز پیامک',
                   isActive: navProvider.selectedIndex == 14,
                   onTap: () { navProvider.updateIndex(14); context.go(AppRoutes.sms); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.warehouse_outlined,
                   label: 'انبارداری و مواد اولیه',
                   isActive: navProvider.selectedIndex == 15,
                   onTap: () { navProvider.updateIndex(15); context.go(AppRoutes.inventory); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'کیف پول مالی مشتریان',
                   isActive: navProvider.selectedIndex == 16,
                   onTap: () { navProvider.updateIndex(16); context.go(AppRoutes.wallets); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.notifications_active_outlined,
                   label: 'مدیریت اعلان‌ها',
                   isActive: navProvider.selectedIndex == 17,
                   onTap: () { navProvider.updateIndex(17); context.go(AppRoutes.notifications); },
                 ),
                 NavigationItem(
+                  forceWhite: drawerMode,
                   icon: Icons.settings_outlined,
                   label: AppStrings.settings,
                   isActive: navProvider.selectedIndex == 6,
