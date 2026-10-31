@@ -7,6 +7,18 @@ begin;
 alter table public.reservations
   add column if not exists duration_minutes integer not null default 90;
 
+-- A reservation may exist before it is converted into an order.
+alter table public.reservations
+  alter column order_id drop not null;
+
+-- Notification triggers already write an event_key for idempotency; add the
+-- missing column/index so reservation and order notifications can persist.
+alter table public.customer_notifications
+  add column if not exists event_key text;
+
+create unique index if not exists customer_notifications_event_key_uidx
+  on public.customer_notifications(event_key);
+
 alter table public.reservations
   drop constraint if exists reservations_duration_minutes_check;
 
