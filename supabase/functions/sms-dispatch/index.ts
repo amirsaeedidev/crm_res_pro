@@ -112,7 +112,7 @@ async function sendToMelipayamak(
     if (!sender) return { ok: false, code: "CONFIG", error: "Normal SMS sender number is not configured.", durationMs: Date.now() - started };
     fields.from = sender;
     fields.text = row.tracking_url
-      ? row.normal_message.trim() + '\\n' + row.tracking_url
+      ? row.normal_message.trim() + String.fromCharCode(10) + row.tracking_url
       : row.normal_message;
     fields.isFlash = "false";
   }
