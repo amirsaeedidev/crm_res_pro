@@ -76,14 +76,14 @@ async function trackCampaignLinks(row: OutboxRow): Promise<OutboxRow> {
   const existing = (existingResult.data ?? []) as Array<{ token: string; destination_url: string | null }>;
 
   const rewrite = async (source: string): Promise<string> => {
-    const urlPattern = /https?:\\/\\/[^\\s<>"']+/gi;
+    const urlPattern = /https?:\/\/[^\s<>"']+/gi;
     const matches = [...source.matchAll(urlPattern)];
     let result = source;
     for (const match of matches) {
       const raw = match[0];
       const suffix = raw.match(/[).,،!?;:]+$/)?.[0] ?? "";
       const destination = raw.slice(0, raw.length - suffix.length);
-      if (!/^https?:\\/\\//i.test(destination)) continue;
+      if (!/^https?:\/\//i.test(destination)) continue;
       let token = existing.find((item) => item.destination_url === destination)?.token;
       if (!token) {
         token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
