@@ -25,7 +25,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
   final _address = TextEditingController();
   final _header = TextEditingController();
   final _footer = TextEditingController();
-  String _paperSize = 'a4';
+  String _paperSize = '80mm';
   bool _showLogo = true;
   bool _showDate = true;
   bool _showCustomer = true;
@@ -59,28 +59,28 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
   Future<void> _load() async {
     try {
       final row = await SupabaseService.client
-          .from('receipt_settings')
+          .from('restaurant_settings')
           .select('*')
-          .eq('id', 'main')
+          .eq('id', 'restaurant')
           .maybeSingle();
       if (!mounted) return;
       if (row != null) {
-        _storeName.text = (row['store_name'] ?? '').toString();
-        _logoUrl.text = (row['logo_url'] ?? '').toString();
-        _phone.text = (row['store_phone'] ?? '').toString();
-        _address.text = (row['store_address'] ?? '').toString();
-        _header.text = (row['header_text'] ?? '').toString();
-        _footer.text = (row['footer_text'] ?? '').toString();
-        _paperSize = (row['paper_size'] ?? 'a4').toString();
-        _showLogo = row['show_logo'] == true;
-        _showDate = row['show_date'] != false;
-        _showCustomer = row['show_customer'] != false;
-        _showPhone = row['show_phone'] != false;
-        _showOrderType = row['show_order_type'] != false;
-        _showTable = row['show_table_number'] != false;
-        _showQueue = row['show_queue_number'] != false;
-        _showDiscount = row['show_discount'] != false;
-        _showNotes = row['show_notes'] != false;
+        _storeName.text = (row['company_name'] ?? '').toString();
+        _logoUrl.text = (row['receipt_logo_url'] ?? '').toString();
+        _phone.text = (row['company_phone'] ?? '').toString();
+        _address.text = (row['company_address'] ?? '').toString();
+        _header.text = (row['receipt_header_text'] ?? '').toString();
+        _footer.text = (row['receipt_footer_text'] ?? '').toString();
+        _paperSize = (row['receipt_paper_size'] ?? '80mm').toString();
+        _showLogo = row['receipt_show_logo'] == true;
+        _showDate = row['receipt_show_date'] != false;
+        _showCustomer = row['receipt_show_customer'] != false;
+        _showPhone = row['receipt_show_phone'] != false;
+        _showOrderType = row['receipt_show_order_type'] != false;
+        _showTable = row['receipt_show_table_number'] != false;
+        _showQueue = row['receipt_show_queue_number'] != false;
+        _showDiscount = row['receipt_show_discount'] != false;
+        _showNotes = row['receipt_show_notes'] != false;
       }
     } on PostgrestException catch (e) {
       if (mounted) setState(() => _error = AppErrorMessage.from(e, fallback: 'بارگذاری تنظیمات فاکتور انجام نشد. دوباره تلاش کنید.'));
@@ -160,24 +160,24 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
           throw const FormatException('نشانی اینترنتی لوگو معتبر نیست.');
         }
       }
-      await SupabaseService.client.from('receipt_settings').upsert({
-        'id': 'main',
-        'store_name': _storeName.text.trim(),
-        'logo_url': logo,
-        'store_phone': _phone.text.trim(),
-        'store_address': _address.text.trim(),
-        'header_text': _header.text.trim(),
-        'footer_text': _footer.text.trim(),
-        'paper_size': _paperSize,
-        'show_logo': _showLogo,
-        'show_date': _showDate,
-        'show_customer': _showCustomer,
-        'show_phone': _showPhone,
-        'show_order_type': _showOrderType,
-        'show_table_number': _showTable,
-        'show_queue_number': _showQueue,
-        'show_discount': _showDiscount,
-        'show_notes': _showNotes,
+      await SupabaseService.client.from('restaurant_settings').upsert({
+        'id': 'restaurant',
+        'company_name': _storeName.text.trim(),
+        'receipt_logo_url': logo,
+        'company_phone': _phone.text.trim(),
+        'company_address': _address.text.trim(),
+        'receipt_header_text': _header.text.trim(),
+        'receipt_footer_text': _footer.text.trim(),
+        'receipt_paper_size': _paperSize,
+        'receipt_show_logo': _showLogo,
+        'receipt_show_date': _showDate,
+        'receipt_show_customer': _showCustomer,
+        'receipt_show_phone': _showPhone,
+        'receipt_show_order_type': _showOrderType,
+        'receipt_show_table_number': _showTable,
+        'receipt_show_queue_number': _showQueue,
+        'receipt_show_discount': _showDiscount,
+        'receipt_show_notes': _showNotes,
         'updated_by': SupabaseService.client.auth.currentUser?.id,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'id');
