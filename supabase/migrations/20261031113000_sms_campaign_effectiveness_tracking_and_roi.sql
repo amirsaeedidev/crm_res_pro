@@ -95,7 +95,7 @@ begin
     select c.* from public.sms_campaigns c where c.created_at>=p_start and c.created_at<p_end
   ),
   link_orders as (
-    select distinct on (o.id) o.id as order_id, click.campaign_id, 'link'::text as attribution_type
+    select o.id as order_id, click.campaign_id, 'link'::text as attribution_type
     from public.orders o
     join lateral (
       select cl.campaign_id,cl.clicked_at from public.sms_campaign_clicks cl
