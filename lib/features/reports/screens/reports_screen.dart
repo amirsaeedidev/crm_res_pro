@@ -641,6 +641,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     final revenue = _asNum(summary['revenue']);
     final stockCost = _asNum(summary['inventory_cost']);
     final expenses = _asNum(summary['operating_expenses']);
+    final ingredientPurchases = _asNum(summary['ingredient_purchase_expenses']);
     final profit = _asNum(summary['estimated_profit']);
     final costs = _asNum(summary['total_costs']);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -657,6 +658,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
           _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
           _financialLine('هزینه‌های جاری', expenses, const Color(0xFFE9A23B)),
+          _financialLine('خرید مواد ثبت‌شده (جدا از سود)', ingredientPurchases, const Color(0xFF65C99A)),
           const Divider(height: 24),
           _financialLine('مجموع هزینه‌ها', costs, const Color(0xFFE45B70)),
           _financialLine('سود تخمینی', profit, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
@@ -694,7 +696,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
     final amountController = TextEditingController();
-    final categoryController = TextEditingController(text: 'عمومی');
+    var selectedCategory = 'other';
     final notesController = TextEditingController();
     final saved = await showDialog<bool>(
       context: context,
@@ -707,7 +709,21 @@ class _ReportsScreenState extends State<ReportsScreen>
             const SizedBox(height: 10),
             TextFormField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مبلغ (تومان)'), validator: (v) => (_asNum(v) <= 0) ? 'مبلغ معتبر وارد کنید' : null),
             const SizedBox(height: 10),
-            TextFormField(controller: categoryController, decoration: const InputDecoration(labelText: 'دسته‌بندی')),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              decoration: const InputDecoration(labelText: 'دسته‌بندی هزینه'),
+              items: const [
+                DropdownMenuItem(value: 'personnel', child: Text('حقوق و دستمزد')),
+                DropdownMenuItem(value: 'rent', child: Text('اجاره')),
+                DropdownMenuItem(value: 'utilities', child: Text('آب، برق و گاز')),
+                DropdownMenuItem(value: 'delivery', child: Text('ارسال و پیک')),
+                DropdownMenuItem(value: 'marketing', child: Text('بازاریابی')),
+                DropdownMenuItem(value: 'maintenance', child: Text('تعمیر و نگهداری')),
+                DropdownMenuItem(value: 'ingredients_purchase', child: Text('خرید مواد اولیه')),
+                DropdownMenuItem(value: 'other', child: Text('سایر')),
+              ],
+              onChanged: (value) => selectedCategory = value ?? 'other',
+            ),
             const SizedBox(height: 10),
             TextFormField(controller: notesController, maxLines: 2, decoration: const InputDecoration(labelText: 'توضیحات (اختیاری)')),
           ])),
@@ -721,7 +737,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               await SupabaseService.client.from('restaurant_expenses').insert({
                 'title': titleController.text.trim(),
                 'amount': _asNum(amountController.text),
-                'category': categoryController.text.trim().isEmpty ? 'other' : categoryController.text.trim(),
+                'category': selectedCategory,
                 'notes': notesController.text.trim(),
                 'created_by': userId,
               });
@@ -739,7 +755,6 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
     titleController.dispose();
     amountController.dispose();
-    categoryController.dispose();
     notesController.dispose();
     if (saved == true && mounted) _fetchReport();
   }
