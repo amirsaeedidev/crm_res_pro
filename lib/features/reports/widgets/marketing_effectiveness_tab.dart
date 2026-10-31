@@ -81,9 +81,13 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
     if (_loading && _campaigns.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null && _campaigns.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(_error!), const SizedBox(height: 10), FilledButton(onPressed: _load, child: const Text('تلاش دوباره')),
-    ]));
+    if (_error != null && _campaigns.isEmpty) {
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(_error!),
+        const SizedBox(height: 10),
+        FilledButton(onPressed: _load, child: const Text('تلاش دوباره')),
+      ]));
+    }
     final roi = _summary['roi_percent'];
     final metrics = <Widget>[
       _metric('کمپین‌ها', _digits(_summary['campaign_count']), Icons.campaign_outlined),
