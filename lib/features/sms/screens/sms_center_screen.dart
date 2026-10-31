@@ -23,6 +23,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   Map<String, dynamic> _settings = {};
   List<Map<String, dynamic>> _templates = [];
   List<Map<String, dynamic>> _eligibleCustomers = [];
+  List<Map<String, dynamic>> _discounts = [];
+  String? _selectedDiscountId;
   List<Map<String, dynamic>> _staff = [];
   List<Map<String, dynamic>> _outbox = [];
   List<Map<String, dynamic>> _attempts = [];
@@ -123,6 +125,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
         _repo.getDeliveryStats(),
         _repo.getMarketingEligibleCustomers(),
         _repo.getCampaignEffectiveness(),
+        _repo.getActiveDiscounts(),
       ]);
       if (!mounted) return;
       _settings = Map<String, dynamic>.from(values[0] as Map);
@@ -133,6 +136,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _stats = List<Map<String, dynamic>>.from(values[5] as List);
       _eligibleCustomers = List<Map<String, dynamic>>.from(values[6] as List);
       _campaignEffectiveness = Map<String, dynamic>.from(values[7] as Map);
+      _discounts = List<Map<String, dynamic>>.from(values[8] as List);
       _applySettingsToForm();
       _applyTemplatesToForm();
     } catch (e) {
@@ -345,6 +349,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             .map((e) => e.trim())
             .toList(),
         scheduledAt: _campaignSchedule,
+        discountId: _selectedDiscountId,
       );
       _toast(
         'کمپین در صف قرار گرفت؛ تعداد گیرندگان: ${result['recipient_count'] ?? 0}.',
@@ -1104,6 +1109,31 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               ),
             const SizedBox(height: 12),
             _field(_campaignName, 'نام کمپین'),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              value: _selectedDiscountId,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'کد تخفیف متصل به کمپین (اختیاری)',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('بدون کد تخفیف'),
+                ),
+                ..._discounts.map((discount) {
+                  final id = discount['id'].toString();
+                  final title = (discount['title'] ?? '').toString();
+                  final code = (discount['code'] ?? '').toString();
+                  return DropdownMenuItem<String?>(
+                    value: id,
+                    child: Text('$title • $code', overflow: TextOverflow.ellipsis),
+                  );
+                }),
+              ],
+              onChanged: (value) => setState(() => _selectedDiscountId = value),
+            ),
             const SizedBox(height: 12),
             if (!_isPattern)
               _field(_campaignMessage, 'متن پیامک', maxLines: 4)
