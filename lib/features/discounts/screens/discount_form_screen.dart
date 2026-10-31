@@ -171,7 +171,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   Future<void> _pickTargetCustomers() async {
     final searchController = TextEditingController();
     final selectedPhones = _targetPhonesController.text
-        .split(RegExp(r'[,،;；\\n]'))
+        .split(RegExp(r'[,،;；\n]'))
         .map((value) => value.trim())
         .where((value) => value.isNotEmpty)
         .toSet();
@@ -296,7 +296,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     searchController.dispose();
     if (selection != null && mounted) {
       setState(() {
-        _targetPhonesController.text = selection.join('\\n');
+        _targetPhonesController.text = selection.join('\n');
       });
     }
   }
