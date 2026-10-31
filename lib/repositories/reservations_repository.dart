@@ -84,17 +84,32 @@ class ReservationsRepository {
     }
   }
 
+  int _minutesFromTime(String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) return 0;
+    return (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
+  }
+
   Future<void> _ensureSlotAvailable({required String tableId, required DateTime date, required String time, String? excludeReservationId}) async {
     final dateValue = date.toIso8601String().substring(0, 10);
-    var query = _client.from('reservations').select('id')
+    var query = _client.from('reservations')
+        .select('id,reservation_time,duration_minutes')
         .eq('table_id', tableId)
         .eq('reservation_date', dateValue)
-        .eq('reservation_time', time)
         .inFilter('status', ['pending', 'confirmed']);
     if (excludeReservationId != null) query = query.neq('id', excludeReservationId);
-    final conflicts = await query.limit(1);
-    if (conflicts.isNotEmpty) {
-      throw Exception('برای این میز در تاریخ و ساعت انتخاب‌شده رزرو فعالی وجود دارد.');
+    final conflicts = await query;
+    const requestedDurationMinutes = 90;
+    final requestedStart = _minutesFromTime(time);
+    final requestedEnd = requestedStart + requestedDurationMinutes;
+    for (final row in conflicts) {
+      final existingTime = (row['reservation_time'] ?? '').toString();
+      final existingStart = _minutesFromTime(existingTime);
+      final existingDuration = (row['duration_minutes'] as num?)?.toInt() ?? 90;
+      final existingEnd = existingStart + existingDuration;
+      if (requestedStart < existingEnd && existingStart < requestedEnd) {
+        throw Exception('این میز در بخشی از بازه ۹۰ دقیقه‌ای انتخاب‌شده رزرو فعال دارد. زمان دیگری انتخاب کنید.');
+      }
     }
   }
 
