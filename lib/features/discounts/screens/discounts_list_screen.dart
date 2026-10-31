@@ -39,7 +39,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
   }
 
   String _formatDate(DateTime value) => _persianDigits(
-        _dateFormatter.format(value),
+        _dateFormatter.format(value.toLocal()),
       );
 
   @override
@@ -56,16 +56,27 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     super.dispose();
   }
 
-  ChipType _getStatusChipType(bool isActive, DateTime endDate) {
-    if (!isActive) return ChipType.neutral;
-    if (DateTime.now().isAfter(endDate)) return ChipType.error;
+  ChipType _getStatusChipType(DiscountModel discount) {
+    if (!discount.isActive) return ChipType.neutral;
+    final now = DateTime.now();
+    if (now.isBefore(discount.startDate)) return ChipType.neutral;
+    if (now.isAfter(discount.endDate)) return ChipType.error;
     return ChipType.success;
   }
 
-  String _getStatusText(bool isActive, DateTime endDate) {
-    if (!isActive) return 'غیرفعال';
-    if (DateTime.now().isAfter(endDate)) return 'منقضی شده';
+  String _getStatusText(DiscountModel discount) {
+    if (!discount.isActive) return 'غیرفعال';
+    final now = DateTime.now();
+    if (now.isBefore(discount.startDate)) return 'زمان‌بندی‌شده';
+    if (now.isAfter(discount.endDate)) return 'منقضی شده';
     return 'فعال';
+  }
+
+  String _usageLabel(DiscountModel discount) {
+    final limit = discount.totalUsageLimit == null
+        ? 'نامحدود'
+        : _persianDigits(discount.totalUsageLimit.toString());
+    return '${_persianDigits(discount.usedCount.toString())} / $limit';
   }
 
   @override
@@ -163,6 +174,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                 _buildHeaderText(context, 'کد تخفیف', 1),
                 _buildHeaderText(context, 'نوع', 1),
                 _buildHeaderText(context, 'مقدار', 1),
+                _buildHeaderText(context, 'مصرف', 1),
                 _buildHeaderText(context, 'تاریخ پایان', 1),
                 _buildHeaderText(context, 'وضعیت', 1),
                 _buildHeaderText(context, 'عملیات', 1),
@@ -216,9 +228,19 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
         children: [
           Expanded(
             flex: 2,
-            child: Text(
-              discount.title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  discount.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                if (discount.restrictedToCustomers)
+                  Text(
+                    'کد اختصاصی مشتریان انتخاب‌شده',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primary),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -248,6 +270,20 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           ),
           Expanded(
             flex: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_usageLabel(discount), style: Theme.of(context).textTheme.bodyMedium),
+                if (discount.perUserUsageLimit != null)
+                  Text(
+                    'هر مشتری: ${_persianDigits(discount.perUserUsageLimit.toString())}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
             child: Text(
               _formatDate(discount.endDate),
               style: Theme.of(context).textTheme.bodyMedium,
@@ -256,8 +292,8 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           Expanded(
             flex: 1,
             child: CustomChip(
-              label: _getStatusText(discount.isActive, discount.endDate),
-              type: _getStatusChipType(discount.isActive, discount.endDate),
+              label: _getStatusText(discount),
+              type: _getStatusChipType(discount),
             ),
           ),
           Expanded(
@@ -309,8 +345,8 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   CustomChip(
-                    label: _getStatusText(discount.isActive, discount.endDate),
-                    type: _getStatusChipType(discount.isActive, discount.endDate),
+                    label: _getStatusText(discount),
+                    type: _getStatusChipType(discount),
                   ),
                 ],
               ),
@@ -321,6 +357,11 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                 Icons.percent,
                 'مقدار: ${discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان'}',
               ),
+              _buildMobileRow(context, Icons.insights_outlined, 'مصرف کل: ${_usageLabel(discount)}'),
+              if (discount.perUserUsageLimit != null)
+                _buildMobileRow(context, Icons.person_outline, 'سقف هر مشتری: ${_persianDigits(discount.perUserUsageLimit.toString())} بار'),
+              if (discount.restrictedToCustomers)
+                _buildMobileRow(context, Icons.person_pin_circle_outlined, 'کد اختصاصی مشتریان انتخاب‌شده'),
               _buildMobileRow(context, Icons.calendar_today, 'پایان: ${_formatDate(discount.endDate)}'),
               const SizedBox(height: AppSizes.md),
               Align(

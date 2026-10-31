@@ -8,7 +8,7 @@ class DiscountModel {
   final double? minPurchaseAmount;
   final double? maxDiscountAmount;
   final int? totalUsageLimit;
-  /// The current schema has no per-user usage limit column.
+  /// Maximum number of times one customer can redeem this code.
   final int? perUserUsageLimit;
   final bool restrictedToCustomers;
   final List<String> targetPhones;
