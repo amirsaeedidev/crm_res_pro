@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/utils/app_error_message.dart';
 import '../../../models/reservation_model.dart';
 import '../../../models/table_model.dart';
@@ -169,6 +170,40 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     )));
     guestController.dispose(); noteController.dispose();
     if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(reservationDate: date); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
+  }
+
+  Future<void> _convertReservationToOrder(ReservationModel reservation) async {
+    final reservationsProvider = context.read<ReservationsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تبدیل رزرو به سفارش'),
+        content: Text(
+          'برای «${reservation.customerName}» یک سفارش حضوری برای میز ${_persianDigits(reservation.tableNumber)} ایجاد شود؟ زمان ورود مشتری نیز ثبت خواهد شد.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.receipt_long_rounded),
+            label: const Text('ایجاد سفارش'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final orderId = await reservationsProvider.convertReservationToOrder(reservation.id);
+    if (!mounted) return;
+    if (orderId == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(reservationsProvider.error ?? 'تبدیل رزرو ناموفق بود.')),
+      );
+      return;
+    }
+    messenger.showSnackBar(const SnackBar(content: Text('سفارش حضوری ایجاد و به میز رزرو متصل شد.')));
+    await context.push('/orders/details/$orderId');
   }
 
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
@@ -593,6 +628,16 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             const SizedBox(height: 10),
             Text('یادداشت: ${reservation.note}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
+          if (reservation.orderId != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'سفارش متصل: #${reservation.orderId!.substring(0, 8).toUpperCase()}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           if (reservation.status == ReservationStatus.delayed && reservation.delayMinutes != null) ...[
             const SizedBox(height: 10),
             Text(
@@ -621,7 +666,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             runSpacing: 8,
             children: [
               OutlinedButton.icon(
-                onPressed: () => _showReservationForm(reservation),
+                onPressed: reservation.orderId == null ? () => _showReservationForm(reservation) : null,
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('ویرایش'),
               ),
@@ -630,6 +675,25 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                 icon: const Icon(Icons.history_rounded, size: 18),
                 label: const Text('سوابق'),
               ),
+              if (reservation.orderId != null)
+                FilledButton.icon(
+                  onPressed: () => context.push('/orders/details/${reservation.orderId}'),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  label: const Text('مشاهده سفارش'),
+                )
+              else if ({
+                ReservationStatus.pending,
+                ReservationStatus.confirmed,
+                ReservationStatus.delayed,
+                ReservationStatus.arrived,
+              }.contains(reservation.status))
+                FilledButton.icon(
+                  onPressed: context.watch<ReservationsProvider>().isUpdating
+                      ? null
+                      : () => _convertReservationToOrder(reservation),
+                  icon: const Icon(Icons.point_of_sale_rounded, size: 18),
+                  label: const Text('تبدیل به سفارش'),
+                ),
               PopupMenuButton<String>(
                 tooltip: 'تغییر وضعیت رزرو',
                 onSelected: (status) => _changeStatus(reservation, status),

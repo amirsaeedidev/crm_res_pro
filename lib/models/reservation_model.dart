@@ -29,6 +29,7 @@ class ReservationModel {
   final String id;
   final String? userId;
   final String? tableId;
+  final String? orderId;
   final String customerName;
   final String customerPhone;
   final DateTime date;
@@ -47,7 +48,7 @@ class ReservationModel {
   final DateTime? noShowAt;
 
   const ReservationModel({
-    required this.id, this.userId, this.tableId,
+    required this.id, this.userId, this.tableId, this.orderId,
     required this.customerName, required this.customerPhone,
     required this.date, required this.time, required this.partySize,
     required this.tableNumber, this.note,
@@ -64,6 +65,7 @@ class ReservationModel {
       id: json['id'].toString(),
       userId: json['user_id']?.toString(),
       tableId: json['table_id']?.toString(),
+      orderId: json['order_id']?.toString(),
       customerName: (json['customer_name'] ?? '').toString(),
       customerPhone: (json['customer_phone'] ?? '').toString(),
       date: DateTime.tryParse(dateString) ?? created ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
@@ -86,7 +88,7 @@ class ReservationModel {
   }
 
   ReservationModel copyWith({
-    String? id, String? userId, String? tableId, String? customerName,
+    String? id, String? userId, String? tableId, String? orderId, String? customerName,
     String? customerPhone, DateTime? date, String? time, int? partySize,
     String? tableNumber, String? note, ReservationStatus? status,
     DateTime? createdAt, DateTime? arrivedAt, DateTime? delayedAt,
@@ -94,7 +96,7 @@ class ReservationModel {
     String? cancellationReason, DateTime? noShowAt,
   }) => ReservationModel(
     id: id ?? this.id, userId: userId ?? this.userId,
-    tableId: tableId ?? this.tableId, customerName: customerName ?? this.customerName,
+    tableId: tableId ?? this.tableId, orderId: orderId ?? this.orderId, customerName: customerName ?? this.customerName,
     customerPhone: customerPhone ?? this.customerPhone, date: date ?? this.date,
     time: time ?? this.time, partySize: partySize ?? this.partySize,
     tableNumber: tableNumber ?? this.tableNumber, note: note ?? this.note,

@@ -391,6 +391,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           const SizedBox(height: AppSizes.sm),
           Text('نوع سفارش:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
           Text(_orderTypeLabel(order.orderType), style: Theme.of(context).textTheme.bodyMedium),
+          if (order.orderType == 'dine_in' && order.tableNumber != null) ...[
+            const SizedBox(height: AppSizes.sm),
+            Text('شماره میز:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+            Text('میز ${_persianDigits(order.tableNumber)}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ],
           
           if (order.adminNote != null && order.adminNote!.isNotEmpty) ...[
             const Divider(height: AppSizes.lg),

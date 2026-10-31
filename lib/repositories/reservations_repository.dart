@@ -68,6 +68,26 @@ class ReservationsRepository {
     }
   }
 
+  Future<String> convertReservationToOrder(String reservationId) async {
+    try {
+      final result = await _client.rpc(
+        'convert_reservation_to_order',
+        params: {'p_reservation_id': reservationId},
+      );
+      final orderId = result?.toString();
+      if (orderId == null || orderId.isEmpty) {
+        throw Exception('شناسه سفارش ایجادشده از سرور دریافت نشد.');
+      }
+      return orderId;
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Convert reservation to order failed', error: e, stackTrace: st);
+      if (e.code == '42501') throw Exception('فقط مدیر فعال می‌تواند رزرو را به سفارش تبدیل کند.');
+      if (e.code == '22023') throw Exception(e.message);
+      if (e.code == 'P0002') throw Exception('رزرو موردنظر پیدا نشد.');
+      throw Exception(_friendlyError(e, 'تبدیل رزرو به سفارش'));
+    }
+  }
+
   Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String reservationId) async {
     try {
       final rows = await _client

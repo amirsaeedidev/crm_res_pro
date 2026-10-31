@@ -109,6 +109,24 @@ class ReservationsProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> convertReservationToOrder(String reservationId) async {
+    _isUpdating = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final orderId = await _repository.convertReservationToOrder(reservationId);
+      await fetchReservations();
+      return orderId;
+    } catch (e, st) {
+      LoggerService.error('Convert reservation to order failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e);
+      return null;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
   Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String id) =>
       _repository.getReservationStatusHistory(id);
 

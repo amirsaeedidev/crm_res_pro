@@ -1,0 +1,1 @@
+-- See the applied reservation_to_dine_in_order migration in Supabase.
