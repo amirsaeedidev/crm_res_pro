@@ -31,7 +31,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 7, vsync: this);
+    _tabs = TabController(length: 8, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -72,6 +72,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
+    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);
   }
 
   Future<void> _pickCustomRange() async {
@@ -197,6 +198,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                         Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
+                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),
                       ],
                     ),
                   ),
@@ -213,6 +215,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
+                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),
                       ],
                     ),
                   ),
@@ -297,6 +300,105 @@ class _ReportsScreenState extends State<ReportsScreen>
       reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', Icons.timer_outlined, delayedRows, 'delayed'),
       const SizedBox(height: 16),
       reportCard('مشتریان پرتکرار', 'مشتریانی با حداقل ۳ سفارش در بازه انتخابی', Icons.repeat_rounded, repeatRows, 'repeat_customer'),
+    ]);
+  }
+
+
+  Widget _tableUsageTab(
+    BuildContext context,
+    bool mobile,
+    Map<String, dynamic> summary,
+    Map<String, dynamic> data,
+    bool loading,
+  ) {
+    final tables = (data['tables'] as List<dynamic>? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final hours = (data['hours'] as List<dynamic>? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final peakHour = _num(summary, 'peak_hour').toInt();
+    final peakLabel = '${peakHour.toString().padLeft(2, '0')}:00';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (loading) const LinearProgressIndicator(minHeight: 2),
+      _metricGrid(context, mobile, [
+        _metric('سفارش‌های سالن', _number(_num(summary, 'total_orders')), Icons.receipt_long_outlined, _blue, 'سفارش‌های غیرلغوشده در بازه'),
+        _metric('مجموع زمان اشغال', '${_number(_num(summary, 'occupied_minutes') / 60)} ساعت', Icons.timer_outlined, const Color(0xFF8B72E8), 'زمان ثبت‌شده برای سفارش‌های سالن'),
+        _metric('میانگین حضور', '${_number(_num(summary, 'average_minutes'))} دقیقه', Icons.hourglass_bottom_rounded, const Color(0xFF39B982), 'میانگین از شروع تا پایان سفارش'),
+        _metric('شلوغ‌ترین ساعت', peakLabel, Icons.schedule_rounded, const Color(0xFFE9A23B), '${_number(_num(summary, 'peak_hour_orders'))} سفارش'),
+      ]),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'ساعات شلوغی رستوران',
+        subtitle: 'تعداد سفارش‌های سالن بر اساس ساعت ثبت سفارش',
+        icon: Icons.bar_chart_rounded,
+        child: hours.isEmpty
+          ? const _NoData(message: 'اطلاعاتی برای ساعات شلوغی وجود ندارد.')
+          : SizedBox(
+              height: 250,
+              child: BarChart(BarChartData(
+                gridData: const FlGridData(show: true, drawVerticalLine: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true, reservedSize: 32,
+                    getTitlesWidget: (v, meta) => Text(_digits(v.toInt()), style: const TextStyle(fontSize: 10, color: Color(0xFF8792A8))),
+                  )),
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true, interval: 3, reservedSize: 30,
+                    getTitlesWidget: (v, meta) {
+                      final i = v.toInt();
+                      if (i < 0 || i >= hours.length) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 7),
+                        child: Text('${hours[i]['label']}', style: const TextStyle(fontSize: 9, color: Color(0xFF8792A8))),
+                      );
+                    },
+                  )),
+                ),
+                barGroups: hours.asMap().entries.map((entry) {
+                  final count = _num(entry.value, 'order_count').toDouble();
+                  return BarChartGroupData(x: entry.key, barRods: [
+                    BarChartRodData(
+                      toY: count, width: mobile ? 6 : 10,
+                      borderRadius: BorderRadius.circular(4),
+                      color: entry.key == peakHour ? const Color(0xFFE9A23B) : _blue,
+                    ),
+                  ]);
+                }).toList(),
+              )),
+            ),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'عملکرد هر میز',
+        subtitle: 'تعداد سفارش، مجموع زمان اشغال و میانگین زمان هر سفارش',
+        icon: Icons.table_restaurant_outlined,
+        child: tables.isEmpty
+          ? const _NoData(message: 'میز فعالی برای گزارش وجود ندارد.')
+          : Column(children: tables.map((item) {
+              final count = _num(item, 'order_count');
+              final minutes = _num(item, 'occupied_minutes');
+              final average = _num(item, 'average_minutes');
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: _paleBlue,
+                  foregroundColor: _blue,
+                  child: Text(_digits(item['table_number'])),
+                ),
+                title: Text('میز ${_digits(item['table_number'])} · ظرفیت ${_digits(item['capacity'])} نفر',
+                  style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+                subtitle: Text('${_number(minutes / 60)} ساعت اشغال · میانگین ${_number(average)} دقیقه'),
+                trailing: Text('${_number(count)} سفارش', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+              );
+            }).toList()),
+      ),
+      const SizedBox(height: 10),
+      const Text(
+        'مبنای گزارش: سفارش‌های سالن متصل به میز. سفارش‌های لغوشده محاسبه نمی‌شوند؛ برای سفارش باز، زمان تا لحظه گزارش لحاظ می‌شود.',
+        style: TextStyle(color: Color(0xFF8792A8), fontSize: 11),
+      ),
     ]);
   }
 
