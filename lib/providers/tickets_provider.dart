@@ -10,6 +10,7 @@ import '../repositories/tickets_repository.dart';
 class TicketsProvider extends ChangeNotifier {
   RealtimeChannel? _realtimeChannel;
   bool _realtimeWasConnected = false;
+  bool _disposed = false;
 
   void _ensureRealtimeSubscription() {
     if (_realtimeChannel != null) return;
@@ -53,6 +54,7 @@ class TicketsProvider extends ChangeNotifier {
   Map<String, int> get counts => Map.unmodifiable(_counts);
 
   Future<void> fetchTickets() async {
+    if (_disposed) return;
     _ensureRealtimeSubscription();
     _isLoading = true; _error = null; notifyListeners();
     try { _tickets = await _repository.getTickets(page: _page, pageSize: _pageSize, search: _search, status: _status); _totalPages = _tickets.length == _pageSize ? _page + 1 : _page; _counts = await _repository.getTicketCounts(); }
@@ -102,6 +104,7 @@ class TicketsProvider extends ChangeNotifier {
   
   @override
   void dispose() {
+    _disposed = true;
     final channel = _realtimeChannel;
     _realtimeChannel = null;
     if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
