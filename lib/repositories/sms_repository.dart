@@ -45,12 +45,21 @@ class SmsRepository {
     return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
   }
 
+  Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
+    final rows = await _client.from('discounts').select('id,title,code').eq('is_active', true).order('created_at', ascending: false).limit(200);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
+  }
+
   Future<Map<String, dynamic>> createCampaign({
     required String name,
     required List<String> customerIds,
     required String message,
     required String bodyId,
     required List<String> patternArgs,
+    String? discountId,
+    double smsCostPerMessage = 0,
+    double otherCampaignCost = 0,
+    int attributionWindowDays = 7,
   }) async {
     final result = await _client.rpc('admin_create_sms_campaign', params: {
       'p_name': name,
@@ -59,6 +68,10 @@ class SmsRepository {
       'p_pattern_body_id': bodyId,
       'p_pattern_args': patternArgs,
       'p_audience_filter': {'customer_ids': customerIds},
+      'p_discount_id': discountId,
+      'p_sms_cost_per_message': smsCostPerMessage,
+      'p_other_campaign_cost': otherCampaignCost,
+      'p_attribution_window_days': attributionWindowDays,
     });
     if (result is! Map) throw const FormatException('پاسخ ایجاد کمپین معتبر نیست.');
     return Map<String, dynamic>.from(result);
