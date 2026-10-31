@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import '../../../core/utils/app_error_message.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -11,6 +13,8 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_textfield.dart';
 import '../../../models/discount_model.dart';
+import '../../../models/user_model.dart';
+import '../../../repositories/customers_repository.dart';
 import '../../../providers/discounts_provider.dart';
 import '../../../repositories/discounts_repository.dart';
 
@@ -33,6 +37,12 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   final _totalUsageController = TextEditingController();
   final _perUserUsageController = TextEditingController();
   final _targetPhonesController = TextEditingController();
+  final _customerSearchController = TextEditingController();
+  final Map<String, UserModel> _selectedCustomers = {};
+  List<UserModel> _customerSuggestions = [];
+  Timer? _customerSearchDebounce;
+  bool _customerSearchLoading = false;
+  int _customerSearchRequest = 0;
   
   String? _selectedType;
   DateTime? _startDate;
@@ -63,6 +73,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           _perUserUsageController.text = discount.perUserUsageLimit?.toString() ?? '';
           _targetPhonesController.text = discount.targetPhones.join('\n');
           _restrictedToCustomers = discount.restrictedToCustomers;
+          if (_restrictedToCustomers && discount.targetPhones.isNotEmpty) await _loadExistingTargetCustomers(discount.targetPhones);
           _selectedType = discount.type == 'percentage' ? 'Percentage' : 'Fixed Amount';
           _startDate = discount.startDate;
           _endDate = discount.endDate;
@@ -83,39 +94,93 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     _totalUsageController.dispose();
     _perUserUsageController.dispose();
     _targetPhonesController.dispose();
+    _customerSearchController.dispose();
+    _customerSearchDebounce?.cancel();
     super.dispose();
   }
 
   Future<void> _pickDate(BuildContext context, bool isStart) async {
-    final pickedDate = await showDatePicker(
+    final today = Jalali.now();
+    final pickedDate = await showPersianDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primary,
-                  onPrimary: Colors.white,
-                  surface: AppColors.getSurface(context),
-                  onSurface: AppColors.getPrimaryText(context),
-                ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: isStart && _startDate != null
+          ? Jalali.fromDateTime(_startDate!)
+          : (!isStart && _endDate != null ? Jalali.fromDateTime(_endDate!) : today),
+      firstDate: Jalali(1402, 1, 1),
+      lastDate: Jalali(1500, 12, 29),
+      helpText: isStart ? 'انتخاب تاریخ شروع' : 'انتخاب تاریخ پایان',
+      initialEntryMode: PersianDatePickerEntryMode.calendar,
     );
-
     if (pickedDate != null) {
       setState(() {
         if (isStart) {
-          _startDate = pickedDate;
+          _startDate = pickedDate.toDateTime();
         } else {
-          _endDate = pickedDate;
+          _endDate = pickedDate.toDateTime();
         }
       });
     }
+  }
+
+
+  Future<void> _loadExistingTargetCustomers(List<String> phones) async {
+    final repository = context.read<CustomersRepository>();
+    for (final phone in phones) {
+      try {
+        final matches = await repository.getCustomers(page: 1, pageSize: 8, searchQuery: phone);
+        UserModel? customer;
+        for (final item in matches) {
+          if (item.phone?.trim() == phone.trim()) { customer = item; break; }
+        }
+        if (customer != null) _selectedCustomers[customer.id] = customer;
+      } catch (_) {}
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _searchCustomers(String value) {
+    _customerSearchDebounce?.cancel();
+    final request = ++_customerSearchRequest;
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() { _customerSuggestions = []; _customerSearchLoading = false; });
+      return;
+    }
+    setState(() => _customerSearchLoading = true);
+    _customerSearchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      try {
+        final matches = await context.read<CustomersRepository>().getCustomers(page: 1, pageSize: 8, searchQuery: query);
+        if (!mounted || request != _customerSearchRequest) return;
+        setState(() { _customerSuggestions = matches; _customerSearchLoading = false; });
+      } catch (_) {
+        if (!mounted || request != _customerSearchRequest) return;
+        setState(() { _customerSuggestions = []; _customerSearchLoading = false; });
+      }
+    });
+  }
+
+  void _selectCustomer(UserModel customer) {
+    if (customer.phone?.trim().isNotEmpty != true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('برای این مشتری شماره تلفن ثبت نشده است.')));
+      return;
+    }
+    setState(() {
+      _selectedCustomers[customer.id] = customer;
+      _customerSearchController.clear();
+      _customerSuggestions = [];
+      _customerSearchLoading = false;
+    });
+    _syncTargetPhoneController();
+  }
+
+  void _removeCustomer(UserModel customer) {
+    setState(() => _selectedCustomers.remove(customer.id));
+    _syncTargetPhoneController();
+  }
+
+  void _syncTargetPhoneController() {
+    _targetPhonesController.text = _selectedCustomers.values
+        .map((customer) => customer.phone!.trim()).toSet().join('\\n');
   }
 
   String _persianDigits(String value) {
@@ -281,7 +346,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             child: AbsorbPointer(
                               child: AppTextField(
                                 labelText: 'تاریخ شروع *',
-                                hintText: _startDate == null ? 'انتخاب تاریخ' : _persianDigits(DateFormat('yyyy-MM-dd').format(_startDate!)),
+                                hintText: _startDate == null ? 'انتخاب تاریخ' : _persianDigits(Jalali.fromDateTime(_startDate!).formatCompactDate()),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
@@ -294,7 +359,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             child: AbsorbPointer(
                               child: AppTextField(
                                 labelText: 'تاریخ پایان *',
-                                hintText: _endDate == null ? 'انتخاب تاریخ' : _persianDigits(DateFormat('yyyy-MM-dd').format(_endDate!)),
+                                hintText: _endDate == null ? 'انتخاب تاریخ' : _persianDigits(Jalali.fromDateTime(_endDate!).formatCompactDate()),
                                 prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
                               ),
                             ),
@@ -383,12 +448,65 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                   if (_restrictedToCustomers) ...[
                     const SizedBox(height: AppSizes.sm),
                     AppTextField(
-                      controller: _targetPhonesController,
-                      labelText: 'شماره تلفن مشتریان *',
-                      hintText: 'هر شماره در یک خط یا جداشده با ویرگول',
-                      minLines: 3,
-                      maxLines: 7,
-                      validator: (value) => _restrictedToCustomers && (value == null || value.trim().isEmpty) ? 'حداقل یک شماره وارد کنید.' : null,
+                      controller: _customerSearchController,
+                      labelText: 'جست‌وجوی مشتری با شماره یا نام *',
+                      hintText: 'شماره موبایل یا نام مشتری را وارد کنید',
+                      prefixIcon: const Icon(Icons.person_search_outlined),
+                      onChanged: _searchCustomers,
+                    ),
+                    if (_customerSearchLoading)
+                      const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
+                    else if (_customerSearchController.text.trim().isNotEmpty && _customerSuggestions.isEmpty)
+                      const Padding(padding: EdgeInsets.all(10), child: Text('مشتری‌ای با این مشخصات پیدا نشد.'))
+                    else if (_customerSuggestions.isNotEmpty)
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        decoration: BoxDecoration(border: Border.all(color: Theme.of(context).dividerColor), borderRadius: BorderRadius.circular(12)),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: _customerSuggestions.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final customer = _customerSuggestions[index];
+                            final selected = _selectedCustomers.containsKey(customer.id);
+                            return ListTile(
+                              dense: true,
+                              leading: CircleAvatar(radius: 17, child: Text(customer.fullName.isNotEmpty ? customer.fullName[0] : 'م')),
+                              title: Text(customer.fullName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              subtitle: Text('تلفن: ${customer.phone ?? 'ثبت نشده'}\\nشناسه: ${customer.id}', maxLines: 2, overflow: TextOverflow.ellipsis),
+                              trailing: Icon(selected ? Icons.check_circle : Icons.add_circle_outline, color: selected ? Colors.green : null),
+                              onTap: selected ? null : () => _selectCustomer(customer),
+                            );
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: AppSizes.sm),
+                    if (_selectedCustomers.isNotEmpty)
+                      Align(alignment: Alignment.centerRight, child: Text('مشتریان انتخاب‌شده (${_selectedCustomers.length})', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
+                    if (_selectedCustomers.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _selectedCustomers.values.map((customer) => InputChip(
+                            avatar: const Icon(Icons.person, size: 16),
+                            label: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 210),
+                              child: Text('${customer.fullName} • ${customer.phone}', overflow: TextOverflow.ellipsis),
+                            ),
+                            onDeleted: () => _removeCustomer(customer),
+                          )).toList(),
+                        ),
+                      )
+                    else
+                      const Text('با انتخاب مشتری، پروفایل او به شکل چیپ در پایین نمایش داده می‌شود.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    Offstage(
+                      offstage: true,
+                      child: AppTextField(
+                        controller: _targetPhonesController,
+                        validator: (value) => _restrictedToCustomers && _selectedCustomers.isEmpty && (value == null || value.trim().isEmpty) ? 'حداقل یک مشتری انتخاب کنید.' : null,
+                      ),
                     ),
                   ],
                   const SizedBox(height: AppSizes.md),
