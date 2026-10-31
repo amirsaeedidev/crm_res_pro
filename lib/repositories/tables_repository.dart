@@ -2,14 +2,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/logger_service.dart';
 import '../core/services/supabase_service.dart';
 import '../models/table_model.dart';
-import 'reservations_repository.dart';
 
 class TablesRepository {
   final SupabaseClient _client;
-  final ReservationsRepository _reservationsRepository;
-  TablesRepository({SupabaseClient? client, ReservationsRepository? reservationsRepository})
-      : _client = client ?? SupabaseService.client,
-        _reservationsRepository = reservationsRepository ?? ReservationsRepository(client: client);
+  TablesRepository({SupabaseClient? client}) : _client = client ?? SupabaseService.client;
 
   Future<List<TableModel>> getTables({DateTime? reservationDate}) async {
     try {
