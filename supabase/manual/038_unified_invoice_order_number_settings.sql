@@ -3,6 +3,7 @@
 
 alter table public.restaurant_settings
   add column if not exists receipt_logo_url text not null default '',
+  add column if not exists company_logo_url text not null default '',
   add column if not exists receipt_header_text text not null default '',
   add column if not exists receipt_footer_text text not null default 'با تشکر از خرید شما',
   add column if not exists receipt_paper_size text not null default '80mm',
