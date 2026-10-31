@@ -17,7 +17,9 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? _financialReport;
   ReportModel? _inventoryReport;
   ReportModel? _orderHealthReport;
-  ReportModel? _tableUsageReport;\n  ReportModel? _dishProfitReport;\n  ReportModel? _paymentReconciliationReport;
+  ReportModel? _tableUsageReport;
+  ReportModel? _dishProfitReport;
+  ReportModel? _paymentReconciliationReport;\n  ReportModel? _dishProfitReport;\n  ReportModel? _paymentReconciliationReport;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -28,7 +30,9 @@ class ReportsProvider extends ChangeNotifier {
   ReportModel? get financialReport => _financialReport;
   ReportModel? get inventoryReport => _inventoryReport;
   ReportModel? get orderHealthReport => _orderHealthReport;
-  ReportModel? get tableUsageReport => _tableUsageReport;\n  ReportModel? get dishProfitReport => _dishProfitReport;\n  ReportModel? get paymentReconciliationReport => _paymentReconciliationReport;
+  ReportModel? get tableUsageReport => _tableUsageReport;
+  ReportModel? get dishProfitReport => _dishProfitReport;
+  ReportModel? get paymentReconciliationReport => _paymentReconciliationReport;\n  ReportModel? get dishProfitReport => _dishProfitReport;\n  ReportModel? get paymentReconciliationReport => _paymentReconciliationReport;
 
   Future<void> fetchSalesReport({required DateTime startDate, required DateTime endDate}) async {
     _isLoading = true;
@@ -114,6 +118,29 @@ class ReportsProvider extends ChangeNotifier {
     } catch (e, st) {
       LoggerService.error('Fetch table usage report failed in provider', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش میزها و ساعات شلوغی ناموفق بود.');
+      notifyListeners();
+    }
+  }
+
+
+  Future<void> fetchDishProfitReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _dishProfitReport = await _repository.getDishProfitReport(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch dish profit report failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش سود غذاها ناموفق بود.');
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchPaymentReconciliationReport({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      _paymentReconciliationReport = await _repository.getPaymentReconciliationReport(startDate: startDate, endDate: endDate);
+      notifyListeners();
+    } catch (e, st) {
+      LoggerService.error('Fetch payment reconciliation report failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش پرداخت و مغایرت صندوق ناموفق بود.');
       notifyListeners();
     }
   }
