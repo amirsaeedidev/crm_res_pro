@@ -210,5 +210,33 @@ grant select on public.sms_campaign_clicks,public.sms_campaign_tracking_tokens t
 
 commit;
 
--- The scheduled wrapper admin_create_sms_campaign_scheduled(...) delegates to
--- the existing validated campaign RPC and updates scheduled_at in the same transaction.
+create or replace function public.admin_create_sms_campaign_scheduled(
+  p_name text,p_customer_ids uuid[],p_normal_message text,
+  p_pattern_body_id text default null,p_pattern_args text[] default '{}',
+  p_audience_filter jsonb default '{}',p_discount_id uuid default null,
+  p_sms_cost_per_message numeric default 0,p_other_campaign_cost numeric default 0,
+  p_attribution_window_days integer default 7,p_scheduled_at timestamptz default now()
+) returns jsonb language plpgsql security definer set search_path=''
+as $
+declare v_result jsonb; v_campaign_id uuid;
+begin
+  if not coalesce(public.is_admin(),false) then
+    raise exception 'Administrator access required' using errcode='42501';
+  end if;
+  if p_scheduled_at is null or p_scheduled_at < now()-interval '1 minute' then
+    raise exception 'Scheduled time must be now or in the future' using errcode='22023';
+  end if;
+  v_result:=public.admin_create_sms_campaign(
+    p_name,p_customer_ids,p_normal_message,p_pattern_body_id,p_pattern_args,
+    p_audience_filter,p_discount_id,p_sms_cost_per_message,p_other_campaign_cost,
+    p_attribution_window_days
+  );
+  v_campaign_id:=(v_result->>'campaign_id')::uuid;
+  update public.sms_campaigns set scheduled_at=p_scheduled_at,
+    status=case when p_scheduled_at>now() then 'queued' else status end
+   where id=v_campaign_id;
+  return v_result||jsonb_build_object('scheduled_at',p_scheduled_at);
+end;
+$;
+revoke all on function public.admin_create_sms_campaign_scheduled(text,uuid[],text,text,text[],jsonb,uuid,numeric,numeric,integer,timestamptz) from public,anon;
+grant execute on function public.admin_create_sms_campaign_scheduled(text,uuid[],text,text,text[],jsonb,uuid,numeric,numeric,integer,timestamptz) to authenticated;
