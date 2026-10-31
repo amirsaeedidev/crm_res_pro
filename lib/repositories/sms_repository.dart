@@ -105,6 +105,17 @@ class SmsRepository {
     return {'result': response.data};
   }
 
+  Future<Map<String, dynamic>> getCampaignEffectiveness({int days = 90}) async {
+    final end = DateTime.now().toUtc();
+    final start = end.subtract(Duration(days: days));
+    final result = await _client.rpc('admin_get_sms_campaign_effectiveness', params: {
+      'p_start': start.toIso8601String(),
+      'p_end': end.toIso8601String(),
+    });
+    if (result is! Map) throw const FormatException('گزارش اثربخشی کمپین معتبر نیست.');
+    return Map<String, dynamic>.from(result);
+  }
+
   Future<List<Map<String, dynamic>>> getStaff() async {
     final rows = await _client.from('sms_staff_recipients').select('*').order('created_at', ascending: false);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
