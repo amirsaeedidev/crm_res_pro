@@ -98,9 +98,11 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     List<UserModel> customerSuggestions = List<UserModel>.of(customers.take(8));
     bool customerSearchLoading = false;
     Timer? customerLookupDebounce;
+    int customerSearchRequest = 0;
 
     void searchCustomers(String value, StateSetter updateDialog) {
       customerLookupDebounce?.cancel();
+      final requestId = ++customerSearchRequest;
       final query = value.trim();
       updateDialog(() {
         customerId = null;
@@ -121,13 +123,13 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             pageSize: 8,
             searchQuery: query,
           );
-          if (!dialogContext.mounted) return;
+          if (!dialogContext.mounted || requestId != customerSearchRequest) return;
           updateDialog(() {
             customerSuggestions = matches;
             customerSearchLoading = false;
           });
         } catch (_) {
-          if (!dialogContext.mounted) return;
+          if (!dialogContext.mounted || requestId != customerSearchRequest) return;
           updateDialog(() {
             customerSuggestions = [];
             customerSearchLoading = false;
@@ -237,6 +239,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                             ),
                             onTap: () {
                               customerLookupDebounce?.cancel();
+                              customerSearchRequest++;
                               setDialogState(() {
                                 selectedCustomer = customer;
                                 customerId = customer.id;
@@ -289,7 +292,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         ]),
         const SizedBox(height: 12), TextField(controller: noteController, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)', border: OutlineInputBorder()))
       ]))),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری، میز و تعداد نفرات را صحیح انتخاب کنید.'))); return; }
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری را از فهرست پیشنهادها انتخاب کنید، سپس میز و تعداد نفرات را بررسی کنید.'))); return; }
         TableModel? selectedTable;
         for (final candidate in tables) { if (candidate.id == tableId) { selectedTable = candidate; break; } }
         if (selectedTable == null || guests > selectedTable.capacity) {
