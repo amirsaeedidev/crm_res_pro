@@ -59,7 +59,7 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
   String _money(Object? value) {
     final n = value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
     final s = n.round().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '٬');
-    return _digits(s) + ' تومان';
+    return '${_digits(s)} تومان';
   }
 
   Widget _metric(String title, Object? value, IconData icon) => Container(
@@ -78,7 +78,9 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading && _campaigns.isEmpty) return const Center(child: CircularProgressIndicator());
+    if (_loading && _campaigns.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_error != null && _campaigns.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Text(_error!), const SizedBox(height: 10), FilledButton(onPressed: _load, child: const Text('تلاش دوباره')),
     ]));
@@ -112,7 +114,7 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
       const SizedBox(height: 12),
       Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
         const Expanded(child: Text('ROI کل', style: TextStyle(fontWeight: FontWeight.w700))),
-        Text(roi == null ? 'هزینه کمپین ثبت نشده' : _digits((roi as num).toStringAsFixed(1)) + '٪',
+        Text(roi == null ? 'هزینه کمپین ثبت نشده' : '${_digits((roi as num).toStringAsFixed(1))}٪',
           style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Color(0xFF18A879))),
       ]))),
       const SizedBox(height: 12),
@@ -126,17 +128,17 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
           padding: const EdgeInsets.all(13), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text((c['name'] ?? 'کمپین').toString(), style: const TextStyle(fontWeight: FontWeight.w800))),
-              Text(campaignRoi == null ? 'ROI —' : 'ROI ' + _digits((campaignRoi as num).toStringAsFixed(1)) + '٪',
+              Text(campaignRoi == null ? 'ROI —' : 'ROI ${_digits((campaignRoi as num).toStringAsFixed(1))}٪',
                 style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF18A879))),
             ]),
-            if (c['discount_code'] != null) Text('کد تخفیف: ' + c['discount_code'].toString()),
+            if (c['discount_code'] != null) Text('کد تخفیف: ${c['discount_code']}'),
             const SizedBox(height: 8),
             Wrap(spacing: 14, runSpacing: 7, children: [
-              Text('ارسال پذیرفته‌شده: ' + _digits(c['sent_count'])),
-              Text('کلیک یکتا: ' + _digits(c['unique_clickers'])),
-              Text('سفارش: ' + _digits(c['attributed_orders'])),
-              Text('خرید با کد: ' + _digits(c['coupon_orders'])),
-              Text('خرید از لینک: ' + _digits(c['link_orders'])),
+              Text('ارسال پذیرفته‌شده: ${_digits(c['sent_count'])}'),
+              Text('کلیک یکتا: ${_digits(c['unique_clickers'])}'),
+              Text('سفارش: ${_digits(c['attributed_orders'])}'),
+              Text('خرید با کد: ${_digits(c['coupon_orders'])}'),
+              Text('خرید از لینک: ${_digits(c['link_orders'])}'),
             ]),
             const Divider(),
             Row(children: [
@@ -148,7 +150,7 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
         ));
       }),
       const Padding(padding: EdgeInsets.only(top: 8), child: Text(
-        'ارسال پذیرفته‌شده به معنی پذیرش توسط درگاه است، نه تحویل قطعی به گوشی. ROI بر اساس هزینه‌های ثبت‌شده محاسبه می‌شود و اثبات‌کننده فروش افزایشی نسبت به گروه کنترل نیست.',
+        'ارسال پذیرفته‌شده به معنی پذیرش توسط درگاه است، نه تحویل قطعی به گوشی. ROI بر اساس هزینه‌های ثبت‌شده محاسبه می‌شود؛ هزینه‌های عملیاتی تخصیص‌نیافته به سفارش در آن نیست و اثبات‌کننده فروش افزایشی نسبت به گروه کنترل هم نیست.',
         style: TextStyle(fontSize: 11, color: Color(0xFF75819A)))),
     ]);
   }
