@@ -65,8 +65,8 @@ class OrdersProvider extends ChangeNotifier {
   String get statusFilter => _statusFilter;
 
   Future<void> fetchOrders() async {
-    _ensureRealtimeSubscription();
     if (_disposed) return;
+    _ensureRealtimeSubscription();
     final requestVersion = ++_listRequestVersion;
     _isLoading = true;
     _error = null;
@@ -216,6 +216,9 @@ class OrdersProvider extends ChangeNotifier {
     ++_searchVersion;
     ++_listRequestVersion;
     ++_detailsRequestVersion;
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
     super.dispose();
   }
 
