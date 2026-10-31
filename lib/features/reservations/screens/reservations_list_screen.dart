@@ -100,7 +100,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     Timer? customerLookupDebounce;
     int customerSearchRequest = 0;
 
-    void searchCustomers(String value, StateSetter updateDialog) {
+    void searchCustomers(String value, StateSetter updateDialog, BuildContext searchContext) {
       customerLookupDebounce?.cancel();
       final requestId = ++customerSearchRequest;
       final query = value.trim();
@@ -123,13 +123,13 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             pageSize: 8,
             searchQuery: query,
           );
-          if (!dialogContext.mounted || requestId != customerSearchRequest) return;
+          if (!searchContext.mounted || requestId != customerSearchRequest) return;
           updateDialog(() {
             customerSuggestions = matches;
             customerSearchLoading = false;
           });
         } catch (_) {
-          if (!dialogContext.mounted || requestId != customerSearchRequest) return;
+          if (!searchContext.mounted || requestId != customerSearchRequest) return;
           updateDialog(() {
             customerSuggestions = [];
             customerSearchLoading = false;
@@ -158,13 +158,13 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                     tooltip: 'پاک‌کردن جست‌وجو',
                     onPressed: () {
                       customerSearchController.clear();
-                      searchCustomers('', setDialogState);
+                      searchCustomers('', setDialogState, dialogContext);
                     },
                     icon: const Icon(Icons.close),
                   ),
             border: const OutlineInputBorder(),
           ),
-          onChanged: (value) => searchCustomers(value, setDialogState),
+          onChanged: (value) => searchCustomers(value, setDialogState, dialogContext),
         ),
         const SizedBox(height: 8),
         if (selectedCustomer != null)
@@ -186,7 +186,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                   TextButton(
                     onPressed: () {
                       customerSearchController.clear();
-                      searchCustomers('', setDialogState);
+                      searchCustomers('', setDialogState, dialogContext);
                     },
                     child: const Text('تغییر'),
                   ),
