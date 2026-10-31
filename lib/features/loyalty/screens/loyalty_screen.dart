@@ -256,7 +256,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,8 +279,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               onSubmitted: (_) => _reload(),
             ),
             const SizedBox(height: AppSizes.md),
-            Expanded(
-              child: FutureBuilder<List<LoyaltyWalletModel>>(
+            FutureBuilder<List<LoyaltyWalletModel>>(
                 future: _walletsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -288,6 +287,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                   final wallets = snapshot.data ?? const <LoyaltyWalletModel>[];
                   if (wallets.isEmpty) return const Center(child: Text('کیف امتیازی برای نمایش وجود ندارد.'));
                   return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: wallets.length,
                     separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
                     itemBuilder: (context, index) {
@@ -313,7 +314,6 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                   );
                 },
               ),
-            ),
           ],
         ),
       );
