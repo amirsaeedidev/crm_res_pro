@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,9 +8,6 @@ class AppErrorHandler {
 
   static String message(Object error, {String? fallback}) {
     if (error is AppException) return error.message;
-    if (error is SocketException) {
-      return 'ارتباط با اینترنت برقرار نیست. اتصال خود را بررسی کنید.';
-    }
     if (error is TimeoutException) {
       return 'زمان انتظار برای پاسخ سرور به پایان رسید. دوباره تلاش کنید.';
     }
@@ -28,7 +24,9 @@ class AppErrorHandler {
     final raw = error.toString().toLowerCase();
     if (raw.contains('failed host lookup') ||
         raw.contains('socketexception') ||
-        raw.contains('network is unreachable')) {
+        raw.contains('network is unreachable') ||
+        raw.contains('connection refused') ||
+        raw.contains('no address associated with hostname')) {
       return 'سرور در دسترس نیست. اتصال اینترنت خود را بررسی کنید.';
     }
     if (raw.contains('failed to fetch') || raw.contains('clientexception')) {
