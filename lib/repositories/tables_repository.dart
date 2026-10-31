@@ -40,7 +40,7 @@ class TablesRepository {
     final dateValue = date.toIso8601String().substring(0, 10);
     final rows = await _client
         .from('reservations')
-        .select('table_id,status')
+        .select('table_id,status,order_id')
         .eq('reservation_date', dateValue)
         .inFilter('status', ['pending', 'confirmed', 'delayed', 'arrived']);
     final reserved = <String>{};
@@ -49,7 +49,9 @@ class TablesRepository {
       final tableId = row['table_id']?.toString();
       if (tableId == null || tableId.isEmpty) continue;
       if (row['status'] == 'arrived') {
-        arrived.add(tableId);
+        // The active linked order owns occupancy after conversion.
+        // Once that order is completed/cancelled, the table can be released.
+        if (row['order_id'] == null) arrived.add(tableId);
       } else {
         reserved.add(tableId);
       }

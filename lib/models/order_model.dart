@@ -48,7 +48,7 @@ class OrderModel {
   OrderModel copyWith({String? id, String? userId, String? customerName, String? customerPhone,
     String? orderType, String? status, String? assignedStaffId, double? totalAmount, int? estimatedReadyMinutes,
     String? adminNote, DateTime? completedAt, DateTime? createdAt, DateTime? updatedAt, List<OrderItem>? items,
-    double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, int? dailyQueueNumber}) => OrderModel(
+    double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, String? tableId, int? dailyQueueNumber}) => OrderModel(
       id: id ?? this.id, userId: userId ?? this.userId, customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone, orderType: orderType ?? this.orderType,
       status: status ?? this.status, assignedStaffId: assignedStaffId ?? this.assignedStaffId, totalAmount: totalAmount ?? this.totalAmount,
