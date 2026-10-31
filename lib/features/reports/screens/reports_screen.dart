@@ -199,12 +199,14 @@ class _ReportsScreenState extends State<ReportsScreen>
     addSummary('گزارش انبار', provider.inventoryReport?.summary);
     addTable('وضعیت مواد اولیه', provider.inventoryReport?.chartData ?? []);
     addSummary('سود هر غذا', provider.dishProfitReport?.summary);
-    final dishData = provider.dishProfitReport?.chartData.firstOrNull ?? const <String, dynamic>{};
+    final dishRows = provider.dishProfitReport?.chartData ?? const <Map<String, dynamic>>[];
+    final dishData = dishRows.isNotEmpty ? dishRows.first : const <String, dynamic>{};
     addTable('سودآوری غذاها', (dishData['dishes'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('سود روزانه', (dishData['daily'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('سود ماهانه', (dishData['monthly'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addSummary('تطبیق پرداخت و صندوق', provider.paymentReconciliationReport?.summary);
-    final paymentData = provider.paymentReconciliationReport?.chartData.firstOrNull ?? const <String, dynamic>{};
+    final paymentRows = provider.paymentReconciliationReport?.chartData ?? const <Map<String, dynamic>>[];
+    final paymentData = paymentRows.isNotEmpty ? paymentRows.first : const <String, dynamic>{};
     addTable('روش‌های پرداخت', (paymentData['methods'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('بستن صندوق و مغایرت', (paymentData['closings'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('وضعیت سفارش‌ها', provider.orderHealthReport?.chartData ?? []);
