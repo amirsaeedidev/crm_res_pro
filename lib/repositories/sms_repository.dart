@@ -52,6 +52,7 @@ class SmsRepository {
     required String bodyId,
     required List<String> patternArgs,
     DateTime? scheduledAt,
+    String? discountId,
   }) async {
     final result = await _client.rpc('admin_create_sms_campaign_scheduled', params: {
       'p_name': name,
@@ -60,7 +61,7 @@ class SmsRepository {
       'p_pattern_body_id': bodyId,
       'p_pattern_args': patternArgs,
       'p_audience_filter': {'customer_ids': customerIds},
-      'p_discount_id': null,
+      'p_discount_id': discountId,
       'p_sms_cost_per_message': 0,
       'p_other_campaign_cost': 0,
       'p_attribution_window_days': 7,
@@ -103,6 +104,14 @@ class SmsRepository {
     }
     if (response.data is Map) return Map<String, dynamic>.from(response.data as Map);
     return {'result': response.data};
+  }
+
+  Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
+    final rows = await _client.from('discounts')
+        .select('id,title,code,is_active')
+        .eq('is_active', true)
+        .order('created_at', ascending: false);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
   }
 
   Future<Map<String, dynamic>> getCampaignEffectiveness({int days = 90}) async {
