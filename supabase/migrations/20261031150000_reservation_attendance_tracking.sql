@@ -140,7 +140,7 @@ begin
       case when tg_op = 'INSERT' then null else old.status end,
       new.status,
       auth.uid(),
-      new.delay_minutes,
+      case when new.status = 'delayed' then new.delay_minutes else null end,
       case when new.status = 'delayed' then new.delay_note
            when new.status = 'cancelled' then new.cancellation_reason else null end
     );
