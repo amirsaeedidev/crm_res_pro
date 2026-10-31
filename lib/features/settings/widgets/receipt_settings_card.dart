@@ -70,7 +70,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       if (!mounted) return;
       if (row != null) {
         _storeName.text = (row['company_name'] ?? '').toString();
-        _logoUrl.text = (row['receipt_logo_url'] ?? '').toString();
+        _logoUrl.text = (row['company_logo_url'] ?? '').toString();
         _phone.text = (row['company_phone'] ?? '').toString();
         _address.text = (row['company_address'] ?? '').toString();
         _header.text = (row['receipt_header_text'] ?? '').toString();
@@ -176,7 +176,7 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
       await SupabaseService.client.from('restaurant_settings').upsert({
         'id': 'restaurant',
         'company_name': _storeName.text.trim(),
-        'receipt_logo_url': logo,
+        'company_logo_url': logo,
         'company_phone': _phone.text.trim(),
         'company_address': _address.text.trim(),
         'receipt_header_text': _header.text.trim(),
