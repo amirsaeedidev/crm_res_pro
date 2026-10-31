@@ -710,7 +710,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             TextFormField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مبلغ (تومان)'), validator: (v) => (_asNum(v) <= 0) ? 'مبلغ معتبر وارد کنید' : null),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              value: selectedCategory,
+              initialValue: selectedCategory,
               decoration: const InputDecoration(labelText: 'دسته‌بندی هزینه'),
               items: const [
                 DropdownMenuItem(value: 'personnel', child: Text('حقوق و دستمزد')),
