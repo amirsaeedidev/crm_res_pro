@@ -47,19 +47,28 @@ class _ReportsScreenState extends State<ReportsScreen>
   (DateTime, DateTime) _getDateRange() {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
+    final jalaliNow = Jalali.fromDateTime(now);
+    final jalaliMonthStart =
+        Jalali(jalaliNow.year, jalaliNow.month, 1).toDateTime();
+    // Jalali weeks start on Saturday. DateTime weekday: Monday=1 ... Sunday=7.
+    final daysSinceSaturday = (now.weekday + 1) % 7;
+    final jalaliWeekStart =
+        todayStart.subtract(Duration(days: daysSinceSaturday));
+
     switch (_selectedFilter) {
       case DateRangeFilter.today:
         return (todayStart, now);
       case DateRangeFilter.thisWeek:
-        return (todayStart.subtract(Duration(days: now.weekday - 1)), now);
+        return (jalaliWeekStart, now);
       case DateRangeFilter.thisMonth:
-        return (DateTime(now.year, now.month, 1), now);
+        return (jalaliMonthStart, now);
       case DateRangeFilter.custom:
-        if (_customDateRange == null) return (DateTime(now.year, now.month, 1), now);
+        if (_customDateRange == null) return (jalaliMonthStart, now);
         final end = _customDateRange!.end;
         return (
           _customDateRange!.start,
-          DateTime(end.year, end.month, end.day + 1).subtract(const Duration(microseconds: 1)),
+          DateTime(end.year, end.month, end.day + 1)
+              .subtract(const Duration(microseconds: 1)),
         );
     }
   }
