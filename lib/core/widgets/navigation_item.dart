@@ -9,6 +9,7 @@ class NavigationItem extends StatelessWidget {
   final String? imageAssetPath;
   final String label;
   final bool isActive;
+  final bool forceWhite;
   final VoidCallback onTap;
 
   const NavigationItem({
@@ -17,6 +18,7 @@ class NavigationItem extends StatelessWidget {
     this.imageAssetPath,
     required this.label,
     required this.isActive,
+    this.forceWhite = false,
     required this.onTap,
   });
 
@@ -47,7 +49,7 @@ class NavigationItem extends StatelessWidget {
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Icon(
                     icon,
-                    color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
+                    color: forceWhite ? Colors.white : (isActive ? AppColors.primary : AppColors.getSecondaryText(context)),
                     size: AppSizes.iconMd + 12,
                   ),
                 )
@@ -62,7 +64,7 @@ class NavigationItem extends StatelessWidget {
                 child: Text(
                   label,
                   style: AppTypography.titleMedium.copyWith(
-                    color: isActive ? AppColors.primary : AppColors.getPrimaryText(context),
+                    color: forceWhite ? Colors.white : (isActive ? AppColors.primary : AppColors.getPrimaryText(context)),
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
