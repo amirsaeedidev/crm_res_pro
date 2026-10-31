@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+import '../../../core/services/supabase_service.dart';
+
+class OrderPaymentPanel extends StatefulWidget {
+  final String orderId;
+  final num orderTotal;
+  const OrderPaymentPanel({super.key, required this.orderId, required this.orderTotal});
+  @override
+  State<OrderPaymentPanel> createState() => _OrderPaymentPanelState();
+}
+
+class _OrderPaymentPanelState extends State<OrderPaymentPanel> {
+  List<Map<String, dynamic>> rows = [];
+  bool loading = true;
+  static const methods = {'cash':'نقدی','card_terminal':'کارت‌خوان','online':'آنلاین','wallet':'کیف پول','bank_transfer':'انتقال بانکی','other':'سایر'};
+  num amount(Map<String,dynamic> row) => num.tryParse(row['amount']?.toString() ?? '') ?? 0;
+  num get paid => rows.where((r)=>r['status']=='received').fold<num>(0,(s,r)=>s+amount(r));
+  String money(num n) => n.round().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'),(m)=>'٬');
+  @override
+  void initState(){super.initState(); load();}
+  Future<void> load() async {
+    setState(()=>loading=true);
+    try {
+      final data=await SupabaseService.client.from('order_payments').select('id,amount,payment_method,status').eq('order_id',widget.orderId).order('received_at',ascending:false);
+      if(mounted)setState(()=>rows=data.map((e)=>Map<String,dynamic>.from(e)).toList());
+    } catch (_) {
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('دریافت سوابق پرداخت ناموفق بود.')));
+    } finally {if(mounted)setState(()=>loading=false);}
+  }
+  Future<void> addPayment() async {
+    final amountCtrl=TextEditingController(); final refCtrl=TextEditingController(); var method='card_terminal';
+    final ok=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,refresh)=>AlertDialog(
+      title:const Text('ثبت دریافت وجه'),
+      content:Column(mainAxisSize:MainAxisSize.min,children:[
+        TextField(controller:amountCtrl,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'مبلغ دریافتی (تومان)')),
+        DropdownButton<String>(value:method,items:methods.entries.map((e)=>DropdownMenuItem(value:e.key,child:Text(e.value))).toList(),onChanged:(v)=>refresh(()=>method=v??'card_terminal')),
+        TextField(controller:refCtrl,decoration:const InputDecoration(labelText:'شماره پیگیری (اختیاری)')),
+      ]),
+      actions:[
+        TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('انصراف')),
+        FilledButton(onPressed:() async {
+          final value=num.tryParse(amountCtrl.text.replaceAll(',','').trim());
+          if(value==null||value<=0||value>widget.orderTotal-paid){ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content:Text('مبلغ معتبر و کمتر یا مساوی مانده سفارش وارد کنید.')));return;}
+          try {
+            await SupabaseService.client.rpc('record_order_payment',params:{'p_order_id':widget.orderId,'p_amount':value,'p_payment_method':method,'p_reference_number':refCtrl.text.trim().isEmpty?null:refCtrl.text.trim(),'p_note':null});
+            if(ctx.mounted)Navigator.pop(ctx,true);
+          } catch (_) {if(ctx.mounted)ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content:Text('ثبت پرداخت ناموفق بود؛ مانده و دسترسی مدیر را بررسی کنید.')));}
+        },child:const Text('ثبت دریافت')),
+      ],
+    )));
+    amountCtrl.dispose();refCtrl.dispose();if(ok==true)await load();
+  }
+  Future<void> voidPayment(String id) async {
+    try {await SupabaseService.client.rpc('void_order_payment',params:{'p_payment_id':id});await load();}
+    catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('ابطال پرداخت ناموفق بود.')));}
+  }
+  @override
+  Widget build(BuildContext context){
+    final due=(widget.orderTotal-paid).clamp(0,double.infinity);
+    return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Expanded(child:Text('وضعیت دریافت وجه',style:TextStyle(fontWeight:FontWeight.bold,fontSize:17))),IconButton(onPressed:loading?null:load,icon:const Icon(Icons.refresh))]),
+      if(loading)const LinearProgressIndicator(),
+      Text('مبلغ سفارش: '+money(widget.orderTotal)+' تومان'),
+      Text('دریافت‌شده: '+money(paid)+' تومان',style:const TextStyle(color:Colors.green,fontWeight:FontWeight.bold)),
+      Text('مانده: '+money(due)+' تومان',style:const TextStyle(fontWeight:FontWeight.bold)),
+      const SizedBox(height:8),
+      FilledButton.icon(onPressed:loading||due<=0?null:addPayment,icon:const Icon(Icons.add),label:const Text('ثبت دریافت وجه')),
+      ...rows.map((r)=>ListTile(contentPadding:EdgeInsets.zero,title:Text(money(amount(r))+' تومان · '+(methods[r['payment_method']]??'سایر')),subtitle:Text(r['status']=='received'?'ثبت‌شده':'باطل‌شده'),trailing:r['status']=='received'?IconButton(icon:const Icon(Icons.undo,color:Colors.red),onPressed:()=>voidPayment(r['id'].toString())):null)),
+      const Text('پرداخت‌های قدیمی تا زمان ثبت دستی، دریافت‌شده محسوب نمی‌شوند.',style:TextStyle(fontSize:11,color:Colors.grey)),
+    ])));
+  }
+}
