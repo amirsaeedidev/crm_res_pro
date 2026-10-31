@@ -53,7 +53,9 @@ class AppRouter {
 
       // Routes inside the Main Layout (Sidebar + Topbar)
       ShellRoute(
-        builder: (context, state, child) => AdminRouteGuard(child: MainLayout(child: child)),
+        builder: (context, state, child) => AdminRouteGuard(
+          child: MainLayout(child: child, currentRoute: state.uri.path),
+        ),
         routes: [
           GoRoute(path: AppRoutes.dashboard, name: AppRoutes.dashboard, pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen())),
           GoRoute(path: AppRoutes.orders, name: AppRoutes.orders, pageBuilder: (context, state) => const NoTransitionPage(child: OrdersListScreen())),
