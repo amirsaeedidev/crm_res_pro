@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
@@ -230,11 +230,9 @@ class _ReportsScreenState extends State<ReportsScreen>
       final bytes = excel.save();
       if (bytes == null) throw Exception('ساخت فایل Excel ناموفق بود');
       final (from, to) = _getDateRange();
-      final path = await FilePicker.platform.saveFile(
+      final path = await FilePicker.saveFile(
         fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.xlsx',
         bytes: Uint8List.fromList(bytes),
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
       );
       if (path != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل Excel آماده و ذخیره شد.')));
@@ -277,8 +275,6 @@ class _ReportsScreenState extends State<ReportsScreen>
       final path = await FilePicker.platform.saveFile(
         fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.pdf',
         bytes: await pdf.save(),
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
       );
       if (path != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل PDF آماده و ذخیره شد.')));
