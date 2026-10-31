@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_loading.dart';
@@ -76,11 +77,18 @@ class _ReportsScreenState extends State<ReportsScreen>
 
   Future<void> _pickCustomRange() async {
     final now = DateTime.now();
-    final picked = await showDateRangePicker(
+    final initialRange = _customDateRange == null
+        ? null
+        : JalaliRange(
+            start: Jalali.fromDateTime(_customDateRange!.start),
+            end: Jalali.fromDateTime(_customDateRange!.end),
+          );
+    final picked = await showPersianDateRangePicker(
       context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime(now.year, now.month, now.day),
-      initialDateRange: _customDateRange,
+      firstDate: Jalali(1402, 1, 1),
+      lastDate: Jalali.fromDateTime(DateTime(now.year, now.month, now.day)),
+      initialDateRange: initialRange,
+      initialDate: Jalali.fromDateTime(now),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: Theme.of(context).colorScheme.copyWith(
@@ -91,12 +99,21 @@ class _ReportsScreenState extends State<ReportsScreen>
         child: child!,
       ),
     );
-    if (!mounted || picked == null) return;
+    if (!mounted || picked?.start == null || picked?.end == null) return;
+    final start = picked!.start!.toDateTime();
+    final end = picked.end!.toDateTime();
     setState(() {
-      _customDateRange = picked;
+      _customDateRange = DateTimeRange(start: start, end: end);
       _selectedFilter = DateRangeFilter.custom;
     });
     _fetchReport();
+  }
+
+  String _jalaliDateLabel(DateTime value) {
+    final date = Jalali.fromDateTime(value);
+    return _digits(
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}',
+    );
   }
 
   num _num(Map<String, dynamic> map, String key) {
@@ -347,7 +364,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             avatar: const Icon(Icons.date_range_rounded, size: 17),
             label: Text(_customDateRange == null
                 ? 'بازه دلخواه'
-                : '${_digits(_customDateRange!.start.day)}/${_digits(_customDateRange!.start.month)} تا ${_digits(_customDateRange!.end.day)}/${_digits(_customDateRange!.end.month)}'),
+                : '${_jalaliDateLabel(_customDateRange!.start)} تا ${_jalaliDateLabel(_customDateRange!.end)}'),
             backgroundColor: _selectedFilter == DateRangeFilter.custom ? _paleBlue : Colors.white,
             side: BorderSide(color: _selectedFilter == DateRangeFilter.custom ? _blue : const Color(0xFFE3E9F4)),
             onPressed: _pickCustomRange,
