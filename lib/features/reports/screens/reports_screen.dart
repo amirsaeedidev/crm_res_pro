@@ -179,8 +179,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                     ),
                     child: TabBar(
                       controller: _tabs,
-                      isScrollable: mobile,
-                      tabAlignment: mobile ? TabAlignment.start : TabAlignment.fill,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
                       dividerColor: Colors.transparent,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
