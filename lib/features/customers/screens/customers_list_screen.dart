@@ -148,10 +148,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSizes.md),
-      child: Consumer<CustomersProvider>(
-        builder: (context, provider, _) => Column(
+    return Consumer<CustomersProvider>(
+      builder: (context, provider, _) => SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSizes.md),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -398,8 +398,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
             ),
             const SizedBox(height: AppSizes.md),
             if (provider.error != null && provider.customers.isEmpty)
-              Expanded(
-                child: Center(
+              Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -417,16 +416,21 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 ),
               )
             else if (provider.isLoading && provider.customers.isEmpty)
-              const Expanded(child: Center(child: AppLoading()))
+              const Center(child: Padding(
+                padding: EdgeInsets.all(AppSizes.lg),
+                child: AppLoading(),
+              ))
             else if (provider.customers.isEmpty)
-              const Expanded(
-                child: Center(
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSizes.lg),
                   child: Text('مشتری‌ای مطابق جست‌وجو پیدا نشد.'),
                 ),
               )
             else ...[
-              Expanded(
-                child: ListView.separated(
+              ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: provider.customers.length,
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSizes.sm),
@@ -587,7 +591,6 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     );
                   },
                 ),
-              ),
               const SizedBox(height: AppSizes.xs),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
