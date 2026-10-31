@@ -6,6 +6,7 @@ alter table public.sms_campaigns
   add column if not exists other_campaign_cost numeric(14,2) not null default 0 check (other_campaign_cost >= 0);
 
 create index if not exists sms_campaigns_discount_id_idx on public.sms_campaigns(discount_id);
+create unique index if not exists sms_campaigns_discount_id_unique_idx on public.sms_campaigns(discount_id) where discount_id is not null;
 
 create table if not exists public.sms_campaign_tracking_tokens (
   id uuid primary key default gen_random_uuid(),
@@ -52,6 +53,21 @@ begin
   if v_settings.send_mode='pattern' and length(trim(coalesce(p_pattern_body_id,v_settings.default_body_id,'')))=0 then raise exception 'Pattern Body ID is required' using errcode='22023'; end if;
   if p_discount_id is not null and not exists(select 1 from public.discounts d where d.id=p_discount_id and d.is_active=true) then
     raise exception 'Selected campaign discount is not active' using errcode='22023';
+  end if;
+  if p_discount_id is not null and exists (
+    select 1 from public.discounts d
+    where d.id=p_discount_id and d.restricted_to_customers
+      and exists (
+        select 1 from public.profiles p
+        where p.id=any(p_customer_ids) and p.role='customer' and p.status='active'
+          and p.marketing_sms_opt_in=true
+          and not exists (
+            select 1 from public.discount_customer_targets t
+            where t.discount_id=d.id and t.user_id=p.id
+          )
+      )
+  ) then
+    raise exception 'The selected restricted discount is not assigned to every campaign recipient' using errcode='22023';
   end if;
   if coalesce(p_sms_cost_per_message,0)<0 or coalesce(p_other_campaign_cost,0)<0 then raise exception 'Campaign costs cannot be negative' using errcode='22023'; end if;
   if coalesce(p_attribution_window_days,7)<1 or coalesce(p_attribution_window_days,7)>90 then raise exception 'Attribution window must be between 1 and 90 days' using errcode='22023'; end if;
