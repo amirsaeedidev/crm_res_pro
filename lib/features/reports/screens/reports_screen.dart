@@ -32,7 +32,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 8, vsync: this);
+    _tabs = TabController(length: 10, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -73,7 +73,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
-    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);
+    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);\n    provider.fetchDishProfitReport(startDate: startDate, endDate: endDate);\n    provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
   }
 
   Future<void> _pickCustomRange() async {
@@ -199,7 +199,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                         Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
-                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),
+                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),\n                        Tab(icon: Icon(Icons.restaurant_menu_outlined, size: 18), text: 'سود هر غذا'),\n                        Tab(icon: Icon(Icons.point_of_sale_outlined, size: 18), text: 'پرداخت و صندوق'),
                       ],
                     ),
                   ),
@@ -216,7 +216,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
-                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),
+                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),\n                        _dishProfitTab(context, mobile, provider.dishProfitReport?.summary ?? const {}, provider.dishProfitReport?.chartData.isNotEmpty == true ? provider.dishProfitReport!.chartData.first : const {}, provider.isLoading),\n                        _paymentReconciliationTab(context, mobile, provider.paymentReconciliationReport?.summary ?? const {}, provider.paymentReconciliationReport?.chartData.isNotEmpty == true ? provider.paymentReconciliationReport!.chartData.first : const {}, provider.isLoading),
                       ],
                     ),
                   ),
@@ -728,6 +728,83 @@ class _ReportsScreenState extends State<ReportsScreen>
             ]));
           }).toList())),
       ],
+    ]);
+  }
+
+
+  Widget _dishProfitTab(BuildContext context, bool mobile, Map<String,dynamic> summary, Map<String,dynamic> data, bool loading) {
+    final dishes=(data['dishes'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final daily=(data['daily'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final monthly=(data['monthly'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    if(loading && summary.isEmpty) return const Center(child:CircularProgressIndicator());
+    return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      _metricGrid(context,mobile,[
+        _metric('فروش خالص غذاها','${_number(_asNum(summary['total_revenue']))} تومان',Icons.payments_outlined,_blue,'پس از تخصیص تخفیف سفارش'),
+        _metric('بهای مواد اولیه','${_number(_asNum(summary['total_cost']))} تومان',Icons.kitchen_outlined,const Color(0xFF8B72E8),'بر اساس دستور پخت و قیمت فعلی انبار'),
+        _metric('سود ناخالص غذاها','${_number(_asNum(summary['total_profit']))} تومان',Icons.trending_up,const Color(0xFF39B982),'قبل از هزینه‌های عملیاتی'),
+      ]),
+      const SizedBox(height:16),
+      _sectionCard(title:'سودآوری هر غذا',subtitle:'فروش، تعداد، بهای تمام‌شده و سود ناخالص هر محصول',icon:Icons.restaurant_menu_outlined,
+        child:dishes.isEmpty?const _NoData(message:'در این بازه فروش تکمیل‌شده‌ای ثبت نشده است.'):Column(children:dishes.map((d){
+          final name=(d['product_name']??'غذای نامشخص').toString();
+          return ListTile(contentPadding:EdgeInsets.zero,title:Text(name,style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text('${_digits(_asNum(d['quantity']).toStringAsFixed(0))} عدد · فروش ${_number(_asNum(d['net_revenue']))} · هزینه ${_number(_asNum(d['total_cost']))} تومان'),
+            trailing:Text('${_number(_asNum(d['gross_profit']))} تومان',style:TextStyle(fontWeight:FontWeight.w800,color:_asNum(d['gross_profit'])>=0?const Color(0xFF279B70):const Color(0xFFE45B70))));
+        }).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'سود روزانه',subtitle:'فروش خالص منهای بهای مواد مصرفی',icon:Icons.calendar_view_day,
+        child:daily.isEmpty?const _NoData(message:'داده روزانه‌ای وجود ندارد.'):Column(children:daily.map((r)=>_financialLine((r['date']??'').toString(),_asNum(r['profit']),const Color(0xFF39B982))).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'سود ماهانه',subtitle:'تجمیع فروش و بهای مواد در هر ماه',icon:Icons.calendar_month,
+        child:monthly.isEmpty?const _NoData(message:'داده ماهانه‌ای وجود ندارد.'):Column(children:monthly.map((r)=>_financialLine((r['month']??'').toString(),_asNum(r['profit']),const Color(0xFF8B72E8))).toList())),
+      const SizedBox(height:8),
+      const Text('توجه: سود هر غذا و سود روزانه/ماهانه در این بخش سود ناخالص پس از بهای مواد دستور پخت است؛ هزینه‌های عملیاتی، ضایعات و کسری‌های ثبت‌نشده در این تفکیک محصولی لحاظ نشده‌اند. برای محصول بدون دستور پخت، بهای مواد صفر گزارش می‌شود.',style:TextStyle(fontSize:12,color:Color(0xFF8792A8))),
+    ]);
+  }
+
+  Future<void> _recordCashClosing(BuildContext context) async {
+    final opening=TextEditingController(text:'0'), counted=TextEditingController(), shift=TextEditingController(text:'شیفت اصلی'), note=TextEditingController();
+    final form=GlobalKey<FormState>();
+    final result=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('ثبت شمارش صندوق'),
+      content:Form(key:form,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+        TextFormField(controller:shift,decoration:const InputDecoration(labelText:'نام شیفت'),validator:(v)=>v==null||v.trim().isEmpty?'نام شیفت الزامی است':null),
+        TextFormField(controller:opening,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'موجودی نقد ابتدای شیفت (تومان)'),validator:(v)=>_asNum(v)<0?'مبلغ نامعتبر است':null),
+        TextFormField(controller:counted,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'وجه نقد شمارش‌شده پایان شیفت (تومان)'),validator:(v)=>_asNum(v)<0?'مبلغ نامعتبر است':null),
+        TextFormField(controller:note,decoration:const InputDecoration(labelText:'توضیحات (اختیاری)')),
+      ]))),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('انصراف')),
+        FilledButton(onPressed:()async{if(!form.currentState!.validate())return;try{
+          final now=DateTime.now(); final date='${now.year.toString().padLeft(4,'0')}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
+          await SupabaseService.client.rpc('record_cash_register_closing',params:{'p_business_date':date,'p_shift_label':shift.text.trim(),'p_opening_cash':_asNum(opening.text),'p_counted_cash':_asNum(counted.text),'p_note':note.text.trim()});
+          if(ctx.mounted)Navigator.pop(ctx,true);
+        }catch(_){if(ctx.mounted)ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content:Text('ثبت بستن صندوق ناموفق بود. دسترسی مدیر و اتصال را بررسی کنید.')));}},child:const Text('ثبت شمارش'))]));
+    opening.dispose();counted.dispose();shift.dispose();note.dispose();
+    if(result==true&&mounted)_fetchReport();
+  }
+
+  Widget _paymentReconciliationTab(BuildContext context,bool mobile,Map<String,dynamic> summary,Map<String,dynamic> data,bool loading){
+    final methods=(data['methods'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final closings=(data['closings'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    if(loading&&summary.isEmpty)return const Center(child:CircularProgressIndicator());
+    return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(mainAxisAlignment:MainAxisAlignment.end,children:[FilledButton.icon(onPressed:()=>_recordCashClosing(context),icon:const Icon(Icons.point_of_sale_outlined),label:const Text('ثبت شمارش صندوق'))]),
+      const SizedBox(height:12),
+      _metricGrid(context,mobile,[
+        _metric('کل دریافتی','${_number(_asNum(summary['total_received']))} تومان',Icons.payments_outlined,_blue,'پرداخت‌های ثبت‌شده و دریافت‌شده'),
+        _metric('دریافتی نقدی','${_number(_asNum(summary['cash_received']))} تومان',Icons.money, const Color(0xFF39B982),'فقط روش نقدی'),
+        _metric('غیرنقدی','${_number(_asNum(summary['non_cash_received']))} تومان',Icons.credit_card_outlined,const Color(0xFF8B72E8),'کارت‌خوان، کیف پول و سایر روش‌ها'),
+      ]),
+      const SizedBox(height:16),
+      _sectionCard(title:'تفکیک روش‌های پرداخت',subtitle:'جمع مبالغ پرداخت‌های موفق در بازه انتخابی',icon:Icons.account_balance_wallet_outlined,
+        child:methods.isEmpty?const _NoData(message:'پرداخت ثبت‌شده‌ای در این بازه وجود ندارد.'):Column(children:methods.map((r)=>_financialLine('${r['payment_method']} · ${_digits(_asNum(r['payment_count']).toStringAsFixed(0))} تراکنش',_asNum(r['amount']),_blue)).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'مغایرت صندوق',subtitle:'مقایسه وجه نقد شمارش‌شده با موجودی مورد انتظار (ابتدای شیفت + پرداخت نقدی)',icon:Icons.fact_check_outlined,
+        child:closings.isEmpty?const _NoData(message:'هنوز شمارش صندوقی ثبت نشده است. برای محاسبه مغایرت، پایان شیفت وجه نقد واقعی را ثبت کنید.'):Column(children:closings.map((r){
+          final variance=_asNum(r['variance']); final date=(r['business_date']??'').toString(); final shift=(r['shift_label']??'').toString();
+          return ListTile(contentPadding:EdgeInsets.zero,title:Text('$date · $shift',style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text('مورد انتظار: ${_number(_asNum(r['expected_cash']))} · شمارش‌شده: ${_number(_asNum(r['counted_cash']))} تومان'),
+            trailing:Text('${variance>0?'+':''}${_number(variance)} تومان',style:TextStyle(fontWeight:FontWeight.w800,color:variance==0?const Color(0xFF279B70):const Color(0xFFE45B70))));
+        }).toList())),
     ]);
   }
 
