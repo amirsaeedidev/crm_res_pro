@@ -187,22 +187,38 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(AppSizes.md),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Expanded(child: Text('مدیریت فایل‌ها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold))),
-        const SizedBox(width: AppSizes.sm),
-        SizedBox(
-          width: 190,
-          child: DropdownButtonFormField<String>(
-            initialValue: _selectedBucket,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'محل آپلود'),
-            items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(),
-            onChanged: (value) { if (value != null) setState(() => _selectedBucket = value); },
-          ),
+      Text(
+        'مدیریت فایل‌ها',
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: AppColors.getPrimaryText(context),
+          fontWeight: FontWeight.bold,
         ),
-        const SizedBox(width: AppSizes.sm),
-        AppButton(label: _isUploading ? 'در حال آپلود...' : 'آپلود تصاویر', icon: Icons.cloud_upload_outlined, isLoading: _isUploading, onPressed: _isUploading ? null : _pickAndUploadFile, width: 170),
-      ]),
+      ),
+      const SizedBox(height: AppSizes.md),
+      Wrap(
+        spacing: AppSizes.sm,
+        runSpacing: AppSizes.sm,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+            width: 220,
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedBucket,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'محل آپلود'),
+              items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(),
+              onChanged: (value) { if (value != null) setState(() => _selectedBucket = value); },
+            ),
+          ),
+          AppButton(
+            label: _isUploading ? 'در حال آپلود...' : 'آپلود تصاویر',
+            icon: Icons.cloud_upload_outlined,
+            isLoading: _isUploading,
+            onPressed: _isUploading ? null : _pickAndUploadFile,
+            width: 170,
+          ),
+        ],
+      ),
       const SizedBox(height: AppSizes.md),
       AppCard(
         child: Column(
