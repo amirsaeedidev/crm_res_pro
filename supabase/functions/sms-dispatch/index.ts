@@ -28,6 +28,8 @@ type OutboxRow = {
   pattern_args: string[] | null;
   attempts: number;
   max_attempts: number;
+  campaign_id?: string | null;
+  tracking_url?: string;
 };
 
 function json(data: unknown, status = 200) {
@@ -50,6 +52,26 @@ async function isAuthorized(req: Request, cronSecret: string): Promise<boolean> 
   const { data: profile, error: profileError } = await admin.from("profiles")
     .select("role,status").eq("id", userResult.user.id).maybeSingle();
   return !profileError && !!profile && profile.role === "admin" && profile.status === "active";
+}
+
+async function getTrackingUrl(row: OutboxRow): Promise<string | undefined> {
+  if (row.event_key !== "marketing_campaign" || !row.campaign_id) return undefined;
+  const { data: existing } = await admin.from("sms_campaign_tracking_tokens")
+    .select("token").eq("outbox_id", row.id).maybeSingle();
+  let token = existing?.token as string | undefined;
+  if (!token) {
+    token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+    const { data, error } = await admin.from("sms_campaign_tracking_tokens")
+      .insert({
+        outbox_id: row.id,
+        campaign_id: row.campaign_id,
+        recipient_user_id: row.recipient_user_id,
+        token,
+      }).select("token").single();
+    if (error) throw new Error("Unable to create campaign tracking token");
+    token = data.token as string;
+  }
+  return SUPABASE_URL.replace(/\\/$/, "") + "/functions/v1/sms-track?t=" + encodeURIComponent(token);
 }
 
 function formBody(values: Record<string, string>) {
@@ -88,7 +110,9 @@ async function sendToMelipayamak(
     const sender = String(settings.sender_number ?? "").trim();
     if (!sender) return { ok: false, code: "CONFIG", error: "Normal SMS sender number is not configured.", durationMs: Date.now() - started };
     fields.from = sender;
-    fields.text = row.normal_message;
+    fields.text = row.tracking_url
+      ? row.normal_message.trim() + '\\n' + row.tracking_url
+      : row.normal_message;
     fields.isFlash = "false";
   }
 
@@ -155,6 +179,16 @@ Deno.serve(async (req: Request) => {
     const summary = { processed: 0, sent: 0, retried: 0, failed: 0 };
     for (const row of (rows ?? []) as OutboxRow[]) {
       summary.processed++;
+      try {
+        row.tracking_url = await getTrackingUrl(row);
+      } catch {
+        summary.failed++;
+        await admin.rpc('sms_finalize_attempt', {
+          p_outbox_id: row.id, p_success: false, p_response_code: 'TRACKING',
+          p_error_message: 'Campaign tracking link could not be prepared.', p_duration_ms: 0,
+        });
+        continue;
+      }
       const outcome = await sendToMelipayamak(row, settings, username, apiKey);
       const { data: finalized, error: finalizeError } = await admin.rpc("sms_finalize_attempt", {
         p_outbox_id: row.id,
