@@ -113,7 +113,6 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= AppBreakpoints.laptop; // 1024px
-    final navProvider = context.watch<NavigationProvider>();
 
     // Directionality is now applied globally in app.dart
     return Scaffold(
