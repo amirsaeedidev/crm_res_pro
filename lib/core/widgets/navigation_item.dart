@@ -36,7 +36,7 @@ class NavigationItem extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             // Fixed: Replaced deprecated withOpacity with withValues
-            color: isActive ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+            color: isActive ? (forceWhite ? Colors.white.withValues(alpha: 0.20) : AppColors.primary.withValues(alpha: 0.15)) : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.medium),
           ),
           child: Row(
@@ -56,7 +56,7 @@ class NavigationItem extends StatelessWidget {
               else
                 Icon(
                   icon,
-                  color: isActive ? AppColors.primary : AppColors.getSecondaryText(context),
+                  color: forceWhite ? Colors.white : (isActive ? AppColors.primary : AppColors.getSecondaryText(context)),
                   size: AppSizes.iconMd + 4,
                 ),
               const SizedBox(width: AppSizes.md),
@@ -74,7 +74,7 @@ class NavigationItem extends StatelessWidget {
                   width: 4,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: forceWhite ? Colors.white : AppColors.primary,
                     borderRadius: BorderRadius.circular(AppRadius.circular),
                   ),
                 ),
