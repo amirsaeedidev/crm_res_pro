@@ -111,6 +111,8 @@ class ReservationsRepository {
   }
 
   String _friendlyError(PostgrestException e, String action) {
+    if (e.code == '23P01') return e.message;
+    if (e.code == '23505') return 'این میز در این زمان قبلاً رزرو شده است.';
     if (e.code == '42501' || e.code == 'PGRST301') return 'برای $action باید با حساب مدیر وارد شده باشید.';
     if (e.code == 'PGRST205' || e.code == '42P01') return 'نمای reservations_view در Supabase پیدا نشد. migrationهای پروژه را بررسی کنید.';
     if (e.code == 'PGRST204' || e.code == '42703' || e.message.contains('reservation_date') || e.message.contains('reservation_time')) {
