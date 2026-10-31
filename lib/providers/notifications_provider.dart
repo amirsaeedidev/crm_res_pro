@@ -25,6 +25,7 @@ class NotificationModel {
   final DateTime timestamp;
   final bool isRead;
   final NotificationType type;
+  final String priority;
 
   const NotificationModel({
     required this.id,
@@ -33,6 +34,7 @@ class NotificationModel {
     required this.timestamp,
     this.isRead = false,
     this.type = NotificationType.unknown,
+    this.priority = 'normal',
   });
 
   NotificationModel copyWith({
@@ -42,6 +44,7 @@ class NotificationModel {
     DateTime? timestamp,
     bool? isRead,
     NotificationType? type,
+    String? priority,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class NotificationModel {
       timestamp: timestamp ?? this.timestamp,
       isRead: isRead ?? this.isRead,
       type: type ?? this.type,
+      priority: priority ?? this.priority,
     );
   }
 }
@@ -300,7 +304,7 @@ class NotificationsProvider extends ChangeNotifier {
     try {
       final rows = await _client
           .from('admin_notifications')
-          .select('id,title,body,notification_type,is_read,created_at')
+          .select('id,title,body,notification_type,is_read,priority,created_at')
           .order('created_at', ascending: false)
           .limit(_maxNotifications);
       if (!_isCurrentSession(userId, generation)) return;
@@ -328,6 +332,7 @@ class NotificationsProvider extends ChangeNotifier {
       timestamp: _readTimestamp(record['created_at']),
       isRead: record['is_read'] == true,
       type: type,
+      priority: _stringValue(record['priority']).isEmpty ? 'normal' : _stringValue(record['priority']),
     );
   }
 
