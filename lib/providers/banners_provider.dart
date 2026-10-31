@@ -1,10 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils/app_error_message.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/realtime_service.dart';
 import '../models/banner_model.dart';
 import '../repositories/banners_repository.dart';
 
 class BannersProvider extends ChangeNotifier {
+  RealtimeChannel? _realtimeChannel;
+  bool _realtimeWasConnected = false;
+
+  void _ensureRealtimeSubscription() {
+    if (_realtimeChannel != null) return;
+    _realtimeChannel = RealtimeService.subscribeToTable(
+      table: 'banners',
+      onInsert: (_) => unawaited(fetchBanners()),
+      onUpdate: (_) => unawaited(fetchBanners()),
+      onDelete: (_) => unawaited(fetchBanners()),
+      onStatus: (status, message) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          if (_realtimeWasConnected) unawaited(fetchBanners());
+          _realtimeWasConnected = true;
+        }
+      },
+    );
+  }
+
   final BannersRepository _repository;
   BannersProvider(this._repository);
 
@@ -26,6 +49,7 @@ class BannersProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   Future<void> fetchBanners() async {
+    _ensureRealtimeSubscription();
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -137,4 +161,13 @@ class BannersProvider extends ChangeNotifier {
       return false;
     }
   }
+  
+  @override
+  void dispose() {
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
+    super.dispose();
+  }
+
 }
