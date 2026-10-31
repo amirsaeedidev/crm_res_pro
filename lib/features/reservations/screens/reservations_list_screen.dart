@@ -172,6 +172,9 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
   }
 
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
+    final provider = context.read<ReservationsProvider>();
+    final tablesProvider = context.read<TablesProvider>();
+    final messenger = ScaffoldMessenger.of(context);
     int? delayMinutes;
     String? note;
 
@@ -210,7 +213,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       if (confirmed != true) return;
       if (minutes == null || minutes < 1 || minutes > 480) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text('میزان تأخیر باید بین ۱ تا ۴۸۰ دقیقه باشد.')),
           );
         }
@@ -254,18 +257,16 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       if (confirmed != true) return;
     }
 
-    final provider = context.read<ReservationsProvider>();
-    final tablesProvider = context.read<TablesProvider>();
     final ok = await provider.updateReservationStatus(
       reservation.id, status, delayMinutes: delayMinutes, note: note,
     );
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text(provider.error ?? 'تغییر وضعیت رزرو ناموفق بود.')),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('وضعیت رزرو به «${_statusLabel(status)}» تغییر کرد.')),
       );
     }
@@ -280,7 +281,8 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
 
   Future<void> _showStatusHistory(ReservationModel reservation) async {
     try {
-      final history = await context.read<ReservationsProvider>().getReservationStatusHistory(reservation.id);
+      final reservationsProvider = context.read<ReservationsProvider>();
+      final history = await reservationsProvider.getReservationStatusHistory(reservation.id);
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -293,7 +295,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                 ? const Center(child: Text('برای این رزرو سابقه‌ای ثبت نشده است.'))
                 : ListView.separated(
                     itemCount: history.length,
-                    separatorBuilder: (_, __) => const Divider(height: 18),
+                    separatorBuilder: (_, _) => const Divider(height: 18),
                     itemBuilder: (context, index) {
                       final item = history[index];
                       final transition = item.previousStatus == null
