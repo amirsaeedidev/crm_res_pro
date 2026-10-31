@@ -73,8 +73,10 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       _selectedDate = next;
       _showWholeMonth = false;
     });
-    await context.read<ReservationsProvider>().setDateRange(from: _monthStart(next), to: _monthEnd(next));
-    await context.read<TablesProvider>().fetchTables(reservationDate: _selectedDate.toGregorian().toDateTime());
+    final reservationsProvider = context.read<ReservationsProvider>();
+    final tablesProvider = context.read<TablesProvider>();
+    await reservationsProvider.setDateRange(from: _monthStart(next), to: _monthEnd(next));
+    await tablesProvider.fetchTables(reservationDate: _selectedDate.toGregorian().toDateTime());
   }
 
   Future<void> _selectDate(Jalali date) async {
@@ -84,10 +86,12 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       _visibleMonth = Jalali(date.year, date.month, 1);
       _showWholeMonth = false;
     });
+    final reservationsProvider = context.read<ReservationsProvider>();
+    final tablesProvider = context.read<TablesProvider>();
     if (monthChanged) {
-      await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
+      await reservationsProvider.setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
     }
-    await context.read<TablesProvider>().fetchTables(reservationDate: date.toGregorian().toDateTime());
+    await tablesProvider.fetchTables(reservationDate: date.toGregorian().toDateTime());
   }
 
   Future<void> _goToToday() async {
@@ -97,8 +101,10 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
       _selectedDate = today;
       _showWholeMonth = false;
     });
-    await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
-    await context.read<TablesProvider>().fetchTables(reservationDate: today.toGregorian().toDateTime());
+    final reservationsProvider = context.read<ReservationsProvider>();
+    final tablesProvider = context.read<TablesProvider>();
+    await reservationsProvider.setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
+    await tablesProvider.fetchTables(reservationDate: today.toGregorian().toDateTime());
   }
   Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
 
