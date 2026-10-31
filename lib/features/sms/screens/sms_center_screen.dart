@@ -1112,7 +1112,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             ],
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: _selectedDiscountId,
+              initialValue: _selectedDiscountId,
               decoration: const InputDecoration(
                 labelText: 'کد تخفیف متصل به کمپین (اختیاری)',
                 border: OutlineInputBorder(),
