@@ -91,7 +91,7 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
       _metric('درآمد سفارش', _money(_summary['order_revenue']), Icons.payments_outlined),
       _metric('بهای تمام‌شده مواد', _money(_summary['cogs']), Icons.inventory_2_outlined),
       _metric('هزینه کمپین', _money(_n(_summary, 'sms_cost') + _n(_summary, 'other_campaign_cost')), Icons.receipt_long_outlined),
-      _metric('سود خالص منتسب', _money(_summary['net_profit']), Icons.account_balance_wallet_outlined),
+      _metric('سود منتسب', _money(_summary['net_profit']), Icons.account_balance_wallet_outlined),
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (_loading) const LinearProgressIndicator(minHeight: 2),
@@ -140,7 +140,7 @@ class _MarketingEffectivenessTabState extends State<MarketingEffectivenessTab> {
             ]),
             const Divider(),
             Row(children: [
-              const Expanded(child: Text('سود خالص', style: TextStyle(fontWeight: FontWeight.w700))),
+              const Expanded(child: Text('سود منتسب', style: TextStyle(fontWeight: FontWeight.w700))),
               Text(_money(profit), style: TextStyle(fontWeight: FontWeight.w900,
                 color: profit >= 0 ? const Color(0xFF18A879) : const Color(0xFFE45B70))),
             ]),
