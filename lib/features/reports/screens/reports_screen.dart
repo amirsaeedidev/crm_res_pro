@@ -581,7 +581,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       const SizedBox(height: 18),
       _sectionCard(
         title: 'روند فروش خالص',
-        subtitle: 'فروش خالص روزانه پس از کسر تخفیف‌ها',
+        subtitle: 'مبالغ محور نمودار به تومان است؛ فروش خالص روزانه پس از کسر تخفیف‌ها',
         icon: Icons.bar_chart_rounded,
         child: chart.isEmpty
             ? const _NoData(message: 'داده نموداری برای این بازه موجود نیست.')
