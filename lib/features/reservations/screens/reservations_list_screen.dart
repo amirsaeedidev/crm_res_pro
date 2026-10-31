@@ -251,7 +251,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                     runSpacing: 10,
                     children: [
                       Text(
-                        _showWholeMonth ? 'رزروهای ماه \${_persianDigits('\${_visibleMonth.year}/\${_visibleMonth.month.toString().padLeft(2, '0')}')}' : 'رزروهای \${_formatDate(_selectedDate.toGregorian().toDateTime())}',
+                        _showWholeMonth ? 'رزروهای ماه ${_persianDigits('${_visibleMonth.year}/${_visibleMonth.month.toString().padLeft(2, '0')}')}' : 'رزروهای ${_formatDate(_selectedDate.toGregorian().toDateTime())}',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       SegmentedButton<bool>(
@@ -391,12 +391,12 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           Wrap(spacing: 16, runSpacing: 10, children: [
             _detailItem(context, Icons.calendar_today_rounded, _formatDate(reservation.date)),
             _detailItem(context, Icons.schedule_rounded, _persianDigits(reservation.time)),
-            _detailItem(context, Icons.groups_2_outlined, '\${_persianDigits(reservation.partySize)} نفر'),
-            _detailItem(context, Icons.table_restaurant_outlined, 'میز \${_persianDigits(reservation.tableNumber)}'),
+            _detailItem(context, Icons.groups_2_outlined, '${_persianDigits(reservation.partySize)} نفر'),
+            _detailItem(context, Icons.table_restaurant_outlined, 'میز ${_persianDigits(reservation.tableNumber)}'),
           ]),
           if (reservation.note?.isNotEmpty == true) ...[
             const SizedBox(height: 10),
-            Text('یادداشت: \${reservation.note}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text('یادداشت: ${reservation.note}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
           const SizedBox(height: 12),
           const Divider(height: 1),
@@ -420,11 +420,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                   PopupMenuItem(value: 'completed', child: Text('تکمیل رزرو')),
                   PopupMenuItem(value: 'cancelled', child: Text('لغو رزرو')),
                 ],
-                child: OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-                  label: const Text('تغییر وضعیت'),
-                ),
+                child: const Chip(avatar: Icon(Icons.swap_horiz_rounded, size: 18), label: Text('تغییر وضعیت')),
               ),
             ],
           ),
