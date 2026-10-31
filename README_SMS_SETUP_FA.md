@@ -52,4 +52,4 @@ Job کران Supabase با نام `crm-sms-dispatch-every-minute` هر دقیق�
   `https://cfdzxtnkiptnlitwvnla.supabase.co/functions/v1/sms-delivery-webhook`
   هدر احراز هویت callback باید `x-sms-delivery-secret` باشد. وضعیت‌های درگاه باید به `delivered` یا `undelivered` نگاشت شوند؛ نام فیلدهای callback را مطابق مستندات حساب ملی پیامک تنظیم کنید.
 
-Migration مستندشده در `supabase/manual/037_sms_campaign_lifecycle.sql` قرار دارد. پس از pull، اپ CRM را به‌روز کنید. تغییرات رضایت در اپ مشتری باید با RPC بالا به UI تنظیمات حساب مشتری متصل شود.
+Migration مستندشده در `supabase/manual/037_sms_campaign_lifecycle.sql` قرار دارد. پس از pull، هر دو اپ CRM و رستوران را به‌روز کنید. اپ مشتری در صفحه پروفایل، کلید روشن/خاموش رضایت پیامک تبلیغاتی را با RPC بالا ذخیره می‌کند.
