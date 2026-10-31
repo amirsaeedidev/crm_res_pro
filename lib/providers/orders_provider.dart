@@ -1,10 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils/app_error_message.dart';
 import '../models/order_model.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/realtime_service.dart';
 import '../repositories/orders_repository.dart';
 
 class OrdersProvider extends ChangeNotifier {
+  RealtimeChannel? _realtimeChannel;
+  bool _realtimeWasConnected = false;
+
+  void _ensureRealtimeSubscription() {
+    if (_realtimeChannel != null) return;
+    _realtimeChannel = RealtimeService.subscribeToTable(
+      table: 'orders',
+      onInsert: (_) => unawaited(fetchOrders()),
+      onUpdate: (_) => unawaited(fetchOrders()),
+      onDelete: (_) => unawaited(fetchOrders()),
+      onStatus: (status, message) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          if (_realtimeWasConnected) unawaited(fetchOrders());
+          _realtimeWasConnected = true;
+        }
+      },
+    );
+  }
+
   final OrdersRepository _repository;
   OrdersProvider(this._repository);
 
@@ -42,6 +65,7 @@ class OrdersProvider extends ChangeNotifier {
   String get statusFilter => _statusFilter;
 
   Future<void> fetchOrders() async {
+    _ensureRealtimeSubscription();
     if (_disposed) return;
     final requestVersion = ++_listRequestVersion;
     _isLoading = true;
