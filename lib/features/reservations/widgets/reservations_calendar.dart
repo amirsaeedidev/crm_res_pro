@@ -21,7 +21,7 @@ class ReservationsCalendar extends StatelessWidget {
 
   String _dateKey(Jalali date) {
     final g = date.toGregorian().toDateTime();
-    return '\${g.year.toString().padLeft(4, '0')}-\${g.month.toString().padLeft(2, '0')}-\${g.day.toString().padLeft(2, '0')}';
+    return '${g.year.toString().padLeft(4, '0')}-${g.month.toString().padLeft(2, '0')}-${g.day.toString().padLeft(2, '0')}';
   }
 
   String _digits(String value) {
@@ -44,7 +44,7 @@ class ReservationsCalendar extends StatelessWidget {
     final scheme = theme.colorScheme;
     final firstDay = Jalali(visibleMonth.year, visibleMonth.month, 1);
     final gridStart = firstDay.addDays(-(firstDay.weekDay - 1));
-    final title = '\${visibleMonth.formatter.mN} \${_digits(visibleMonth.year.toString())}';
+    final title = '${visibleMonth.formatter.mN} ${_digits(visibleMonth.year.toString())}';
 
     return Card(
       elevation: 0,
