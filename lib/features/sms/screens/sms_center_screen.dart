@@ -27,6 +27,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   List<Map<String, dynamic>> _outbox = [];
   List<Map<String, dynamic>> _attempts = [];
   List<Map<String, dynamic>> _stats = [];
+  Map<String, dynamic> _campaignEffectiveness = {};
   final Set<String> _selectedCustomers = {};
   DateTime? _campaignSchedule;
   final Map<String, TextEditingController> _normalTemplateControllers = {};
@@ -121,6 +122,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
         _repo.getAttemptLogs(),
         _repo.getDeliveryStats(),
         _repo.getMarketingEligibleCustomers(),
+        _repo.getCampaignEffectiveness(),
       ]);
       if (!mounted) return;
       _settings = Map<String, dynamic>.from(values[0] as Map);
@@ -130,6 +132,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _attempts = List<Map<String, dynamic>>.from(values[4] as List);
       _stats = List<Map<String, dynamic>>.from(values[5] as List);
       _eligibleCustomers = List<Map<String, dynamic>>.from(values[6] as List);
+      _campaignEffectiveness = Map<String, dynamic>.from(values[7] as Map);
       _applySettingsToForm();
       _applyTemplatesToForm();
     } catch (e) {
@@ -1311,7 +1314,15 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   );
 
   Widget _buildLogsTab() => RefreshIndicator(
-    onRefresh: _reloadLogs,
+    onRefresh: () async {
+      await _reloadLogs();
+      try {
+        final report = await _repo.getCampaignEffectiveness();
+        if (mounted) setState(() => _campaignEffectiveness = report);
+      } catch (e) {
+        _toast('بارگذاری آمار کمپین ناموفق بود: $e');
+      }
+    },
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1357,6 +1368,54 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               AppColors.primary,
             ),
           ],
+        ),
+        const SizedBox(height: 14),
+        _card(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'اثربخشی کمپین‌ها در ۹۰ روز اخیر',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Builder(builder: (context) {
+                final summary = Map<String, dynamic>.from(
+                  (_campaignEffectiveness['summary'] as Map?) ?? const {},
+                );
+                final campaigns = (_campaignEffectiveness['campaigns'] as List? ?? const []);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: [
+                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', Icons.ads_click),
+                        _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', Icons.shopping_bag_outlined),
+                        _metric('سفارش با کد تخفیف', '${summary['coupon_orders'] ?? 0}', Icons.discount_outlined),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (campaigns.isEmpty)
+                      const Text('هنوز کمپین ثبت‌شده‌ای در این بازه وجود ندارد.')
+                    else
+                      ...campaigns.take(20).map((item) {
+                        final row = Map<String, dynamic>.from(item as Map);
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text((row['name'] ?? 'کمپین').toString()),
+                          subtitle: Text(
+                            'کلیک: ${row['total_clicks'] ?? 0} • کلیک‌کننده یکتا: ${row['unique_clickers'] ?? 0} • استفاده از کد: ${row['coupon_orders'] ?? 0}',
+                          ),
+                          trailing: Text('سفارش: ${row['attributed_orders'] ?? 0}'),
+                        );
+                      }),
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         _card(
