@@ -15,6 +15,8 @@ enum NotificationType {
   newReservation,
   newCustomer,
   newTicket,
+  lowStock,
+  paymentFailed,
   unknown,
 }
 
@@ -319,6 +321,8 @@ class NotificationsProvider extends ChangeNotifier {
       'new_reservation' => NotificationType.newReservation,
       'new_customer' => NotificationType.newCustomer,
       'new_ticket' => NotificationType.newTicket,
+      'low_stock' => NotificationType.lowStock,
+      'payment_failed' => NotificationType.paymentFailed,
       _ => NotificationType.unknown,
     };
     return NotificationModel(
