@@ -475,7 +475,7 @@ class _AppTopbarState extends State<AppTopbar> {
     BuildContext context,
     NotificationModel notif,
   ) {
-    final priorityColor = switch (notif.priority) {\n      'urgent' => AppColors.error,\n      'high' => AppColors.warning,\n      _ => _getNotifColor(notif.type),\n    };\n    final color = priorityColor;
+    final color = switch (notif.priority) {\n      'urgent' => AppColors.error,\n      'high' => AppColors.warning,\n      _ => _getNotifColor(notif.type),\n    };
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSizes.xs),
