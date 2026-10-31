@@ -73,7 +73,7 @@ class _MainLayoutState extends State<MainLayout> {
           ? null
           : Drawer(
               width: AppSizes.sidebarWidth,
-              child: const AppSidebar(),
+              child: const AppSidebar(drawerMode: true),
             ),
       body: SafeArea(
         top: true,
