@@ -1,4 +1,13 @@
+import 'dart:typed_data';
+
+import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -78,29 +87,197 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
   }
 
+  String _jalaliDate(DateTime date) {
+    final j = Jalali.fromDateTime(date);
+    return '${j.year.toString().padLeft(4, '0')}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
+  }
+
+  int? _parseDatePart(String value) {
+    const fa = '۰۱۲۳۴۵۶۷۸۹';
+    const ar = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = value.trim();
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized.replaceAll(fa[i], '$i').replaceAll(ar[i], '$i');
+    }
+    return int.tryParse(normalized);
+  }
+
+  DateTime? _parseJalaliDate(String value) {
+    final parts = value.trim().split(RegExp(r'[/.-]'));
+    if (parts.length != 3) return null;
+    final y = _parseDatePart(parts[0]);
+    final m = _parseDatePart(parts[1]);
+    final d = _parseDatePart(parts[2]);
+    if (y == null || m == null || d == null || y < 1300 || y > 1500 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+    try {
+      final date = Jalali(y, m, d).toDateTime();
+      if (_jalaliDate(date) != '${y.toString().padLeft(4, '0')}/${m.toString().padLeft(2, '0')}/${d.toString().padLeft(2, '0')}') return null;
+      return DateTime(date.year, date.month, date.day);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _pickCustomRange() async {
     final now = DateTime.now();
-    final picked = await showDateRangePicker(
+    final defaultStart = _customDateRange?.start ?? DateTime(now.year, now.month, 1);
+    final defaultEnd = _customDateRange?.end ?? DateTime(now.year, now.month, now.day);
+    final start = TextEditingController(text: _jalaliDate(defaultStart));
+    final end = TextEditingController(text: _jalaliDate(defaultEnd));
+    final form = GlobalKey<FormState>();
+    final picked = await showDialog<DateTimeRange>(
       context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime(now.year, now.month, now.day),
-      initialDateRange: _customDateRange,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: _blue,
-            onPrimary: Colors.white,
-          ),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('انتخاب بازه شمسی'),
+        content: Form(
+          key: form,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextFormField(controller: start, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'از تاریخ (۱۴۰۵/۰۱/۰۱)'), validator: (v) => _parseJalaliDate(v ?? '') == null ? 'تاریخ شمسی معتبر وارد کنید' : null),
+            const SizedBox(height: 12),
+            TextFormField(controller: end, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'تا تاریخ (۱۴۰۵/۰۱/۳۱)'), validator: (v) => _parseJalaliDate(v ?? '') == null ? 'تاریخ شمسی معتبر وارد کنید' : null),
+          ]),
         ),
-        child: child!,
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () {
+            if (!form.currentState!.validate()) return;
+            final from = _parseJalaliDate(start.text)!;
+            final to = _parseJalaliDate(end.text)!;
+            if (to.isBefore(from)) {
+              ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('تاریخ پایان نباید قبل از تاریخ شروع باشد.')));
+              return;
+            }
+            Navigator.pop(dialogContext, DateTimeRange(start: from, end: to));
+          }, child: const Text('اعمال بازه')),
+        ],
       ),
     );
+    start.dispose();
+    end.dispose();
     if (!mounted || picked == null) return;
     setState(() {
       _customDateRange = picked;
       _selectedFilter = DateRangeFilter.custom;
     });
     _fetchReport();
+  }
+
+  List<List<String>> _buildExportRows() {
+    final provider = context.read<ReportsProvider>();
+    final (from, to) = _getDateRange();
+    final rows = <List<String>>[
+      ['گزارش جامع رستوران'],
+      ['بازه شمسی', '${_jalaliDate(from)} تا ${_jalaliDate(to)}'],
+      ['واحد پول', 'تومان'],
+      [],
+    ];
+    void addSummary(String title, Map<String, dynamic>? summary) {
+      if (summary == null || summary.isEmpty) return;
+      rows.add([title]);
+      summary.forEach((key, value) => rows.add([key, value?.toString() ?? '']));
+      rows.add([]);
+    }
+    void addTable(String title, List<Map<String, dynamic>> data) {
+      if (data.isEmpty) return;
+      final keys = <String>[];
+      for (final item in data) {
+        for (final key in item.keys) {
+          if (!keys.contains(key)) keys.add(key);
+        }
+      }
+      rows.add([title]);
+      rows.add(keys);
+      for (final item in data) {
+        rows.add(keys.map((key) => item[key]?.toString() ?? '').toList());
+      }
+      rows.add([]);
+    }
+    addSummary('خلاصه فروش', provider.salesReport?.summary);
+    addTable('روند فروش', provider.salesReport?.chartData ?? []);
+    addSummary('گزارش مالی', provider.financialReport?.summary);
+    addTable('ترکیب مالی', provider.financialReport?.chartData ?? []);
+    addSummary('گزارش انبار', provider.inventoryReport?.summary);
+    addTable('وضعیت مواد اولیه', provider.inventoryReport?.chartData ?? []);
+    addSummary('سود هر غذا', provider.dishProfitReport?.summary);
+    final dishData = provider.dishProfitReport?.chartData.firstOrNull ?? const <String, dynamic>{};
+    addTable('سودآوری غذاها', (dishData['dishes'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('سود روزانه', (dishData['daily'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('سود ماهانه', (dishData['monthly'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addSummary('تطبیق پرداخت و صندوق', provider.paymentReconciliationReport?.summary);
+    final paymentData = provider.paymentReconciliationReport?.chartData.firstOrNull ?? const <String, dynamic>{};
+    addTable('روش‌های پرداخت', (paymentData['methods'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('بستن صندوق و مغایرت', (paymentData['closings'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('وضعیت سفارش‌ها', provider.orderHealthReport?.chartData ?? []);
+    addTable('استفاده از میزها', provider.tableUsageReport?.chartData ?? []);
+    return rows;
+  }
+
+  Future<void> _exportExcel() async {
+    try {
+      final excel = Excel.createExcel();
+      final sheet = excel['گزارش رستوران'];
+      for (final row in _buildExportRows()) {
+        sheet.appendRow(row.map((cell) => TextCellValue(cell)).toList());
+      }
+      final bytes = excel.save();
+      if (bytes == null) throw Exception('ساخت فایل Excel ناموفق بود');
+      final (from, to) = _getDateRange();
+      final path = await FilePicker.platform.saveFile(
+        fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.xlsx',
+        bytes: Uint8List.fromList(bytes),
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+      );
+      if (path != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل Excel آماده و ذخیره شد.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خروجی Excel ناموفق بود: $e')));
+    }
+  }
+
+  Future<void> _exportPdf() async {
+    try {
+      final font = pw.Font.ttf(await rootBundle.load('assets/fonts/Lalezar.ttf'));
+      final pdf = pw.Document();
+      final rows = _buildExportRows().where((row) => row.isNotEmpty).toList();
+      pdf.addPage(pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        theme: pw.ThemeData.withFont(base: font, bold: font),
+        margin: const pw.EdgeInsets.all(24),
+        build: (_) => [
+          pw.Directionality(
+            textDirection: pw.TextDirection.rtl,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                pw.Text('گزارش جامع رستوران', textAlign: pw.TextAlign.center, style: pw.TextStyle(font: font, fontSize: 20)),
+                pw.SizedBox(height: 8),
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey400, width: .4),
+                  children: rows.map((row) => pw.TableRow(children: row.map((cell) => pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text(cell, textAlign: pw.TextAlign.right, style: pw.TextStyle(font: font, fontSize: 8)),
+                  )).toList())).toList(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ));
+      final (from, to) = _getDateRange();
+      final path = await FilePicker.platform.saveFile(
+        fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.pdf',
+        bytes: await pdf.save(),
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (path != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل PDF آماده و ذخیره شد.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خروجی PDF ناموفق بود: $e')));
+    }
   }
 
   num _num(Map<String, dynamic> map, String key) {
@@ -455,12 +632,14 @@ class _ReportsScreenState extends State<ReportsScreen>
           ActionChip(
             avatar: const Icon(Icons.date_range_rounded, size: 17),
             label: Text(_customDateRange == null
-                ? 'بازه دلخواه'
-                : '${_digits(_customDateRange!.start.day)}/${_digits(_customDateRange!.start.month)} تا ${_digits(_customDateRange!.end.day)}/${_digits(_customDateRange!.end.month)}'),
+                ? 'بازه شمسی دلخواه'
+                : '${_digits(_jalaliDate(_customDateRange!.start))} تا ${_digits(_jalaliDate(_customDateRange!.end))}'),
             backgroundColor: _selectedFilter == DateRangeFilter.custom ? _paleBlue : Colors.white,
             side: BorderSide(color: _selectedFilter == DateRangeFilter.custom ? _blue : const Color(0xFFE3E9F4)),
             onPressed: _pickCustomRange,
           ),
+          ActionChip(avatar: const Icon(Icons.table_view_outlined, size: 17), label: const Text('خروجی Excel'), onPressed: _exportExcel),
+          ActionChip(avatar: const Icon(Icons.picture_as_pdf_outlined, size: 17), label: const Text('خروجی PDF'), onPressed: _exportPdf),
         ],
       );
 
