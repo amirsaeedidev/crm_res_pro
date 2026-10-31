@@ -19,6 +19,7 @@ import '../providers/tables_provider.dart';
 import '../providers/reports_provider.dart';
 import '../providers/customers_provider.dart';
 import '../providers/tickets_provider.dart';
+import '../providers/notifications_provider.dart';
 
 import '../repositories/auth_repository.dart';
 import '../repositories/dashboard_repository.dart';
@@ -101,6 +102,9 @@ class AppProviders {
     ),
     ChangeNotifierProvider<TicketsProvider>(
       create: (context) => TicketsProvider(context.read<TicketsRepository>()),
+    ),
+    ChangeNotifierProvider<NotificationsProvider>(
+      create: (_) => NotificationsProvider(),
     ),
   ];
 }
