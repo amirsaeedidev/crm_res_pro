@@ -587,7 +587,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _productsTab(BuildContext context, List<Map<String, dynamic>> products, bool loading) {
     return _sectionCard(
       title: 'عملکرد محصولات',
-      subtitle: 'فهرست واقعی محصولات برگشتی از گزارش Supabase',
+      subtitle: 'فروش تجمعی کل دوره‌ها؛ مستقل از فیلتر تاریخ بالای صفحه',
       icon: Icons.fastfood_outlined,
       child: loading && products.isEmpty
           ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
@@ -602,7 +602,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (summary.isEmpty && chart.isEmpty) {
-      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'توزیع مشتریان از داده‌های واقعی', icon: Icons.people_alt_outlined,
+      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'مشتریان دارای سفارش تکمیل‌شده در کل دوره‌ها؛ مستقل از فیلتر تاریخ', icon: Icons.people_alt_outlined,
         child: const _NoData(message: 'گزارش مشتریان هنوز داده‌ای برنگردانده است.'));
     }
     final entries = summary.entries.toList();
@@ -612,7 +612,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           _humanize(entry.key), _number(_asNum(entry.value)), Icons.people_outline_rounded, _blue, 'مقدار برگشتی از گزارش مشتریان',
         )).toList()),
       const SizedBox(height: 18),
-      _sectionCard(title: 'توزیع مشتریان', subtitle: 'دسته‌بندی برگشتی از Supabase', icon: Icons.groups_2_outlined,
+      _sectionCard(title: 'توزیع مشتریان', subtitle: 'تعداد مشتریان یکتا در هر نوع سفارش؛ ممکن است مشتری در چند گروه باشد', icon: Icons.groups_2_outlined,
         child: chart.isEmpty ? const _NoData(message: 'جزئیات دسته‌بندی مشتریان موجود نیست.') : Column(
           children: chart.asMap().entries.map((entry) {
             final row = entry.value;
