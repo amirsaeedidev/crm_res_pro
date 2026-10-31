@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/utils/app_error_message.dart';
 import '../../../models/reservation_model.dart';
@@ -18,7 +20,6 @@ class ReservationsListScreen extends StatefulWidget {
 class _ReservationsListScreenState extends State<ReservationsListScreen> {
   final _search = TextEditingController();
   static const _statuses = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
-  final _dateFormat = DateFormat('yyyy/MM/dd');
 
   @override
   void initState() { super.initState(); WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -50,8 +51,12 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     return result;
   }
 
-  String _formatDate(DateTime value) =>
-      _persianDigits(_dateFormat.format(value));
+  String _formatDate(DateTime value) {
+    final jalali = Jalali.fromDateTime(value);
+    final formatted =
+        '${jalali.year}/${jalali.month.toString().padLeft(2, '0')}/${jalali.day.toString().padLeft(2, '0')}';
+    return _persianDigits(formatted);
+  }
   Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
 
   Future<void> _showReservationForm([ReservationModel? current]) async {
@@ -61,7 +66,12 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final reservationsProvider = context.read<ReservationsProvider>();
     List<UserModel> customers;
     try {
-      customers = await customersRepository.getCustomers(page: 1, pageSize: 100);
+      customers = await customersRepository.getCustomers(page: 1, pageSize: 8);
+      if (current?.userId != null &&
+          !customers.any((customer) => customer.id == current!.userId)) {
+        final selected = await customersRepository.getCustomerById(current!.userId!);
+        customers = [selected, ...customers];
+      }
       if (!mounted) return;
       await tablesProvider.fetchTables();
     } catch (e) {
@@ -75,7 +85,56 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
 
     final guestController = TextEditingController(text: (current?.partySize ?? 2).toString());
     final noteController = TextEditingController(text: current?.note ?? '');
+    final customerSearchController = TextEditingController();
     String? customerId = current?.userId ?? customers.first.id;
+    UserModel? selectedCustomer;
+    for (final customer in customers) {
+      if (customer.id == customerId) {
+        selectedCustomer = customer;
+        break;
+      }
+    }
+    customerSearchController.text = selectedCustomer?.fullName ?? '';
+    List<UserModel> customerSuggestions = List<UserModel>.of(customers.take(8));
+    bool customerSearchLoading = false;
+    Timer? customerLookupDebounce;
+
+    void searchCustomers(String value, StateSetter updateDialog) {
+      customerLookupDebounce?.cancel();
+      final query = value.trim();
+      updateDialog(() {
+        customerId = null;
+        selectedCustomer = null;
+        customerSearchLoading = query.isNotEmpty;
+      });
+      if (query.isEmpty) {
+        updateDialog(() {
+          customerSuggestions = List<UserModel>.of(customers.take(8));
+          customerSearchLoading = false;
+        });
+        return;
+      }
+      customerLookupDebounce = Timer(const Duration(milliseconds: 350), () async {
+        try {
+          final matches = await customersRepository.getCustomers(
+            page: 1,
+            pageSize: 8,
+            searchQuery: query,
+          );
+          if (!dialogContext.mounted) return;
+          updateDialog(() {
+            customerSuggestions = matches;
+            customerSearchLoading = false;
+          });
+        } catch (_) {
+          if (!dialogContext.mounted) return;
+          updateDialog(() {
+            customerSuggestions = [];
+            customerSearchLoading = false;
+          });
+        }
+      });
+    }
     String? tableId = current?.tableId ?? tables.first.id;
     DateTime date = current?.date ?? DateTime.now();
     final currentTimeParts = (current?.time ?? '19:00').split(':');
@@ -84,10 +143,150 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final result = await showDialog<bool>(context: context, barrierDismissible: false, builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, setDialogState) => AlertDialog(
       title: Text(current == null ? 'ثبت رزرو جدید' : 'ویرایش رزرو'),
       content: SizedBox(width: 520, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        DropdownButtonFormField<String>(initialValue: customerId, isExpanded: true, decoration: const InputDecoration(labelText: 'مشتری', border: OutlineInputBorder()), items: customers.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.fullName} • ${c.phone ?? 'بدون تلفن'}', overflow: TextOverflow.ellipsis))).toList(), onChanged: current == null ? (value) => setDialogState(() => customerId = value) : null),
+        TextField(
+          controller: customerSearchController,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            labelText: 'جست‌وجوی مشتری با نام یا شماره تلفن',
+            hintText: 'نام یا شماره موبایل را وارد کنید',
+            prefixIcon: const Icon(Icons.person_search_outlined),
+            suffixIcon: customerSearchController.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'پاک‌کردن جست‌وجو',
+                    onPressed: () {
+                      customerSearchController.clear();
+                      searchCustomers('', setDialogState);
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+            border: const OutlineInputBorder(),
+          ),
+          onChanged: (value) => searchCustomers(value, setDialogState),
+        ),
+        const SizedBox(height: 8),
+        if (selectedCustomer != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(dialogContext).colorScheme.primaryContainer.withValues(alpha: .35),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(dialogContext).colorScheme.primary.withValues(alpha: .25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.verified_user_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(selectedCustomer!.fullName, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  TextButton(
+                    onPressed: () {
+                      customerSearchController.clear();
+                      searchCustomers('', setDialogState);
+                    },
+                    child: const Text('تغییر'),
+                  ),
+                ]),
+                Text('تلفن: ${selectedCustomer!.phone?.isNotEmpty == true ? selectedCustomer!.phone : 'ثبت نشده'}'),
+                const SizedBox(height: 3),
+                SelectableText(
+                  'شناسه مشتری: ${selectedCustomer!.id}',
+                  style: Theme.of(dialogContext).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxHeight: 190),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(dialogContext).dividerColor),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: customerSearchLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : customerSuggestions.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(14),
+                        child: Text('مشتری‌ای با این مشخصات پیدا نشد.'),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: customerSuggestions.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final customer = customerSuggestions[index];
+                          return ListTile(
+                            dense: true,
+                            leading: CircleAvatar(
+                              child: Text(customer.fullName.isEmpty ? '؟' : customer.fullName.substring(0, 1)),
+                            ),
+                            title: Text(customer.fullName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('تلفن: ${customer.phone?.isNotEmpty == true ? customer.phone : 'ثبت نشده'}'),
+                                Text('شناسه: ${customer.id}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                            onTap: () {
+                              customerLookupDebounce?.cancel();
+                              setDialogState(() {
+                                selectedCustomer = customer;
+                                customerId = customer.id;
+                                customerSuggestions = [];
+                                customerSearchLoading = false;
+                                customerSearchController.text = customer.fullName;
+                              });
+                            },
+                          );
+                        },
+                      ),
+          ),
         const SizedBox(height: 12), DropdownButtonFormField<String>(initialValue: tableId, isExpanded: true, decoration: const InputDecoration(labelText: 'میز', border: OutlineInputBorder()), items: tables.map((t) => DropdownMenuItem(value: t.id, child: Text('میز ${_persianDigits(t.tableNumber)} • ظرفیت ${_persianDigits(t.capacity)}${t.status == TableStatus.occupied ? ' • اشغال' : ''}'))).toList(), onChanged: (value) => setDialogState(() => tableId = value)),
         const SizedBox(height: 12), TextFormField(controller: guestController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'تعداد نفرات', border: OutlineInputBorder())),
-        const SizedBox(height: 12), Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () async { final selected = await showDatePicker(context: dialogContext, initialDate: date, firstDate: DateTime.now().subtract(const Duration(days: 365)), lastDate: DateTime.now().add(const Duration(days: 730))); if (selected != null) setDialogState(() => date = selected); }, icon: const Icon(Icons.calendar_today), label: Text(_formatDate(date)))), const SizedBox(width: 8), Expanded(child: OutlinedButton.icon(onPressed: () async { final selected = await showTimePicker(context: dialogContext, initialTime: time); if (selected != null) setDialogState(() => time = selected); }, icon: const Icon(Icons.schedule), label: Text(time.format(dialogContext))))]),
+        const SizedBox(height: 12), Row(children: [
+          Expanded(child: OutlinedButton.icon(
+            onPressed: () async {
+              final now = DateTime.now();
+              final selected = await showPersianDatePicker(
+                context: dialogContext,
+                initialDate: Jalali.fromDateTime(date),
+                firstDate: Jalali.fromDateTime(now.subtract(const Duration(days: 365))),
+                lastDate: Jalali.fromDateTime(now.add(const Duration(days: 730))),
+                initialEntryMode: PersianDatePickerEntryMode.calendarOnly,
+              );
+              if (selected != null) setDialogState(() => date = selected.toDateTime());
+            },
+            icon: const Icon(Icons.calendar_month_outlined),
+            label: Text(_formatDate(date)),
+          )),
+          const SizedBox(width: 8),
+          Expanded(child: OutlinedButton.icon(
+            onPressed: () async {
+              final selected = await showTimePicker(
+                context: dialogContext,
+                initialTime: time,
+                builder: (context, child) => Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                    child: child!,
+                  ),
+                ),
+              );
+              if (selected != null) setDialogState(() => time = selected);
+            },
+            icon: const Icon(Icons.schedule),
+            label: Text(time.format(dialogContext)),
+          )),
+        ]),
         const SizedBox(height: 12), TextField(controller: noteController, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)', border: OutlineInputBorder()))
       ]))),
       actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری، میز و تعداد نفرات را صحیح انتخاب کنید.'))); return; }
@@ -110,6 +309,8 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         }
       }, child: Text(current == null ? 'ثبت رزرو' : 'ذخیره تغییرات'))]
     )));
+    customerLookupDebounce?.cancel();
+    customerSearchController.dispose();
     guestController.dispose(); noteController.dispose();
     if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
   }
