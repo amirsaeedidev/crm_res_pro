@@ -37,3 +37,19 @@ Job کران Supabase با نام `crm-sms-dispatch-every-minute` هر دقیق�
 - ارسال بر اساس الگو: `https://rest.payamak-panel.com/api/SendSMS/BaseServiceNumber`
 
 فیلدها و کد پاسخ ممکن است طبق نوع سرویس و حساب پنل متفاوت باشند؛ الگوی واقعی حساب خود را با مستندات/نمونه رسمی فروشنده تطبیق دهید. من بدون اعتبارنامهٔ واقعی، ارسال پولی انجام نداده‌ام.
+
+
+## کمپین‌های زمان‌بندی‌شده، تحویل و رهگیری
+
+- کمپین عادی و پترن از یک RPC مشترک اعتبارسنجی‌شده ساخته می‌شود؛ تاریخ و ساعت آینده در `scheduled_at` ذخیره می‌شود و صف تا زمان مقرر آن را claim نمی‌کند.
+- کلید یکتای `idempotency_key` برای هر کمپین/مشتری مانع صف‌بندی تکراری است. لغو کمپین پیام‌های در صف را متوقف می‌کند؛ پیام‌هایی که قبلاً به درگاه تحویل شده‌اند قابل پس‌گرفتن نیستند.
+- رضایت بازاریابی در لحظه claim دوباره بررسی می‌شود. اپ مشتری برای افزودن کلید خاموش/روشن رضایت باید RPC زیر را با نشست همان مشتری فراخوانی کند:
+  `customer_set_marketing_sms_opt_in(p_opt_in: true|false)`.
+  مقدار پیش‌فرض رضایت همچنان خاموش است.
+- برای پیام‌های کمپینی دارای لینک، پردازشگر لینک‌های HTTP/HTTPS را با لینک اختصاصی گیرنده جایگزین می‌کند. Edge Function با نام `sms-campaign-click` کلیک را ثبت و به مقصد ذخیره‌شده هدایت می‌کند. پارامتر URL مقصد از سمت کاربر دریافت نمی‌شود تا امکان open-redirect ایجاد نشود.
+- استفاده از کد تخفیف متصل به کمپین، پس از تکمیل سفارش در `sms_campaign_discount_redemptions` ثبت می‌شود. گزارش CRM تعداد کلیک یکتا، سفارش منتسب و سفارش دارای کد تخفیف را نشان می‌دهد.
+- گزارش تحویل در `sms_outbox.delivery_status`، `delivered_at` و `delivery_error` ذخیره می‌شود. Edge Function با نام `sms-delivery-webhook` آماده است؛ برای فعال‌شدن callback باید secret با نام `SMS_DELIVERY_WEBHOOK_SECRET` را در Supabase Function Secrets تنظیم کنید و callback درگاه را به آدرس زیر متصل کنید:
+  `https://cfdzxtnkiptnlitwvnla.supabase.co/functions/v1/sms-delivery-webhook`
+  هدر احراز هویت callback باید `x-sms-delivery-secret` باشد. وضعیت‌های درگاه باید به `delivered` یا `undelivered` نگاشت شوند؛ نام فیلدهای callback را مطابق مستندات حساب ملی پیامک تنظیم کنید.
+
+Migration مستندشده در `supabase/manual/037_sms_campaign_lifecycle.sql` قرار دارد. پس از pull، اپ CRM را به‌روز کنید. تغییرات رضایت در اپ مشتری باید با RPC بالا به UI تنظیمات حساب مشتری متصل شود.
