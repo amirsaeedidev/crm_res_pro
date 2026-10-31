@@ -78,7 +78,8 @@ class _OrderPaymentPanelState extends State<OrderPaymentPanel> {
               'p_note': null,
             });
             if (ctx.mounted) Navigator.pop(ctx, true);
-          } catch (_) {
+          } catch (error) {
+            await _logPaymentFailure(error);
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 const SnackBar(content: Text('ثبت پرداخت ناموفق بود؛ مانده به تومان و دسترسی مدیر را بررسی کنید.')),
@@ -117,12 +118,25 @@ class _OrderPaymentPanelState extends State<OrderPaymentPanel> {
               : 'پرداخت کیف پول با موفقیت ثبت شد.'),
         ));
       }
-    } catch (_) {
+    } catch (error) {
+      await _logPaymentFailure(error);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('پرداخت کیف پول انجام نشد؛ موجودی، اتصال حساب مشتری و دسترسی مدیر را بررسی کنید.')),
         );
       }
+    }
+  }
+
+  Future<void> _logPaymentFailure(Object error) async {
+    try {
+      await SupabaseService.client.rpc('log_admin_payment_failure', params: {
+        'p_order_id': widget.orderId,
+        // Avoid storing raw server details or credentials in the notification.
+        'p_reason': 'خطا هنگام ثبت یا تأیید پرداخت',
+      });
+    } catch (_) {
+      // The original payment error remains the primary failure. Logging is best effort.
     }
   }
 
