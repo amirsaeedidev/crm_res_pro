@@ -414,7 +414,6 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     ],
                   ),
                 ),
-              )
             else if (provider.isLoading && provider.customers.isEmpty)
               const Center(child: Padding(
                 padding: EdgeInsets.all(AppSizes.lg),
