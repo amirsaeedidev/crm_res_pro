@@ -40,7 +40,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 10, vsync: this);
+    _tabs = TabController(length: 11, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -84,6 +84,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);
     provider.fetchDishProfitReport(startDate: startDate, endDate: endDate);
     provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
+    provider.fetchReportReconciliation(startDate: startDate, endDate: endDate);
   }
 
   String _jalaliDate(DateTime date) {
@@ -208,6 +209,12 @@ class _ReportsScreenState extends State<ReportsScreen>
     final paymentData = paymentRows.isNotEmpty ? paymentRows.first : const <String, dynamic>{};
     addTable('روش‌های پرداخت', (paymentData['methods'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('بستن صندوق و مغایرت', (paymentData['closings'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    final reconciliationRows = provider.reportReconciliation?.chartData ?? const <Map<String, dynamic>>[];
+    final reconciliationData = reconciliationRows.isNotEmpty ? reconciliationRows.first : const <String, dynamic>{};
+    addSummary('تطبیق سفارش، پرداخت و انبار', provider.reportReconciliation?.summary);
+    addTable('کنترل سفارش‌ها', (reconciliationData['orders'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('تطبیق مصرف مواد', (reconciliationData['inventory'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('گردش‌های انبار', (reconciliationData['transactions'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
     addTable('وضعیت سفارش‌ها', provider.orderHealthReport?.chartData ?? []);
     addTable('استفاده از میزها', provider.tableUsageReport?.chartData ?? []);
     return rows;
@@ -382,6 +389,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),
                         Tab(icon: Icon(Icons.restaurant_menu_outlined, size: 18), text: 'سود هر غذا'),
                         Tab(icon: Icon(Icons.point_of_sale_outlined, size: 18), text: 'پرداخت و صندوق'),
+                        Tab(icon: Icon(Icons.fact_check_outlined, size: 18), text: 'تطبیق گزارش‌ها'),
                       ],
                     ),
                   ),
@@ -401,6 +409,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),
                         _dishProfitTab(context, mobile, provider.dishProfitReport?.summary ?? const {}, provider.dishProfitReport?.chartData.isNotEmpty == true ? provider.dishProfitReport!.chartData.first : const {}, provider.isLoading),
                         _paymentReconciliationTab(context, mobile, provider.paymentReconciliationReport?.summary ?? const {}, provider.paymentReconciliationReport?.chartData.isNotEmpty == true ? provider.paymentReconciliationReport!.chartData.first : const {}, provider.isLoading),
+                        _reportReconciliationTab(context, mobile, provider.reportReconciliation?.summary ?? const {}, provider.reportReconciliation?.chartData.isNotEmpty == true ? provider.reportReconciliation!.chartData.first : const {}, provider.isLoading),
                       ],
                     ),
                   ),
@@ -992,6 +1001,60 @@ class _ReportsScreenState extends State<ReportsScreen>
             trailing:Text('${variance>0?'+':''}${_number(variance)} تومان',style:TextStyle(fontWeight:FontWeight.w800,color:variance==0?const Color(0xFF279B70):const Color(0xFFE45B70))));
         }).toList())),
     ]);
+  }
+
+  Widget _reportReconciliationTab(BuildContext context, bool mobile, Map<String,dynamic> summary, Map<String,dynamic> data, bool loading) {
+    List<Map<String,dynamic>> rows(String key) => (data[key] as List<dynamic>? ?? const []).map((e) => Map<String,dynamic>.from(e as Map)).toList();
+    final orders = rows('orders');
+    final inventory = rows('inventory');
+    final transactions = rows('transactions');
+    if (loading && summary.isEmpty) return const Center(child: CircularProgressIndicator());
+    Color statusColor(String status) => status == 'مطابق' || status == 'ثبت‌شده' ? const Color(0xFF279B70) : status.contains('مانده قابل دریافت') ? const Color(0xFF8B72E8) : const Color(0xFFE45B70);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _metricGrid(context, mobile, [
+        _metric('سفارش بررسی‌شده', _digits(summary['orders_checked'] ?? 0), Icons.receipt_long_outlined, _blue, 'در بازه انتخابی'),
+        _metric('سفارش دارای مغایرت', _digits(summary['orders_with_issues'] ?? 0), Icons.error_outline, const Color(0xFFE45B70), 'نیازمند بررسی مدیر'),
+        _metric('مغایرت پرداخت', _digits(summary['payment_mismatches'] ?? 0), Icons.payments_outlined, const Color(0xFF8B72E8), 'تکمیل‌شده یا لغوشده'),
+        _metric('مغایرت مصرف انبار', _digits(summary['inventory_mismatches'] ?? 0), Icons.inventory_2_outlined, const Color(0xFF39B982), 'مقایسه دستور مصرف با گردش واقعی'),
+      ]),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'تطبیق سفارش‌ها و پرداخت‌ها', subtitle: 'مقایسه مبلغ اقلام، مبلغ سفارش، دریافتی و بازپرداخت', icon: Icons.receipt_long_outlined,
+        child: orders.isEmpty ? const _NoData(message: 'در این بازه سفارشی برای تطبیق وجود ندارد.') : Column(children: orders.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          final id = (r['daily_queue_number'] ?? r['order_id'] ?? '—').toString();
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text('سفارش #${_digits(id)} · ${_statusLabel((r['status'] ?? '').toString())}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('کل سفارش: ${_number(_asNum(r['order_total']))} · دریافتی خالص: ${_number(_asNum(r['net_received']))} · اختلاف: ${_number(_asNum(r['payment_difference']))} تومان\nاقلام: ${_number(_asNum(r['items_total']))} · بدون دستور مصرف: ${_digits(r['products_without_recipe'] ?? 0)}'),
+            isThreeLine: true,
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontWeight: FontWeight.w800, fontSize: 11)));
+        }).toList())),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'تطبیق دستور مصرف با گردش انبار', subtitle: 'مقدار مورد انتظار هر ماده در برابر خروج واقعی ثبت‌شده برای سفارش', icon: Icons.kitchen_outlined,
+        child: inventory.isEmpty ? const _NoData(message: 'برای سفارش‌های این بازه گردش مصرف ثبت نشده یا دستور مصرفی وجود ندارد.') : Column(children: inventory.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text((r['material_name'] ?? 'ماده اولیه').toString(), style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('سفارش #${_digits(r['order_id'] ?? '—')} · مورد انتظار: ${_digits(r['expected_quantity'] ?? 0)} ${r['unit'] ?? ''} · ثبت‌شده: ${_digits(r['actual_quantity'] ?? 0)} ${r['unit'] ?? ''}'),
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontWeight: FontWeight.w800, fontSize: 10)));
+        }).toList())),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'گردش‌های ثبت‌شده انبار', subtitle: 'خرید، مصرف سفارش، ضایعات، برگشت و اصلاح موجودی', icon: Icons.inventory_2_outlined,
+        child: transactions.isEmpty ? const _NoData(message: 'تراکنشی در بازه انتخابی ثبت نشده است.') : Column(children: transactions.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          final qty = _asNum(r['quantity_delta']);
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text('${r['material_name'] ?? 'ماده اولیه'} · ${r['transaction_type'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('مقدار: ${_digits(qty)} · هزینه: ${_number(_asNum(r['total_cost']))} تومان · سفارش: ${_digits(r['daily_queue_number'] ?? '—')}'),
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontSize: 10, fontWeight: FontWeight.w700)));
+        }).toList())),
+      const SizedBox(height: 8),
+      const Text('نکته: مانده پرداخت سفارش‌های باز لزوماً مغایرت نیست. مقایسه مصرف انبار بر اساس دستور مصرف فعلی و تراکنش‌های ثبت‌شده انجام می‌شود؛ سفارش‌های بدون دستور مصرف جداگانه مشخص می‌شوند.', style: TextStyle(fontSize: 12, color: Color(0xFF8792A8))),
+    ]);
+  }
+
+  String _statusLabel(String status) {
+    const labels = {'pending':'در انتظار','confirmed':'تأییدشده','preparing':'در حال آماده‌سازی','ready':'آماده','out_for_delivery':'ارسال‌شده','completed':'تکمیل‌شده','cancelled':'لغوشده'};
+    return labels[status] ?? status;
   }
 
   Widget _financialLine(String label, num amount, Color color, {bool strong = false}) => Padding(
