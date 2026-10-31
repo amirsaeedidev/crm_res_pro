@@ -21,6 +21,9 @@ class FileManagerScreen extends StatefulWidget {
 class _FileManagerScreenState extends State<FileManagerScreen> {
   static const _buckets = <String>['products', 'categories', 'banners'];
   String _selectedBucket = 'products';
+  String _bucketFilter = 'all';
+  final TextEditingController _searchController = TextEditingController();
+  String _fileTypeFilter = 'all';
   bool _isUploading = false;
   bool _isLoading = false;
   String? _error;
@@ -38,6 +41,23 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         return 'فایل‌های دیگر';
     }
   }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _visibleFiles => _files.where((file) {
+    final query = _searchController.text.trim().toLowerCase();
+    final name = (file['name'] ?? '').toString().toLowerCase();
+    final matchesName = query.isEmpty || name.contains(query);
+    final matchesType = _fileTypeFilter == 'all' ||
+        (_fileTypeFilter == 'images' && file['is_image'] == true) ||
+        (_fileTypeFilter == 'other' && file['is_image'] != true);
+    final matchesBucket = _bucketFilter == 'all' || file['bucket'] == _bucketFilter;
+    return matchesName && matchesType && matchesBucket;
+  }).toList(growable: false);
 
   @override
   void initState() {
@@ -170,21 +190,99 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       Row(children: [
         Expanded(child: Text('مدیریت فایل‌ها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold))),
         const SizedBox(width: AppSizes.sm),
-        DropdownButton<String>(value: _selectedBucket, items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(), onChanged: (v) { if (v != null) setState(() => _selectedBucket = v); }),
+        SizedBox(
+          width: 190,
+          child: DropdownButtonFormField<String>(
+            initialValue: _selectedBucket,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'محل آپلود'),
+            items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(),
+            onChanged: (value) { if (value != null) setState(() => _selectedBucket = value); },
+          ),
+        ),
         const SizedBox(width: AppSizes.sm),
-        AppButton(label: _isUploading ? 'در حال آپلود...' : 'آپلود تصویر', icon: Icons.cloud_upload_outlined, isLoading: _isUploading, onPressed: _isUploading ? null : _pickAndUploadFile, width: 170),
+        AppButton(label: _isUploading ? 'در حال آپلود...' : 'آپلود تصاویر', icon: Icons.cloud_upload_outlined, isLoading: _isUploading, onPressed: _isUploading ? null : _pickAndUploadFile, width: 170),
       ]),
       const SizedBox(height: AppSizes.md),
-      Text('نمایش فایل‌های تصاویر محصولات، دسته‌بندی‌ها و بنرها', style: Theme.of(context).textTheme.bodySmall),
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('فیلتر فایل‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: AppSizes.sm),
+            LayoutBuilder(builder: (context, constraints) {
+              final fieldWidth = constraints.maxWidth < 560 ? constraints.maxWidth : 240.0;
+              return Wrap(
+                spacing: AppSizes.sm,
+                runSpacing: AppSizes.sm,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'جست‌وجو بر اساس نام فایل',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchController.text.isEmpty ? null : IconButton(
+                          tooltip: 'پاک کردن جست‌وجو',
+                          onPressed: () { _searchController.clear(); setState(() {}); },
+                          icon: const Icon(Icons.clear),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _bucketFilter,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'فیلتر محل ذخیره'),
+                      items: [
+                        const DropdownMenuItem(value: 'all', child: Text('همه فایل‌ها')),
+                        ..._buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))),
+                      ],
+                      onChanged: (value) => setState(() => _bucketFilter = value ?? 'all'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _fileTypeFilter,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'نوع فایل'),
+                      items: const [
+                        DropdownMenuItem(value: 'all', child: Text('همه نوع‌ها')),
+                        DropdownMenuItem(value: 'images', child: Text('تصاویر')),
+                        DropdownMenuItem(value: 'other', child: Text('سایر فایل‌ها')),
+                      ],
+                      onChanged: (value) => setState(() => _fileTypeFilter = value ?? 'all'),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _loadFiles,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('به‌روزرسانی'),
+                  ),
+                ],
+              );
+            }),
+            const SizedBox(height: AppSizes.xs),
+            Text('برای آپلود، محل ذخیره را از بالای صفحه انتخاب کنید.', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSizes.md),
+      Text('فایل‌های ذخیره‌شده در فضای ابری رستوران', style: Theme.of(context).textTheme.bodySmall),
       const SizedBox(height: AppSizes.md),
       if (_error != null) AppCard(child: Column(children: [Text(_error!, textAlign: TextAlign.center), const SizedBox(height: 8), FilledButton(onPressed: _loadFiles, child: const Text('تلاش مجدد'))])),
       if (_isLoading) const Expanded(child: Center(child: CircularProgressIndicator()))
-      else if (_files.isEmpty && _error == null) const Expanded(child: Center(child: Text('در باکت‌های قابل مشاهده فایلی پیدا نشد.')))
+      else if (_visibleFiles.isEmpty && _error == null) const Expanded(child: Center(child: Text('در باکت‌های قابل مشاهده فایلی پیدا نشد.')))
       else Expanded(child: RefreshIndicator(onRefresh: _loadFiles, child: GridView.builder(
-        itemCount: _files.length,
+        itemCount: _visibleFiles.length,
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 240, childAspectRatio: .78, crossAxisSpacing: AppSizes.md, mainAxisSpacing: AppSizes.md),
         itemBuilder: (context, index) {
-          final file = _files[index];
+          final file = _visibleFiles[index];
           final isImage = file['is_image'] == true;
           return AppCard(padding: EdgeInsets.zero, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Expanded(child: Container(color: AppColors.getBackground(context), child: isImage
