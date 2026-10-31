@@ -25,6 +25,8 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
   final _address = TextEditingController();
   final _header = TextEditingController();
   final _footer = TextEditingController();
+  final _orderPrefix = TextEditingController();
+  final _orderDigits = TextEditingController(text: '4');
   String _paperSize = '80mm';
   bool _showLogo = true;
   bool _showDate = true;
@@ -53,6 +55,8 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
     _address.dispose();
     _header.dispose();
     _footer.dispose();
+    _orderPrefix.dispose();
+    _orderDigits.dispose();
     super.dispose();
   }
 
@@ -71,6 +75,8 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
         _address.text = (row['company_address'] ?? '').toString();
         _header.text = (row['receipt_header_text'] ?? '').toString();
         _footer.text = (row['receipt_footer_text'] ?? '').toString();
+        _orderPrefix.text = (row['order_number_prefix'] ?? '').toString();
+        _orderDigits.text = (row['order_number_digits'] ?? 4).toString();
         _paperSize = (row['receipt_paper_size'] ?? '80mm').toString();
         _showLogo = row['receipt_show_logo'] == true;
         _showDate = row['receipt_show_date'] != false;
@@ -168,6 +174,8 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
         'company_address': _address.text.trim(),
         'receipt_header_text': _header.text.trim(),
         'receipt_footer_text': _footer.text.trim(),
+        'order_number_prefix': _orderPrefix.text.trim(),
+        'order_number_digits': int.tryParse(_orderDigits.text.trim()) ?? 4,
         'receipt_paper_size': _paperSize,
         'receipt_show_logo': _showLogo,
         'receipt_show_date': _showDate,
@@ -307,11 +315,19 @@ class _ReceiptSettingsCardState extends State<ReceiptSettingsCard> {
           decoration: const InputDecoration(labelText: 'اندازه چاپ', border: OutlineInputBorder()),
           items: const [
             DropdownMenuItem(value: 'a4', child: Text('برگه استاندارد')),
-            DropdownMenuItem(value: 'roll_80', child: Text('رول حرارتی ۸۰ میلی‌متر')),
-            DropdownMenuItem(value: 'roll_58', child: Text('رول حرارتی ۵۸ میلی‌متر')),
+            DropdownMenuItem(value: '80mm', child: Text('رول حرارتی ۸۰ میلی‌متر')),
+            DropdownMenuItem(value: '58mm', child: Text('رول حرارتی ۵۸ میلی‌متر')),
           ],
           onChanged: (value) { if (value != null) setState(() => _paperSize = value); },
         )),
+        const Divider(height: AppSizes.lg),
+        Text('شماره‌گذاری سفارش‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: AppSizes.sm),
+        Wrap(spacing: AppSizes.md, runSpacing: AppSizes.sm, children: [
+          SizedBox(width: 220, child: _field(_orderPrefix, 'پیش‌شماره سفارش')),
+          SizedBox(width: 220, child: _field(_orderDigits, 'تعداد رقم شماره', keyboardType: TextInputType.number)),
+        ]),
+        Text('شماره سفارش به‌صورت روزانه و اتمیک در سرور تولید می‌شود؛ تغییر این تنظیمات فقط شکل نمایشی آن را عوض می‌کند.', style: Theme.of(context).textTheme.bodySmall),
         const Divider(height: AppSizes.lg),
         Text('نمایش در فاکتور', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         Wrap(spacing: 24, runSpacing: 0, children: [
