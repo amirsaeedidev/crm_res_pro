@@ -70,7 +70,7 @@ function parseProviderResponse(raw: string): Record<string, unknown> {
 
 async function trackCampaignLinks(row: OutboxRow): Promise<OutboxRow> {
   if (!row.campaign_id) return row;
-  const trackingBase = (Deno.env.get("SMS_TRACKING_BASE_URL") ?? `${SUPABASE_URL}/functions/v1/sms-campaign-click`).replace(/\\/$/, "");
+  const trackingBase = (Deno.env.get("SMS_TRACKING_BASE_URL") ?? `${SUPABASE_URL}/functions/v1/sms-campaign-click`).replace(/\/$/, "");
   const existingResult = await admin.from("sms_campaign_tracking_tokens")
     .select("token,destination_url").eq("outbox_id", row.id);
   const existing = (existingResult.data ?? []) as Array<{ token: string; destination_url: string | null }>;
