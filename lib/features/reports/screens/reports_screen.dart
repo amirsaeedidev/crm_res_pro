@@ -532,16 +532,40 @@ class _ReportsScreenState extends State<ReportsScreen>
     num totalTypes,
   ) {
     final chart = context.read<ReportsProvider>().salesReport?.chartData ?? const <Map<String, dynamic>>[];
+    final grossSales = _num(summary, 'gross_sales');
+    final discounts = _num(summary, 'discount_amount');
+    final netSales = _num(summary, 'net_sales');
+    final refunds = _num(summary, 'refund_amount');
+    final netAfterRefunds = _num(summary, 'net_after_refunds');
+    final deliveryFees = _num(summary, 'delivery_fees');
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مجموع فروش', '${_number(sales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
+        _metric('فروش خالص', '${_number(netSales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'فروش ناخالص پس از کسر تخفیف'),
         _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', Icons.calculate_outlined, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
         _metric('تغییر نسبت به قبل', _percentage(growth), Icons.compare_arrows_rounded, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
-        title: 'روند فروش',
-        subtitle: 'مقادیر نمودار بر اساس داده‌ای است که گزارش فروش برمی‌گرداند',
+        title: 'تفکیک مبالغ فروش',
+        subtitle: 'فقط سفارش‌های تکمیل‌شده؛ بازپرداخت‌ها بر اساس زمان پردازش ثبت می‌شوند',
+        icon: Icons.receipt_long_outlined,
+        child: Column(children: [
+          _financialLine('فروش ناخالص', grossSales, _blue),
+          _financialLine('تخفیف‌ها', discounts, const Color(0xFFE9A23B)),
+          const Divider(height: 18),
+          _financialLine('فروش خالص پس از تخفیف', netSales, const Color(0xFF39B982), strong: true),
+          _financialLine('هزینه ارسال', deliveryFees, const Color(0xFF8B72E8)),
+          _financialLine('بازپرداخت انجام‌شده (${_number(_num(summary, 'refund_count'))} مورد)', refunds, const Color(0xFFE45B70)),
+          const Divider(height: 18),
+          _financialLine('خالص پس از بازپرداخت', netAfterRefunds, netAfterRefunds >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
+          const SizedBox(height: 8),
+          const Text('بازپرداخت‌ها جداگانه نمایش داده می‌شوند؛ ممکن است مربوط به سفارش لغوشده‌ای باشند که در فروش سفارش‌های تکمیل‌شده محاسبه نشده است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'روند فروش خالص',
+        subtitle: 'فروش خالص روزانه پس از کسر تخفیف‌ها',
         icon: Icons.bar_chart_rounded,
         child: chart.isEmpty
             ? const _NoData(message: 'داده نموداری برای این بازه موجود نیست.')
@@ -564,8 +588,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                   ),
                   barGroups: chart.asMap().entries.map((entry) {
                     final item = entry.value;
-                    final amount = _num(item, 'total_sales') != 0 ? _num(item, 'total_sales') : _num(item, 'sales');
-                    return BarChartGroupData(x: entry.key, barRods: [BarChartRodData(toY: amount.toDouble(), width: mobile ? 13 : 22, borderRadius: BorderRadius.circular(7), color: _blue, backDrawRodData: BackgroundBarChartRodData(show: true, toY: chart.map((e) => (_num(e, 'total_sales') != 0 ? _num(e, 'total_sales') : _num(e, 'sales')).toDouble()).fold<double>(0, (a, b) => a > b ? a : b), color: const Color(0xFFF0F4FC)))]);
+                    final amount = _num(item, 'net_sales') != 0 ? _num(item, 'net_sales') : _num(item, 'amount');
+                    return BarChartGroupData(x: entry.key, barRods: [BarChartRodData(toY: amount.toDouble(), width: mobile ? 13 : 22, borderRadius: BorderRadius.circular(7), color: _blue, backDrawRodData: BackgroundBarChartRodData(show: true, toY: chart.map((e) => (_num(e, 'net_sales') != 0 ? _num(e, 'net_sales') : _num(e, 'amount')).toDouble()).fold<double>(0, (a, b) => a > b ? a : b), color: const Color(0xFFF0F4FC)))]);
                   }).toList(),
                 )),
               ),
