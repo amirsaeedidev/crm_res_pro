@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_sizes.dart';
@@ -5,6 +7,7 @@ import '../theme/app_breakpoints.dart';
 import 'app_sidebar.dart';
 import 'app_topbar.dart';
 import '../../providers/navigation_provider.dart';
+import '../services/realtime_service.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -17,6 +20,30 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  StreamSubscription<String>? _realtimeErrorSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _realtimeErrorSubscription = RealtimeService.connectionErrors.listen((message) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.maybeOf(context)
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ));
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _realtimeErrorSubscription?.cancel();
+    super.dispose();
+  }
 
   // Translate the current route to a Persian app-bar title.
   String _getPageTitle(String route) {
