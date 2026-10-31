@@ -28,6 +28,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   List<Map<String, dynamic>> _attempts = [];
   List<Map<String, dynamic>> _stats = [];
   final Set<String> _selectedCustomers = {};
+  DateTime? _campaignSchedule;
   final Map<String, TextEditingController> _normalTemplateControllers = {};
   final Map<String, TextEditingController> _patternTemplateControllers = {};
   final Map<String, bool> _templateActive = {};
@@ -280,6 +281,33 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     }
   }
 
+  Future<void> _pickCampaignSchedule() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _campaignSchedule ?? now,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 2),
+      helpText: 'تاریخ اجرای کمپین',
+    );
+    if (pickedDate == null || !mounted) return;
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_campaignSchedule ?? now.add(const Duration(minutes: 5))),
+      helpText: 'ساعت اجرای کمپین',
+    );
+    if (pickedTime == null || !mounted) return;
+    final selected = DateTime(
+      pickedDate.year, pickedDate.month, pickedDate.day,
+      pickedTime.hour, pickedTime.minute,
+    );
+    if (selected.isBefore(DateTime.now().add(const Duration(minutes: 1)))) {
+      _toast('زمان اجرای کمپین باید حداقل یک دقیقه بعد از زمان فعلی باشد.');
+      return;
+    }
+    setState(() => _campaignSchedule = selected);
+  }
+
   Future<void> _queueCampaign() async {
     if (_selectedCustomers.isEmpty) {
       _toast('حداقل یک مشتری دارای رضایت پیامک تبلیغاتی انتخاب کنید.');
@@ -297,7 +325,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     }
     final confirmed = await _confirm(
       'ایجاد کمپین پیامکی',
-      'برای ${_selectedCustomers.length} مشتری دارای رضایت، پیامک در صف قرار می‌گیرد. ارسال با تنظیمات فعلی و پس از تأیید اطلاعات درگاه انجام می‌شود. ادامه می‌دهید؟',
+      _campaignSchedule == null
+          ? 'برای ${_selectedCustomers.length} مشتری دارای رضایت، پیامک در صف قرار می‌گیرد و پس از تأیید درگاه ارسال می‌شود. ادامه می‌دهید؟'
+          : 'کمپین برای ${DateFormat('yyyy/MM/dd HH:mm').format(_campaignSchedule!)} زمان‌بندی می‌شود و تا آن زمان ارسال نخواهد شد. ادامه می‌دهید؟',
     );
     if (!confirmed || !mounted) return;
     setState(() => _saving = true);
@@ -311,11 +341,13 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             .split(';')
             .map((e) => e.trim())
             .toList(),
+        scheduledAt: _campaignSchedule,
       );
       _toast(
         'کمپین در صف قرار گرفت؛ تعداد گیرندگان: ${result['recipient_count'] ?? 0}.',
       );
       _selectedCustomers.clear();
+      _campaignSchedule = null;
       await _reloadLogs();
     } catch (e) {
       _toast('ساخت کمپین ناموفق بود: $e');
@@ -1081,6 +1113,22 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 maxLines: 2,
               ),
             ],
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _saving ? null : _pickCampaignSchedule,
+              icon: const Icon(Icons.schedule),
+              label: Text(
+                _campaignSchedule == null
+                    ? 'ارسال فوری (برای زمان‌بندی انتخاب کن)'
+                    : 'زمان اجرا: ${DateFormat('yyyy/MM/dd – HH:mm').format(_campaignSchedule!)}',
+              ),
+            ),
+            if (_campaignSchedule != null)
+              TextButton.icon(
+                onPressed: () => setState(() => _campaignSchedule = null),
+                icon: const Icon(Icons.close),
+                label: const Text('حذف زمان‌بندی و ارسال فوری'),
+              ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
