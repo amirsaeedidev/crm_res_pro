@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:provider/provider.dart';
 import 'providers.dart';
 import 'router.dart';
@@ -20,7 +21,13 @@ class CrmApp extends StatelessWidget {
             title: AppStrings.appName,
             locale: const Locale('fa', 'IR'),
             supportedLocales: const [Locale('fa', 'IR')],
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            localizationsDelegates: const [
+              PersianMaterialLocalizations.delegate,
+              PersianCupertinoLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
