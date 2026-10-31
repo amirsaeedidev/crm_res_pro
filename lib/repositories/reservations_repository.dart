@@ -12,10 +12,12 @@ class ReservationsRepository {
   final SupabaseClient _client;
   ReservationsRepository({SupabaseClient? client}) : _client = client ?? SupabaseService.client;
 
-  Future<List<ReservationModel>> getReservations({int page = 1, int pageSize = 15, String? searchQuery, String? status}) async {
+  Future<List<ReservationModel>> getReservations({int page = 1, int pageSize = 1000, String? searchQuery, String? status, String? dateFrom, String? dateTo}) async {
     if (page < 1 || pageSize < 1) throw ArgumentError('page and pageSize must be positive');
     try {
       var query = _client.from('reservations_view').select('*');
+      if (dateFrom != null && dateFrom.isNotEmpty) query = query.gte('date', dateFrom);
+      if (dateTo != null && dateTo.isNotEmpty) query = query.lte('date', dateTo);
       final normalizedStatus = status?.trim();
       if (normalizedStatus != null && normalizedStatus.isNotEmpty && normalizedStatus != 'all') query = query.eq('status', normalizedStatus);
       final search = searchQuery?.trim();
@@ -23,7 +25,7 @@ class ReservationsRepository {
         final escaped = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('%', r'\%').replaceAll('_', r'\_');
         query = query.or('customer_name.ilike.%$escaped%,customer_phone.ilike.%$escaped%,table_number.ilike.%$escaped%');
       }
-      final rows = await query.order('date', ascending: false).order('time', ascending: false).range((page - 1) * pageSize, page * pageSize - 1);
+      final rows = await query.order('date', ascending: true).order('time', ascending: true).range((page - 1) * pageSize, page * pageSize - 1);
       return rows.map((row) => ReservationModel.fromJson(Map<String, dynamic>.from(row))).toList();
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch reservations failed', error: e, stackTrace: st);
