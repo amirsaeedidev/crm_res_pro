@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 import 'package:provider/provider.dart';
 import '../../../core/utils/app_error_message.dart';
 import '../../../models/reservation_model.dart';
@@ -8,6 +8,7 @@ import '../../../models/user_model.dart';
 import '../../../providers/reservations_provider.dart';
 import '../../../providers/tables_provider.dart';
 import '../../../repositories/customers_repository.dart';
+import '../widgets/reservations_calendar.dart';
 
 class ReservationsListScreen extends StatefulWidget {
   const ReservationsListScreen({super.key});
@@ -18,14 +19,16 @@ class ReservationsListScreen extends StatefulWidget {
 class _ReservationsListScreenState extends State<ReservationsListScreen> {
   final _search = TextEditingController();
   static const _statuses = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
-  final _dateFormat = DateFormat('yyyy/MM/dd');
+  Jalali _visibleMonth = Jalali.now();
+  Jalali _selectedDate = Jalali.now();
+  bool _showWholeMonth = false;
 
   @override
   void initState() { super.initState(); WidgetsBinding.instance.addPostFrameCallback((_) async {
     if (!mounted) return;
     final reservationsProvider = context.read<ReservationsProvider>();
     final tablesProvider = context.read<TablesProvider>();
-    await reservationsProvider.fetchReservations();
+    await reservationsProvider.setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
     if (!mounted) return;
     await tablesProvider.fetchTables();
   }); }
@@ -50,8 +53,50 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     return result;
   }
 
-  String _formatDate(DateTime value) =>
-      _persianDigits(_dateFormat.format(value));
+  DateTime _monthStart(Jalali month) => Jalali(month.year, month.month, 1).toGregorian().toDateTime();
+  DateTime _monthEnd(Jalali month) => Jalali(month.year, month.month, month.monthLength).toGregorian().toDateTime();
+
+  String _formatDate(DateTime value) {
+    final date = Jalali.fromDateTime(value).formatter;
+    return _persianDigits('${date.yyyy}/${date.mm}/${date.dd}');
+  }
+
+  String _dateKey(DateTime value) {
+    final date = value.toIso8601String();
+    return date.length >= 10 ? date.substring(0, 10) : date;
+  }
+
+  Future<void> _changeMonth(int amount) async {
+    final next = Jalali(_visibleMonth.year, _visibleMonth.month, 1).addMonths(amount);
+    setState(() {
+      _visibleMonth = next;
+      _selectedDate = next;
+      _showWholeMonth = false;
+    });
+    await context.read<ReservationsProvider>().setDateRange(from: _monthStart(next), to: _monthEnd(next));
+  }
+
+  Future<void> _selectDate(Jalali date) async {
+    final monthChanged = date.year != _visibleMonth.year || date.month != _visibleMonth.month;
+    setState(() {
+      _selectedDate = date;
+      _visibleMonth = Jalali(date.year, date.month, 1);
+      _showWholeMonth = false;
+    });
+    if (monthChanged) {
+      await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
+    }
+  }
+
+  Future<void> _goToToday() async {
+    final today = Jalali.now();
+    setState(() {
+      _visibleMonth = Jalali(today.year, today.month, 1);
+      _selectedDate = today;
+      _showWholeMonth = false;
+    });
+    await context.read<ReservationsProvider>().setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
+  }
   Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
 
   Future<void> _showReservationForm([ReservationModel? current]) async {
@@ -124,38 +169,299 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [Expanded(child: Text('مدیریت رزرو میزها', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))), FilledButton.icon(onPressed: () => _showReservationForm(), icon: const Icon(Icons.add), label: const Text('رزرو جدید'))]),
-    const SizedBox(height: 14), TextField(controller: _search, decoration: InputDecoration(labelText: 'جست‌وجوی مشتری، تلفن یا شماره میز', prefixIcon: const Icon(Icons.search), suffixIcon: IconButton(onPressed: () { _search.clear(); context.read<ReservationsProvider>().setSearchQuery(''); }, icon: const Icon(Icons.clear)), border: const OutlineInputBorder()), onSubmitted: (v) => context.read<ReservationsProvider>().setSearchQuery(v)),
-    const SizedBox(height: 12),
-    SizedBox(
-      height: 42,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(20),
       child: Consumer<ReservationsProvider>(
-        builder: (context, provider, _) => ListView(
-          scrollDirection: Axis.horizontal,
-          children: _statuses.map((status) => Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8),
-            child: ChoiceChip(
-              label: Text(status == 'all' ? 'همه' : _statusLabel(status)),
-              selected: provider.statusFilter == status,
-              onSelected: (_) => provider.setStatusFilter(status),
+        builder: (context, provider, _) {
+          final reservations = provider.reservations;
+          final statusesByDay = <String, List<ReservationStatus>>{};
+          for (final reservation in reservations) {
+            final key = _dateKey(reservation.date);
+            statusesByDay.putIfAbsent(key, () => []).add(reservation.status);
+          }
+          final visibleReservations = _showWholeMonth
+              ? reservations
+              : reservations.where((reservation) {
+                  final date = Jalali.fromDateTime(reservation.date);
+                  return date.year == _selectedDate.year &&
+                      date.month == _selectedDate.month &&
+                      date.day == _selectedDate.day;
+                }).toList();
+          final pendingCount = reservations.where((r) => r.status == ReservationStatus.pending).length;
+          final confirmedCount = reservations.where((r) => r.status == ReservationStatus.confirmed).length;
+          final completedCount = reservations.where((r) => r.status == ReservationStatus.completed).length;
+          final cancelledCount = reservations.where((r) => r.status == ReservationStatus.cancelled).length;
+
+          return RefreshIndicator(
+            onRefresh: provider.fetchReservations,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('تقویم رزروها', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 4),
+                            Text('برنامه‌ریزی و مدیریت رزرو میزها', style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                          ],
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () => _showReservationForm(),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('رزرو جدید'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _summaryCard(context, 'کل رزروهای ماه', reservations.length, Icons.event_available_rounded, scheme.primary),
+                      _summaryCard(context, 'در انتظار', pendingCount, Icons.hourglass_top_rounded, const Color(0xFFF59E0B)),
+                      _summaryCard(context, 'تأییدشده', confirmedCount, Icons.check_circle_outline_rounded, const Color(0xFF3B82F6)),
+                      _summaryCard(context, 'تکمیل‌شده', completedCount, Icons.task_alt_rounded, const Color(0xFF16A34A)),
+                      _summaryCard(context, 'لغوشده', cancelledCount, Icons.event_busy_rounded, scheme.error),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ReservationsCalendar(
+                    visibleMonth: _visibleMonth,
+                    selectedDate: _selectedDate,
+                    statusesByDay: statusesByDay,
+                    onDateSelected: _selectDate,
+                    onPreviousMonth: () => _changeMonth(-1),
+                    onNextMonth: () => _changeMonth(1),
+                    onToday: _goToToday,
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 10,
+                    children: [
+                      Text(
+                        _showWholeMonth ? 'رزروهای ماه \${_persianDigits('\${_visibleMonth.year}/\${_visibleMonth.month.toString().padLeft(2, '0')}')}' : 'رزروهای \${_formatDate(_selectedDate.toGregorian().toDateTime())}',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment(value: false, label: Text('روز انتخاب‌شده'), icon: Icon(Icons.today_rounded)),
+                          ButtonSegment(value: true, label: Text('کل ماه'), icon: Icon(Icons.calendar_view_month_rounded)),
+                        ],
+                        selected: {_showWholeMonth},
+                        onSelectionChanged: (selection) => setState(() => _showWholeMonth = selection.first),
+                        showSelectedIcon: false,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _search,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: provider.setSearchQuery,
+                    decoration: InputDecoration(
+                      hintText: 'جست‌وجوی نام مشتری، تلفن یا شماره میز',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: IconButton(
+                        tooltip: 'پاک کردن جست‌وجو',
+                        onPressed: () {
+                          _search.clear();
+                          provider.setSearchQuery('');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                      filled: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _statuses.map((status) => Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: ChoiceChip(
+                          label: Text(status == 'all' ? 'همه وضعیت‌ها' : _statusLabel(status)),
+                          selected: provider.statusFilter == status,
+                          onSelected: (_) => provider.setStatusFilter(status),
+                          showCheckmark: false,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      )).toList(),
+                    ),
+                  ),
+                  if (provider.isLoading) const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+                  const SizedBox(height: 10),
+                  if (provider.error != null && reservations.isEmpty)
+                    _emptyState(context, provider.error!, actionLabel: 'تلاش مجدد', onAction: provider.fetchReservations)
+                  else if (visibleReservations.isEmpty)
+                    _emptyState(
+                      context,
+                      _showWholeMonth ? 'در این ماه رزروی با فیلترهای انتخاب‌شده وجود ندارد.' : 'برای این روز رزروی با فیلترهای انتخاب‌شده ثبت نشده است.',
+                      actionLabel: 'ثبت رزرو',
+                      onAction: () => _showReservationForm(),
+                    )
+                  else
+                    ...visibleReservations.map((reservation) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _reservationCard(context, reservation),
+                    )),
+                  const SizedBox(height: 28),
+                ],
+              ),
             ),
-          )).toList(),
-        ),
+          );
+        },
       ),
-    ),
-    const SizedBox(height: 12), Expanded(child: Consumer<ReservationsProvider>(builder: (context, provider, _) {
-      if (provider.isLoading && provider.reservations.isEmpty) return const Center(child: CircularProgressIndicator());
-      if (provider.error != null && provider.reservations.isEmpty) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(provider.error!, textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton(onPressed: provider.fetchReservations, child: const Text('تلاش مجدد'))]));
-      if (provider.reservations.isEmpty) return const Center(child: Text('رزروی برای نمایش وجود ندارد.'));
-      return Column(children: [Expanded(child: ListView.separated(itemCount: provider.reservations.length, separatorBuilder: (_, _) => const SizedBox(height: 8), itemBuilder: (context, index) {
-        final reservation = provider.reservations[index];
-        return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [Expanded(child: Text(reservation.customerName.isEmpty ? 'مشتری بدون نام' : reservation.customerName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: _statusColor(reservation.status.name).withValues(alpha: .12), borderRadius: BorderRadius.circular(20)), child: Text(_statusLabel(reservation.status.name), style: TextStyle(color: _statusColor(reservation.status.name))))]),
-          const SizedBox(height: 8), Text('تلفن: ${reservation.customerPhone.isEmpty ? 'ثبت نشده' : reservation.customerPhone}'), Text('تاریخ: ${_formatDate(reservation.date)} • ساعت: ${_persianDigits(reservation.time)} • نفرات: ${_persianDigits(reservation.partySize)}'), Text('میز: ${reservation.tableNumber.isEmpty ? 'نامشخص' : reservation.tableNumber}'), if (reservation.note?.isNotEmpty == true) Text('یادداشت: ${reservation.note}'),
-          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const Icon(Icons.edit_outlined), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => const [PopupMenuItem(value: 'pending', child: Text('در انتظار')), PopupMenuItem(value: 'confirmed', child: Text('تأیید')), PopupMenuItem(value: 'completed', child: Text('تکمیل')), PopupMenuItem(value: 'cancelled', child: Text('لغو'))], child: const Chip(avatar: Icon(Icons.sync_alt, size: 18), label: Text('وضعیت')))])
-        ])));
-      })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const Icon(Icons.chevron_right)), Text('صفحه ${_persianDigits(provider.currentPage)}'), IconButton(onPressed: provider.reservations.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const Icon(Icons.chevron_left))])]);
-    }))
-  ]));
+    );
+  }
+
+  Widget _summaryCard(BuildContext context, String label, int count, IconData icon, Color color) {
+    final theme = Theme.of(context);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 145),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: .65)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(color: color.withValues(alpha: .12), borderRadius: BorderRadius.circular(11)),
+          child: Icon(icon, size: 19, color: color),
+        ),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_persianDigits(count), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _reservationCard(BuildContext context, ReservationModel reservation) {
+    final theme = Theme.of(context);
+    final color = _statusColor(reservation.status.name);
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: .65)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(13)),
+              child: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 11),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(reservation.customerName.isEmpty ? 'مشتری بدون نام' : reservation.customerName,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+              Text(reservation.customerPhone.isEmpty ? 'شماره تماس ثبت نشده' : reservation.customerPhone,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+              decoration: BoxDecoration(color: color.withValues(alpha: .12), borderRadius: BorderRadius.circular(30)),
+              child: Text(_statusLabel(reservation.status.name), style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+          ]),
+          const SizedBox(height: 14),
+          Wrap(spacing: 16, runSpacing: 10, children: [
+            _detailItem(context, Icons.calendar_today_rounded, _formatDate(reservation.date)),
+            _detailItem(context, Icons.schedule_rounded, _persianDigits(reservation.time)),
+            _detailItem(context, Icons.groups_2_outlined, '\${_persianDigits(reservation.partySize)} نفر'),
+            _detailItem(context, Icons.table_restaurant_outlined, 'میز \${_persianDigits(reservation.tableNumber)}'),
+          ]),
+          if (reservation.note?.isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            Text('یادداشت: \${reservation.note}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ],
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _showReservationForm(reservation),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('ویرایش'),
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'تغییر وضعیت رزرو',
+                onSelected: (status) => _changeStatus(reservation, status),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'pending', child: Text('در انتظار')),
+                  PopupMenuItem(value: 'confirmed', child: Text('تأیید رزرو')),
+                  PopupMenuItem(value: 'completed', child: Text('تکمیل رزرو')),
+                  PopupMenuItem(value: 'cancelled', child: Text('لغو رزرو')),
+                ],
+                child: OutlinedButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                  label: const Text('تغییر وضعیت'),
+                ),
+              ),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _detailItem(BuildContext context, IconData icon, String value) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      const SizedBox(width: 6),
+      Text(value, style: Theme.of(context).textTheme.bodySmall),
+    ],
+  );
+
+  Widget _emptyState(BuildContext context, String message, {String? actionLabel, VoidCallback? onAction}) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 34),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .65)),
+      ),
+      child: Column(children: [
+        Icon(Icons.event_note_rounded, size: 38, color: scheme.onSurfaceVariant),
+        const SizedBox(height: 12),
+        Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 14),
+          OutlinedButton(onPressed: onAction, child: Text(actionLabel)),
+        ],
+      ]),
+    );
+  }
+}
 }
