@@ -18,6 +18,11 @@ create schema if not exists extensions;
 create extension if not exists btree_gist with schema extensions;
 set local search_path = public, extensions;
 
+-- Remove legacy uniqueness rules that blocked every second active reservation
+-- on a table, even when it was scheduled for a different time.
+drop index if exists public.idx_reservation_active_table;
+drop index if exists public.reservations_active_slot_unique_idx;
+
 alter table public.reservations
   drop constraint if exists reservations_no_overlapping_active_table_time;
 
