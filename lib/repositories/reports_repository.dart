@@ -159,4 +159,21 @@ class ReportsRepository {
     return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
   }
 
+  /// Cross-checks orders, received payments/refunds and recipe-based stock movements.
+  Future<ReportModel> getReportReconciliation({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      final response = await _client.rpc('get_report_reconciliation', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch report reconciliation failed', error: e);
+      throw Exception('خطا در تطبیق گزارش‌ها: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected report reconciliation error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در تطبیق گزارش‌ها');
+    }
+  }
+
 }
