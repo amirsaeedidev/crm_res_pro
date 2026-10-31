@@ -538,6 +538,9 @@ class _ReportsScreenState extends State<ReportsScreen>
     final refunds = _num(summary, 'refund_amount');
     final netAfterRefunds = _num(summary, 'net_after_refunds');
     final deliveryFees = _num(summary, 'delivery_fees');
+    final recordedRevenue = _num(summary, 'recorded_revenue');
+    final cashReceived = _num(summary, 'cash_received_in_period');
+    final receivable = _num(summary, 'receivable_balance');
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
         _metric('فروش خالص', '${_number(netSales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'فروش ناخالص پس از کسر تخفیف'),
@@ -560,6 +563,19 @@ class _ReportsScreenState extends State<ReportsScreen>
           _financialLine('خالص پس از بازپرداخت', netAfterRefunds, netAfterRefunds >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
           const SizedBox(height: 8),
           const Text('بازپرداخت‌ها جداگانه نمایش داده می‌شوند؛ ممکن است مربوط به سفارش لغوشده‌ای باشند که در فروش سفارش‌های تکمیل‌شده محاسبه نشده است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'درآمد ثبت‌شده و وجه دریافتی',
+        subtitle: 'وجه دریافتی فقط از پرداخت‌هایی محاسبه می‌شود که در جزئیات سفارش ثبت شده‌اند',
+        icon: Icons.account_balance_wallet_outlined,
+        child: Column(children: [
+          _financialLine('درآمد ثبت‌شده سفارش‌های تکمیل‌شده', recordedRevenue, _blue, strong: true),
+          _financialLine('وجه واقعاً دریافت‌شده در این بازه', cashReceived, const Color(0xFF39B982), strong: true),
+          _financialLine('مانده قابل دریافت سفارش‌های این بازه', receivable, const Color(0xFFE9A23B)),
+          const SizedBox(height: 8),
+          const Text('سفارش‌های قدیمی که پرداختشان در پنل ثبت نشده، به‌صورت خودکار پرداخت‌شده فرض نمی‌شوند. وجه دریافتی بر اساس تاریخ ثبت پرداخت و مانده بر اساس سفارش‌های تکمیل‌شده در بازه است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
         ]),
       ),
       const SizedBox(height: 18),
