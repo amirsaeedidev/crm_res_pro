@@ -305,6 +305,21 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _toast('شناسه الگو (Body ID) را وارد کنید.');
       return;
     }
+    if (_isPattern && !_campaignPatternArgs.text.contains('{{track_url}}')) {
+      _toast('برای رهگیری کلیک، متغیر {{track_url}} را در آرگومان‌های پترن قرار دهید.');
+      return;
+    }
+    final smsCost = double.tryParse(_smsCostPerMessage.text.trim());
+    final otherCost = double.tryParse(_otherCampaignCost.text.trim());
+    final attributionDays = int.tryParse(_attributionWindowDays.text.trim());
+    if (smsCost == null || otherCost == null || smsCost < 0 || otherCost < 0) {
+      _toast('هزینه‌ها باید عدد معتبر و غیرمنفی باشند.');
+      return;
+    }
+    if (attributionDays == null || attributionDays < 1 || attributionDays > 90) {
+      _toast('پنجره انتساب باید بین ۱ تا ۹۰ روز باشد.');
+      return;
+    }
     final confirmed = await _confirm(
       'ایجاد کمپین پیامکی',
       'برای ${_selectedCustomers.length} مشتری دارای رضایت، پیامک در صف قرار می‌گیرد. ارسال با تنظیمات فعلی و پس از تأیید اطلاعات درگاه انجام می‌شود. ادامه می‌دهید؟',
@@ -322,9 +337,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             .map((e) => e.trim())
             .toList(),
         discountId: _selectedDiscountId,
-        smsCostPerMessage: double.tryParse(_smsCostPerMessage.text.trim()) ?? 0,
-        otherCampaignCost: double.tryParse(_otherCampaignCost.text.trim()) ?? 0,
-        attributionWindowDays: int.tryParse(_attributionWindowDays.text.trim()) ?? 7,
+        smsCostPerMessage: smsCost,
+        otherCampaignCost: otherCost,
+        attributionWindowDays: attributionDays,
       );
       _toast(
         'کمپین در صف قرار گرفت؛ تعداد گیرندگان: ${result['recipient_count'] ?? 0}.',
@@ -1121,7 +1136,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             _field(_attributionWindowDays, 'پنجره انتساب خرید (روز؛ ۱ تا ۹۰)', keyboardType: TextInputType.number),
             const SizedBox(height: 5),
             const Text('برای پیامک عادی لینک رهگیری به انتهای متن افزوده می‌شود. در الگوی پترن باید متغیر {{track_url}} را در قالب و آرگومان‌ها پیش‌بینی کنید. هزینه هر پیامک را مطابق صورتحساب/تعرفه واقعی وارد کنید.',
-              style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
