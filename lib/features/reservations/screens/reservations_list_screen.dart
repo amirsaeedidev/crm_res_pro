@@ -122,7 +122,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     final noteController = TextEditingController(text: current?.note ?? '');
     String? customerId = current?.userId ?? customers.first.id;
     String? tableId = current?.tableId ?? tables.first.id;
-    DateTime date = current?.date ?? DateTime.now();
+    DateTime date = current?.date ?? _selectedDate.toGregorian().toDateTime();
     final currentTimeParts = (current?.time ?? '19:00').split(':');
     TimeOfDay time = TimeOfDay(hour: int.tryParse(currentTimeParts.first) ?? 19, minute: currentTimeParts.length > 1 ? (int.tryParse(currentTimeParts[1]) ?? 0) : 0);
 
