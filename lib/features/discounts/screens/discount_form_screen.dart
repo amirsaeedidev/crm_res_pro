@@ -240,7 +240,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         'total_usage_limit': _totalUsageController.text.isEmpty ? null : int.parse(_totalUsageController.text),
         'per_user_usage_limit': _perUserUsageController.text.trim().isEmpty ? null : int.parse(_perUserUsageController.text.trim()),
         'restricted_to_customers': _restrictedToCustomers,
-        'target_phones': _targetPhonesController.text.split(RegExp(r'[,،;；\n]')).map((v) => v.trim()).where((v) => v.isNotEmpty).toSet().toList(),
+        'target_phones': _selectedCustomers.isNotEmpty ? _selectedCustomers.values.map((customer) => customer.phone!.trim()).toSet().toList() : _targetPhonesController.text.split(RegExp(r'[,،;；\n]')).map((v) => v.trim()).where((v) => v.isNotEmpty).toSet().toList(),
         'is_active': _isActive,
         'start_date': _startDate!.toIso8601String(),
         'end_date': _endDate!.toIso8601String(),
@@ -338,9 +338,12 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     ),
                     const SizedBox(height: AppSizes.md),
                     // Date Pickers
-                    Row(
+                    Wrap(
+                      spacing: AppSizes.md,
+                      runSpacing: AppSizes.md,
                       children: [
-                        Expanded(
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width < 600 ? double.infinity : 250,
                           child: GestureDetector(
                             onTap: () => _pickDate(context, true),
                             child: AbsorbPointer(
@@ -353,7 +356,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ),
                         ),
                         const SizedBox(width: AppSizes.md),
-                        Expanded(
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width < 600 ? double.infinity : 250,
                           child: GestureDetector(
                             onTap: () => _pickDate(context, false),
                             child: AbsorbPointer(
@@ -473,7 +477,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                               dense: true,
                               leading: CircleAvatar(radius: 17, child: Text(customer.fullName.isNotEmpty ? customer.fullName[0] : 'م')),
                               title: Text(customer.fullName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              subtitle: Text('تلفن: ${customer.phone ?? 'ثبت نشده'}\\nشناسه: ${customer.id}', maxLines: 2, overflow: TextOverflow.ellipsis),
+                              subtitle: Text('تلفن: ${customer.phone ?? 'ثبت نشده'}\nشناسه: ${customer.id}', maxLines: 2, overflow: TextOverflow.ellipsis),
                               trailing: Icon(selected ? Icons.check_circle : Icons.add_circle_outline, color: selected ? Colors.green : null),
                               onTap: selected ? null : () => _selectCustomer(customer),
                             );
