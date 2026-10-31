@@ -7,6 +7,7 @@ import '../../../core/widgets/app_loading.dart';
 import '../../../providers/reports_provider.dart';
 import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
+import '../widgets/marketing_effectiveness_tab.dart';
 
 enum DateRangeFilter { today, thisWeek, thisMonth, custom }
 
@@ -31,7 +32,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 7, vsync: this);
+    _tabs = TabController(length: 8, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -178,8 +179,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                     ),
                     child: TabBar(
                       controller: _tabs,
-                      isScrollable: mobile,
-                      tabAlignment: mobile ? TabAlignment.start : TabAlignment.fill,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
                       dividerColor: Colors.transparent,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
@@ -197,6 +198,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                         Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
+                        Tab(icon: Icon(Icons.campaign_outlined, size: 18), text: 'اثربخشی کمپین'),
                       ],
                     ),
                   ),
@@ -213,6 +215,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
+                        MarketingEffectivenessTab(startDate: _getDateRange().$1, endDate: _getDateRange().$2),
                       ],
                     ),
                   ),
