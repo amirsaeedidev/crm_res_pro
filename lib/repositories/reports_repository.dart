@@ -140,4 +140,23 @@ class ReportsRepository {
     }
   }
 
+
+  /// Product-level gross profit and daily/monthly sales breakdown.
+  Future<ReportModel> getDishProfitReport({required DateTime startDate, required DateTime endDate}) async {
+    final response = await _client.rpc('get_dish_profit_report', params: {
+      'start_date': startDate.toUtc().toIso8601String(),
+      'end_date': endDate.toUtc().toIso8601String(),
+    });
+    return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+  }
+
+  /// Payment-method totals and completed-order payment discrepancies.
+  Future<ReportModel> getPaymentReconciliationReport({required DateTime startDate, required DateTime endDate}) async {
+    final response = await _client.rpc('get_payment_reconciliation_report', params: {
+      'start_date': startDate.toUtc().toIso8601String(),
+      'end_date': endDate.toUtc().toIso8601String(),
+    });
+    return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+  }
+
 }
