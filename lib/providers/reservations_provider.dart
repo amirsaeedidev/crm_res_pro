@@ -84,13 +84,19 @@ class ReservationsProvider extends ChangeNotifier {
     await fetchReservations();
   }
 
-  Future<bool> updateReservationStatus(String id, String newStatus) async {
+  Future<bool> updateReservationStatus(
+    String id,
+    String newStatus, {
+    int? delayMinutes,
+    String? note,
+  }) async {
     _isUpdating = true;
+    _error = null;
     notifyListeners();
-
     try {
-      await _repository.updateReservationStatus(id, newStatus);
-      
+      await _repository.updateReservationStatus(
+        id, newStatus, delayMinutes: delayMinutes, note: note,
+      );
       await fetchReservations();
       return true;
     } catch (e, st) {
@@ -102,6 +108,9 @@ class ReservationsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String id) =>
+      _repository.getReservationStatusHistory(id);
 
   Future<bool> createReservation({required String userId, required String tableId, required int guestCount, required DateTime date, required String time, String? note}) async {
     _isUpdating = true; _error = null; notifyListeners();

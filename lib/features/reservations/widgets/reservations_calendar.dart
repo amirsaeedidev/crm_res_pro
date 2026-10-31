@@ -34,8 +34,11 @@ class ReservationsCalendar extends StatelessWidget {
   Color _statusColor(ReservationStatus status, ColorScheme scheme) => switch (status) {
     ReservationStatus.pending => const Color(0xFFF59E0B),
     ReservationStatus.confirmed => const Color(0xFF3B82F6),
+    ReservationStatus.delayed => const Color(0xFFF97316),
+    ReservationStatus.arrived => const Color(0xFF0F766E),
     ReservationStatus.completed => const Color(0xFF16A34A),
     ReservationStatus.cancelled => scheme.error,
+    ReservationStatus.noShow => Colors.blueGrey,
   };
 
   @override
@@ -122,8 +125,11 @@ class ReservationsCalendar extends StatelessWidget {
           Wrap(spacing: 14, runSpacing: 8, children: [
             _Legend(color: const Color(0xFFF59E0B), label: 'در انتظار'),
             _Legend(color: const Color(0xFF3B82F6), label: 'تأییدشده'),
+            _Legend(color: const Color(0xFFF97316), label: 'با تأخیر'),
+            _Legend(color: const Color(0xFF0F766E), label: 'ورود ثبت‌شده'),
             _Legend(color: const Color(0xFF16A34A), label: 'تکمیل‌شده'),
             _Legend(color: scheme.error, label: 'لغوشده'),
+            _Legend(color: Colors.blueGrey, label: 'عدم مراجعه'),
           ]),
         ]),
       ),

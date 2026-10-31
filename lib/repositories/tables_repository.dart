@@ -10,7 +10,9 @@ class TablesRepository {
   Future<List<TableModel>> getTables({DateTime? reservationDate}) async {
     try {
       final rows = await _client.from('restaurant_tables').select('*').order('table_number');
-      final reservedTableIds = await _getReservedTableIds(reservationDate ?? DateTime.now());
+      final reservationStates = await _getReservationTableStates(reservationDate ?? DateTime.now());
+      final arrivedTableIds = reservationStates.arrived;
+      final reservedTableIds = reservationStates.reserved;
       final activeOrders = await _client.from('orders').select('id,table_id,status')
           .eq('order_type', 'dine_in')
           .inFilter('status', ['pending','confirmed','preparing','ready']);
@@ -23,7 +25,7 @@ class TablesRepository {
         final map = Map<String, dynamic>.from(row);
         final tableId = map['id'].toString();
         final activeOrderId = orderByTable[map['id'].toString()];
-        final occupied = (map['is_occupied'] as bool? ?? false) || activeOrderId != null;
+        final occupied = (map['is_occupied'] as bool? ?? false) || activeOrderId != null || arrivedTableIds.contains(tableId);
         map['status'] = occupied ? 'occupied' : (reservedTableIds.contains(tableId) ? 'reserved' : 'free');
         map['current_order_id'] = activeOrderId;
         return TableModel.fromJson(map);
@@ -34,13 +36,25 @@ class TablesRepository {
     }
   }
 
-  Future<Set<String>> _getReservedTableIds(DateTime date) async {
+  Future<({Set<String> reserved, Set<String> arrived})> _getReservationTableStates(DateTime date) async {
     final dateValue = date.toIso8601String().substring(0, 10);
-    final rows = await _client.from('reservations')
-        .select('table_id')
+    final rows = await _client
+        .from('reservations')
+        .select('table_id,status')
         .eq('reservation_date', dateValue)
-        .inFilter('status', ['pending', 'confirmed']);
-    return rows.map<String>((row) => row['table_id'].toString()).toSet();
+        .inFilter('status', ['pending', 'confirmed', 'delayed', 'arrived']);
+    final reserved = <String>{};
+    final arrived = <String>{};
+    for (final row in rows) {
+      final tableId = row['table_id']?.toString();
+      if (tableId == null || tableId.isEmpty) continue;
+      if (row['status'] == 'arrived') {
+        arrived.add(tableId);
+      } else {
+        reserved.add(tableId);
+      }
+    }
+    return (reserved: reserved, arrived: arrived);
   }
 
   Future<TableModel> createTable({required int tableNumber, required int capacity, bool isActive = true}) async {

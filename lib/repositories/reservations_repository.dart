@@ -33,15 +33,54 @@ class ReservationsRepository {
     }
   }
 
-  Future<void> updateReservationStatus(String id, String newStatus) async {
-    const allowed = {'pending', 'confirmed', 'completed', 'cancelled'};
-    if (!allowed.contains(newStatus)) throw ArgumentError.value(newStatus, 'newStatus', 'Unsupported reservation status');
+  Future<void> updateReservationStatus(
+    String id,
+    String newStatus, {
+    int? delayMinutes,
+    String? note,
+  }) async {
+    const allowed = {'pending', 'confirmed', 'delayed', 'arrived', 'completed', 'cancelled', 'no_show'};
+    if (!allowed.contains(newStatus)) {
+      throw ArgumentError.value(newStatus, 'newStatus', 'Unsupported reservation status');
+    }
+    if (newStatus == 'delayed' &&
+        (delayMinutes == null || delayMinutes < 1 || delayMinutes > 480)) {
+      throw ArgumentError.value(delayMinutes, 'delayMinutes', 'Delay must be between 1 and 480 minutes');
+    }
+
+    final data = <String, dynamic>{
+      'status': newStatus,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (newStatus == 'delayed') {
+      data['delay_minutes'] = delayMinutes;
+      data['delay_note'] = note?.trim().isEmpty == true ? null : note?.trim();
+    } else if (newStatus == 'cancelled') {
+      data['cancellation_reason'] = note?.trim().isEmpty == true ? null : note?.trim();
+    }
+
     try {
-      final rows = await _client.from('reservations').update({'status': newStatus, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id).select('id');
+      final rows = await _client.from('reservations').update(data).eq('id', id).select('id');
       if (rows.isEmpty) throw Exception('رزرو پیدا نشد یا مجوز تغییر آن را ندارید.');
     } on PostgrestException catch (e, st) {
       LoggerService.error('Update reservation status failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'تغییر وضعیت رزرو'));
+    }
+  }
+
+  Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String reservationId) async {
+    try {
+      final rows = await _client
+          .from('reservation_status_history')
+          .select('previous_status,new_status,changed_at,delay_minutes,note')
+          .eq('reservation_id', reservationId)
+          .order('changed_at', ascending: false);
+      return rows
+          .map((row) => ReservationStatusHistoryModel.fromJson(Map<String, dynamic>.from(row)))
+          .toList();
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Fetch reservation status history failed', error: e, stackTrace: st);
+      throw Exception(_friendlyError(e, 'دریافت سوابق رزرو'));
     }
   }
 
@@ -96,7 +135,7 @@ class ReservationsRepository {
         .select('id,reservation_time,duration_minutes')
         .eq('table_id', tableId)
         .eq('reservation_date', dateValue)
-        .inFilter('status', ['pending', 'confirmed']);
+        .inFilter('status', ['pending', 'confirmed', 'delayed', 'arrived']);
     if (excludeReservationId != null) query = query.neq('id', excludeReservationId);
     final conflicts = await query;
     const requestedDurationMinutes = 90;

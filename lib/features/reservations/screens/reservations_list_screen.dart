@@ -18,7 +18,7 @@ class ReservationsListScreen extends StatefulWidget {
 
 class _ReservationsListScreenState extends State<ReservationsListScreen> {
   final _search = TextEditingController();
-  static const _statuses = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
+  static const _statuses = ['all', 'pending', 'confirmed', 'delayed', 'arrived', 'completed', 'cancelled', 'no_show'];
   Jalali _visibleMonth = Jalali.now();
   Jalali _selectedDate = Jalali.now();
   bool _showWholeMonth = false;
@@ -38,8 +38,11 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
   String _statusLabel(String status) => switch (status) {
     'pending' => 'در انتظار',
     'confirmed' => 'تأییدشده',
+    'delayed' => 'با تأخیر',
+    'arrived' => 'ورود مشتری ثبت شد',
     'completed' => 'تکمیل‌شده',
     'cancelled' => 'لغوشده',
+    'no_show' => 'عدم مراجعه',
     _ => 'نامشخص',
   };
 
@@ -106,7 +109,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     await reservationsProvider.setDateRange(from: _monthStart(_visibleMonth), to: _monthEnd(_visibleMonth));
     await tablesProvider.fetchTables(reservationDate: today.toGregorian().toDateTime());
   }
-  Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
+  Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'delayed' => const Color(0xFFF97316), 'arrived' => const Color(0xFF0F766E), 'completed' => Colors.green, 'cancelled' => Colors.red, 'no_show' => Colors.blueGrey, _ => Colors.grey};
 
   Future<void> _showReservationForm([ReservationModel? current]) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -169,12 +172,154 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
   }
 
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
+    int? delayMinutes;
+    String? note;
+
+    if (status == 'delayed') {
+      final minutesController = TextEditingController(text: reservation.delayMinutes?.toString() ?? '15');
+      final noteController = TextEditingController(text: reservation.delayNote ?? '');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ثبت تأخیر مشتری'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(
+              controller: minutesController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'میزان تأخیر به دقیقه', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              minLines: 2,
+              maxLines: 4,
+              maxLength: 500,
+              decoration: const InputDecoration(labelText: 'توضیح (اختیاری)', border: OutlineInputBorder()),
+            ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('ثبت تأخیر')),
+          ],
+        ),
+      );
+      final minutes = int.tryParse(minutesController.text.trim());
+      note = noteController.text.trim();
+      minutesController.dispose();
+      noteController.dispose();
+      if (confirmed != true) return;
+      if (minutes == null || minutes < 1 || minutes > 480) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('میزان تأخیر باید بین ۱ تا ۴۸۰ دقیقه باشد.')),
+          );
+        }
+        return;
+      }
+      delayMinutes = minutes;
+    } else if (status == 'cancelled') {
+      final reasonController = TextEditingController(text: reservation.cancellationReason ?? '');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('لغو رزرو'),
+          content: TextField(
+            controller: reasonController,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 500,
+            decoration: const InputDecoration(labelText: 'علت لغو (اختیاری)', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('بازگشت')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('تأیید لغو')),
+          ],
+        ),
+      );
+      note = reasonController.text.trim();
+      reasonController.dispose();
+      if (confirmed != true) return;
+    } else if (status == 'no_show') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ثبت عدم مراجعه'),
+          content: const Text('آیا مطمئن هستید مشتری برای این رزرو مراجعه نکرده است؟'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('ثبت عدم مراجعه')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     final provider = context.read<ReservationsProvider>();
     final tablesProvider = context.read<TablesProvider>();
-    final ok = await provider.updateReservationStatus(reservation.id, status);
+    final ok = await provider.updateReservationStatus(
+      reservation.id, status, delayMinutes: delayMinutes, note: note,
+    );
     if (!mounted) return;
-    if (!ok) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error ?? 'تغییر وضعیت رزرو ناموفق بود.')));
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.error ?? 'تغییر وضعیت رزرو ناموفق بود.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('وضعیت رزرو به «${_statusLabel(status)}» تغییر کرد.')),
+      );
+    }
     await tablesProvider.fetchTables(reservationDate: reservation.date);
+  }
+
+  String _formatHistoryDate(DateTime value) {
+    final local = value.toLocal();
+    final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return '${_formatDate(local)} • ${_persianDigits(time)}';
+  }
+
+  Future<void> _showStatusHistory(ReservationModel reservation) async {
+    try {
+      final history = await context.read<ReservationsProvider>().getReservationStatusHistory(reservation.id);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('سوابق تغییر وضعیت رزرو'),
+          content: SizedBox(
+            width: 480,
+            height: 340,
+            child: history.isEmpty
+                ? const Center(child: Text('برای این رزرو سابقه‌ای ثبت نشده است.'))
+                : ListView.separated(
+                    itemCount: history.length,
+                    separatorBuilder: (_, __) => const Divider(height: 18),
+                    itemBuilder: (context, index) {
+                      final item = history[index];
+                      final transition = item.previousStatus == null
+                          ? 'ثبت اولیه'
+                          : '${_statusLabel(item.previousStatus!)} ← ${_statusLabel(item.newStatus)}';
+                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(_statusLabel(item.newStatus), style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 3),
+                        Text(transition, style: Theme.of(context).textTheme.bodySmall),
+                        Text(_formatHistoryDate(item.changedAt), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        if (item.delayMinutes != null) Text('مدت تأخیر: ${_persianDigits(item.delayMinutes)} دقیقه'),
+                        if (item.note?.isNotEmpty == true) Text('توضیح: ${item.note}'),
+                      ]);
+                    },
+                  ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'دریافت سوابق رزرو ناموفق بود.'))),
+        );
+      }
+    }
   }
 
   Widget _tableStatusPanel(BuildContext context) {
@@ -234,6 +379,9 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           final confirmedCount = reservations.where((r) => r.status == ReservationStatus.confirmed).length;
           final completedCount = reservations.where((r) => r.status == ReservationStatus.completed).length;
           final cancelledCount = reservations.where((r) => r.status == ReservationStatus.cancelled).length;
+          final delayedCount = reservations.where((r) => r.status == ReservationStatus.delayed).length;
+          final arrivedCount = reservations.where((r) => r.status == ReservationStatus.arrived).length;
+          final noShowCount = reservations.where((r) => r.status == ReservationStatus.noShow).length;
 
           return RefreshIndicator(
             onRefresh: provider.fetchReservations,
@@ -270,6 +418,9 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                       _summaryCard(context, 'در انتظار', pendingCount, Icons.hourglass_top_rounded, const Color(0xFFF59E0B)),
                       _summaryCard(context, 'تأییدشده', confirmedCount, Icons.check_circle_outline_rounded, const Color(0xFF3B82F6)),
                       _summaryCard(context, 'تکمیل‌شده', completedCount, Icons.task_alt_rounded, const Color(0xFF16A34A)),
+                      _summaryCard(context, 'با تأخیر', delayedCount, Icons.more_time_rounded, const Color(0xFFF97316)),
+                      _summaryCard(context, 'ورود ثبت‌شده', arrivedCount, Icons.login_rounded, const Color(0xFF0F766E)),
+                      _summaryCard(context, 'عدم مراجعه', noShowCount, Icons.person_off_outlined, Colors.blueGrey),
                       _summaryCard(context, 'لغوشده', cancelledCount, Icons.event_busy_rounded, scheme.error),
                     ],
                   ),
@@ -440,6 +591,25 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             const SizedBox(height: 10),
             Text('یادداشت: ${reservation.note}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
+          if (reservation.status == ReservationStatus.delayed && reservation.delayMinutes != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'تأخیر ثبت‌شده: ${_persianDigits(reservation.delayMinutes)} دقیقه${reservation.delayNote?.isNotEmpty == true ? ' • ${reservation.delayNote}' : ''}',
+              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFF97316), fontWeight: FontWeight.w700),
+            ),
+          ],
+          if (reservation.status == ReservationStatus.arrived && reservation.arrivedAt != null) ...[
+            const SizedBox(height: 10),
+            Text('زمان ورود مشتری: ${_formatHistoryDate(reservation.arrivedAt!)}', style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF0F766E), fontWeight: FontWeight.w700)),
+          ],
+          if (reservation.status == ReservationStatus.cancelled && reservation.cancellationReason?.isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            Text('علت لغو: ${reservation.cancellationReason}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+          ],
+          if (reservation.status == ReservationStatus.noShow && reservation.noShowAt != null) ...[
+            const SizedBox(height: 10),
+            Text('عدم مراجعه ثبت شد: ${_formatHistoryDate(reservation.noShowAt!)}', style: theme.textTheme.bodySmall?.copyWith(color: Colors.blueGrey, fontWeight: FontWeight.w700)),
+          ],
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 8),
@@ -453,14 +623,22 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('ویرایش'),
               ),
+              OutlinedButton.icon(
+                onPressed: () => _showStatusHistory(reservation),
+                icon: const Icon(Icons.history_rounded, size: 18),
+                label: const Text('سوابق'),
+              ),
               PopupMenuButton<String>(
                 tooltip: 'تغییر وضعیت رزرو',
                 onSelected: (status) => _changeStatus(reservation, status),
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'pending', child: Text('در انتظار')),
                   PopupMenuItem(value: 'confirmed', child: Text('تأیید رزرو')),
+                  PopupMenuItem(value: 'delayed', child: Text('ثبت تأخیر مشتری')),
+                  PopupMenuItem(value: 'arrived', child: Text('ثبت ورود مشتری')),
                   PopupMenuItem(value: 'completed', child: Text('تکمیل رزرو')),
                   PopupMenuItem(value: 'cancelled', child: Text('لغو رزرو')),
+                  PopupMenuItem(value: 'no_show', child: Text('ثبت عدم مراجعه')),
                 ],
                 child: const Chip(avatar: Icon(Icons.swap_horiz_rounded, size: 18), label: Text('تغییر وضعیت')),
               ),
