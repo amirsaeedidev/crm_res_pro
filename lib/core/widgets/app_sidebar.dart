@@ -30,7 +30,11 @@ class AppSidebar extends StatelessWidget {
 
     return Container(
       width: AppSizes.sidebarWidth,
-      color: drawerMode ? const Color(0xFFA1FAEC) : AppColors.surfaceDark,
+      color: drawerMode
+          ? (Theme.of(context).brightness == Brightness.dark
+              ? Colors.black
+              : const Color(0xFF0077B6))
+          : AppColors.surfaceDark,
       child: Column(
         children: [
           // Logo Header
@@ -69,7 +73,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 0,
                   onTap: () {
                     navProvider.updateIndex(0);
-                    context.go(AppRoutes.dashboard);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.dashboard);
                   },
                 ),
                 NavigationItem(
@@ -79,7 +84,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 1,
                   onTap: () {
                     navProvider.updateIndex(1);
-                    context.go(AppRoutes.orders);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.orders);
                   },
                 ),
                 NavigationItem(
@@ -89,7 +95,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 2,
                   onTap: () {
                     navProvider.updateIndex(2);
-                    context.go(AppRoutes.products);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.products);
                   },
                 ),
                 NavigationItem(
@@ -99,7 +106,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 3,
                   onTap: () {
                     navProvider.updateIndex(3);
-                    context.go(AppRoutes.customers);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.customers);
                   },
                 ),
                 NavigationItem(
@@ -109,7 +117,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 4,
                   onTap: () {
                     navProvider.updateIndex(4);
-                    context.go(AppRoutes.categories);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.categories);
                   },
                 ),
                 NavigationItem(
@@ -120,7 +129,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {
                     navProvider.updateIndex(5);
-                    context.go(AppRoutes.reports);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.reports);
                   },
                 ),
                 NavigationItem(
@@ -130,7 +140,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 7,
                   onTap: () {
                     navProvider.updateIndex(7);
-                    context.go(AppRoutes.tables);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.tables);
                   },
                 ),
                 NavigationItem(
@@ -140,7 +151,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 8,
                   onTap: () {
                     navProvider.updateIndex(8);
-                    context.go(AppRoutes.reservations);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.reservations);
                   },
                 ),
                 NavigationItem(
@@ -148,63 +160,72 @@ class AppSidebar extends StatelessWidget {
                   icon: Icons.campaign_outlined,
                   label: 'بنرها',
                   isActive: navProvider.selectedIndex == 9,
-                  onTap: () { navProvider.updateIndex(9); context.go('/banners'); },
+                  onTap: () { navProvider.updateIndex(9); if (drawerMode) Navigator.of(context).pop();
+                    context.push('/banners'); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.discount_outlined,
                   label: 'تخفیف‌ها',
                   isActive: navProvider.selectedIndex == 10,
-                  onTap: () { navProvider.updateIndex(10); context.go('/discounts'); },
+                  onTap: () { navProvider.updateIndex(10); if (drawerMode) Navigator.of(context).pop();
+                    context.push('/discounts'); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.support_agent_outlined,
                   label: 'تیکت‌ها',
                   isActive: navProvider.selectedIndex == 11,
-                  onTap: () { navProvider.updateIndex(11); context.go(AppRoutes.tickets); },
+                  onTap: () { navProvider.updateIndex(11); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.tickets); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.folder_open_outlined,
                   label: 'مدیریت فایل‌ها',
                   isActive: navProvider.selectedIndex == 12,
-                  onTap: () { navProvider.updateIndex(12); context.go(AppRoutes.files); },
+                  onTap: () { navProvider.updateIndex(12); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.files); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.loyalty_outlined,
                   label: 'باشگاه مشتریان',
                   isActive: navProvider.selectedIndex == 13,
-                  onTap: () { navProvider.updateIndex(13); context.go(AppRoutes.loyalty); },
+                  onTap: () { navProvider.updateIndex(13); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.loyalty); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.sms_outlined,
                   label: 'مرکز پیامک',
                   isActive: navProvider.selectedIndex == 14,
-                  onTap: () { navProvider.updateIndex(14); context.go(AppRoutes.sms); },
+                  onTap: () { navProvider.updateIndex(14); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.sms); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.warehouse_outlined,
                   label: 'انبارداری و مواد اولیه',
                   isActive: navProvider.selectedIndex == 15,
-                  onTap: () { navProvider.updateIndex(15); context.go(AppRoutes.inventory); },
+                  onTap: () { navProvider.updateIndex(15); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.inventory); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'کیف پول مالی مشتریان',
                   isActive: navProvider.selectedIndex == 16,
-                  onTap: () { navProvider.updateIndex(16); context.go(AppRoutes.wallets); },
+                  onTap: () { navProvider.updateIndex(16); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.wallets); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
                   icon: Icons.notifications_active_outlined,
                   label: 'مدیریت اعلان‌ها',
                   isActive: navProvider.selectedIndex == 17,
-                  onTap: () { navProvider.updateIndex(17); context.go(AppRoutes.notifications); },
+                  onTap: () { navProvider.updateIndex(17); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.notifications); },
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
@@ -213,7 +234,8 @@ class AppSidebar extends StatelessWidget {
                   isActive: navProvider.selectedIndex == 6,
                   onTap: () {
                     navProvider.updateIndex(6);
-                    context.go(AppRoutes.settings);
+                    if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.settings);
                   },
                 ),
               ],
