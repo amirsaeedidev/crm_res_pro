@@ -37,7 +37,7 @@ class ReportsProvider extends ChangeNotifier {
       _salesReport = await _repository.getSalesReport(startDate: startDate, endDate: endDate);
     } catch (e, st) {
       LoggerService.error('Fetch sales report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش فروش ناموفق بود. دوباره تلاش کنید.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت گزارش فروش ناموفق بود. دوباره تلاش کنید.');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -50,7 +50,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch top products report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست محصولات پرفروش ناموفق بود. دوباره تلاش کنید.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت فهرست محصولات پرفروش ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
@@ -61,7 +61,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch customer distribution report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش مشتریان ناموفق بود. دوباره تلاش کنید.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت گزارش مشتریان ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
@@ -72,7 +72,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch financial report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش مالی ناموفق بود. دوباره تلاش کنید.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت گزارش مالی ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
@@ -83,7 +83,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch inventory report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش انبار ناموفق بود. دوباره تلاش کنید.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت گزارش انبار ناموفق بود. دوباره تلاش کنید.');
       notifyListeners();
     }
   }
@@ -94,7 +94,7 @@ class ReportsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, st) {
       LoggerService.error('Fetch order health report failed in provider', error: e, stackTrace: st);
-      _error = AppErrorMessage.from(e, fallback: 'دریافت گزارش سفارش‌های لغوشده و تأخیردار ناموفق بود.');
+      _error = AppErrorMessage.forDisplay(e.toString(), fallback: 'دریافت گزارش سفارش‌های لغوشده و تأخیردار ناموفق بود.');
       notifyListeners();
     }
   }
