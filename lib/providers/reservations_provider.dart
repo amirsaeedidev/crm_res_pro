@@ -11,6 +11,7 @@ import '../repositories/reservations_repository.dart';
 class ReservationsProvider extends ChangeNotifier {
   RealtimeChannel? _realtimeChannel;
   bool _realtimeWasConnected = false;
+  bool _disposed = false;
 
   void _ensureRealtimeSubscription() {
     if (_realtimeChannel != null) return;
@@ -53,6 +54,7 @@ class ReservationsProvider extends ChangeNotifier {
   String get statusFilter => _statusFilter;
 
   Future<void> fetchReservations() async {
+    if (_disposed) return;
     _ensureRealtimeSubscription();
     _isLoading = true;
     _error = null;
@@ -138,6 +140,7 @@ class ReservationsProvider extends ChangeNotifier {
   
   @override
   void dispose() {
+    _disposed = true;
     final channel = _realtimeChannel;
     _realtimeChannel = null;
     if (channel != null) unawaited(RealtimeService.unsubscribe(channel));
