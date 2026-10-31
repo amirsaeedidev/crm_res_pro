@@ -120,4 +120,60 @@ class ReportsRepository {
     }
   }
 
+  /// Fetches table utilization and peak dine-in hours for the selected period.
+  Future<ReportModel> getTableUsageReport({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final response = await _client.rpc('get_table_usage_report', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch table usage report failed', error: e);
+      throw Exception('خطا در دریافت گزارش میزان استفاده از میزها: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected table usage report error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در گزارش میزها و ساعات شلوغی');
+    }
+  }
+
+
+  /// Product-level gross profit and daily/monthly sales breakdown.
+  Future<ReportModel> getDishProfitReport({required DateTime startDate, required DateTime endDate}) async {
+    final response = await _client.rpc('get_dish_profit_report', params: {
+      'start_date': startDate.toUtc().toIso8601String(),
+      'end_date': endDate.toUtc().toIso8601String(),
+    });
+    return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+  }
+
+  /// Payment-method totals and completed-order payment discrepancies.
+  Future<ReportModel> getPaymentReconciliationReport({required DateTime startDate, required DateTime endDate}) async {
+    final response = await _client.rpc('get_payment_reconciliation_report', params: {
+      'start_date': startDate.toUtc().toIso8601String(),
+      'end_date': endDate.toUtc().toIso8601String(),
+    });
+    return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+  }
+
+  /// Cross-checks orders, received payments/refunds and recipe-based stock movements.
+  Future<ReportModel> getReportReconciliation({required DateTime startDate, required DateTime endDate}) async {
+    try {
+      final response = await _client.rpc('get_report_reconciliation', params: {
+        'start_date': startDate.toUtc().toIso8601String(),
+        'end_date': endDate.toUtc().toIso8601String(),
+      });
+      return ReportModel.fromJson(Map<String, dynamic>.from(response as Map));
+    } on PostgrestException catch (e) {
+      LoggerService.error('Fetch report reconciliation failed', error: e);
+      throw Exception('خطا در تطبیق گزارش‌ها: ${e.message}');
+    } catch (e, st) {
+      LoggerService.error('Unexpected report reconciliation error', error: e, stackTrace: st);
+      throw Exception('خطای ناشناخته در تطبیق گزارش‌ها');
+    }
+  }
+
 }

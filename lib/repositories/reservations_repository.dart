@@ -12,10 +12,12 @@ class ReservationsRepository {
   final SupabaseClient _client;
   ReservationsRepository({SupabaseClient? client}) : _client = client ?? SupabaseService.client;
 
-  Future<List<ReservationModel>> getReservations({int page = 1, int pageSize = 15, String? searchQuery, String? status}) async {
+  Future<List<ReservationModel>> getReservations({int page = 1, int pageSize = 1000, String? searchQuery, String? status, String? dateFrom, String? dateTo}) async {
     if (page < 1 || pageSize < 1) throw ArgumentError('page and pageSize must be positive');
     try {
       var query = _client.from('reservations_view').select('*');
+      if (dateFrom != null && dateFrom.isNotEmpty) query = query.gte('date', dateFrom);
+      if (dateTo != null && dateTo.isNotEmpty) query = query.lte('date', dateTo);
       final normalizedStatus = status?.trim();
       if (normalizedStatus != null && normalizedStatus.isNotEmpty && normalizedStatus != 'all') query = query.eq('status', normalizedStatus);
       final search = searchQuery?.trim();
@@ -23,7 +25,7 @@ class ReservationsRepository {
         final escaped = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('%', r'\%').replaceAll('_', r'\_');
         query = query.or('customer_name.ilike.%$escaped%,customer_phone.ilike.%$escaped%,table_number.ilike.%$escaped%');
       }
-      final rows = await query.order('date', ascending: false).order('time', ascending: false).range((page - 1) * pageSize, page * pageSize - 1);
+      final rows = await query.order('date', ascending: true).order('time', ascending: true).range((page - 1) * pageSize, page * pageSize - 1);
       return rows.map((row) => ReservationModel.fromJson(Map<String, dynamic>.from(row))).toList();
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch reservations failed', error: e, stackTrace: st);
@@ -31,15 +33,74 @@ class ReservationsRepository {
     }
   }
 
-  Future<void> updateReservationStatus(String id, String newStatus) async {
-    const allowed = {'pending', 'confirmed', 'completed', 'cancelled'};
-    if (!allowed.contains(newStatus)) throw ArgumentError.value(newStatus, 'newStatus', 'Unsupported reservation status');
+  Future<void> updateReservationStatus(
+    String id,
+    String newStatus, {
+    int? delayMinutes,
+    String? note,
+  }) async {
+    const allowed = {'pending', 'confirmed', 'delayed', 'arrived', 'completed', 'cancelled', 'no_show'};
+    if (!allowed.contains(newStatus)) {
+      throw ArgumentError.value(newStatus, 'newStatus', 'Unsupported reservation status');
+    }
+    if (newStatus == 'delayed' &&
+        (delayMinutes == null || delayMinutes < 1 || delayMinutes > 480)) {
+      throw ArgumentError.value(delayMinutes, 'delayMinutes', 'Delay must be between 1 and 480 minutes');
+    }
+
+    final data = <String, dynamic>{
+      'status': newStatus,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (newStatus == 'delayed') {
+      data['delay_minutes'] = delayMinutes;
+      data['delay_note'] = note?.trim().isEmpty == true ? null : note?.trim();
+    } else if (newStatus == 'cancelled') {
+      data['cancellation_reason'] = note?.trim().isEmpty == true ? null : note?.trim();
+    }
+
     try {
-      final rows = await _client.from('reservations').update({'status': newStatus, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id).select('id');
+      final rows = await _client.from('reservations').update(data).eq('id', id).select('id');
       if (rows.isEmpty) throw Exception('رزرو پیدا نشد یا مجوز تغییر آن را ندارید.');
     } on PostgrestException catch (e, st) {
       LoggerService.error('Update reservation status failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'تغییر وضعیت رزرو'));
+    }
+  }
+
+  Future<String> convertReservationToOrder(String reservationId) async {
+    try {
+      final result = await _client.rpc(
+        'convert_reservation_to_order',
+        params: {'p_reservation_id': reservationId},
+      );
+      final orderId = result?.toString();
+      if (orderId == null || orderId.isEmpty) {
+        throw Exception('شناسه سفارش ایجادشده از سرور دریافت نشد.');
+      }
+      return orderId;
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Convert reservation to order failed', error: e, stackTrace: st);
+      if (e.code == '42501') throw Exception('فقط مدیر فعال می‌تواند رزرو را به سفارش تبدیل کند.');
+      if (e.code == '22023') throw Exception(e.message);
+      if (e.code == 'P0002') throw Exception('رزرو موردنظر پیدا نشد.');
+      throw Exception(_friendlyError(e, 'تبدیل رزرو به سفارش'));
+    }
+  }
+
+  Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String reservationId) async {
+    try {
+      final rows = await _client
+          .from('reservation_status_history')
+          .select('previous_status,new_status,changed_at,delay_minutes,note')
+          .eq('reservation_id', reservationId)
+          .order('changed_at', ascending: false);
+      return rows
+          .map((row) => ReservationStatusHistoryModel.fromJson(Map<String, dynamic>.from(row)))
+          .toList();
+    } on PostgrestException catch (e, st) {
+      LoggerService.error('Fetch reservation status history failed', error: e, stackTrace: st);
+      throw Exception(_friendlyError(e, 'دریافت سوابق رزرو'));
     }
   }
 
@@ -82,17 +143,32 @@ class ReservationsRepository {
     }
   }
 
+  int _minutesFromTime(String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) return 0;
+    return (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
+  }
+
   Future<void> _ensureSlotAvailable({required String tableId, required DateTime date, required String time, String? excludeReservationId}) async {
     final dateValue = date.toIso8601String().substring(0, 10);
-    var query = _client.from('reservations').select('id')
+    var query = _client.from('reservations')
+        .select('id,reservation_time,duration_minutes')
         .eq('table_id', tableId)
         .eq('reservation_date', dateValue)
-        .eq('reservation_time', time)
-        .inFilter('status', ['pending', 'confirmed']);
+        .inFilter('status', ['pending', 'confirmed', 'delayed', 'arrived']);
     if (excludeReservationId != null) query = query.neq('id', excludeReservationId);
-    final conflicts = await query.limit(1);
-    if (conflicts.isNotEmpty) {
-      throw Exception('برای این میز در تاریخ و ساعت انتخاب‌شده رزرو فعالی وجود دارد.');
+    final conflicts = await query;
+    const requestedDurationMinutes = 90;
+    final requestedStart = _minutesFromTime(time);
+    final requestedEnd = requestedStart + requestedDurationMinutes;
+    for (final row in conflicts) {
+      final existingTime = (row['reservation_time'] ?? '').toString();
+      final existingStart = _minutesFromTime(existingTime);
+      final existingDuration = (row['duration_minutes'] as num?)?.toInt() ?? 90;
+      final existingEnd = existingStart + existingDuration;
+      if (requestedStart < existingEnd && existingStart < requestedEnd) {
+        throw Exception('این میز در بخشی از بازه ۹۰ دقیقه‌ای انتخاب‌شده رزرو فعال دارد. زمان دیگری انتخاب کنید.');
+      }
     }
   }
 
@@ -109,6 +185,8 @@ class ReservationsRepository {
   }
 
   String _friendlyError(PostgrestException e, String action) {
+    if (e.code == '23P01') return e.message;
+    if (e.code == '23505') return 'این میز در این زمان قبلاً رزرو شده است.';
     if (e.code == '42501' || e.code == 'PGRST301') return 'برای $action باید با حساب مدیر وارد شده باشید.';
     if (e.code == 'PGRST205' || e.code == '42P01') return 'نمای reservations_view در Supabase پیدا نشد. migrationهای پروژه را بررسی کنید.';
     if (e.code == 'PGRST204' || e.code == '42703' || e.message.contains('reservation_date') || e.message.contains('reservation_time')) {

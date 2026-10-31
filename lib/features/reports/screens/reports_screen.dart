@@ -1,5 +1,12 @@
+import 'package:excel/excel.dart' hide Border;
+import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:shamsi_date/shamsi_date.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/supabase_service.dart';
@@ -31,7 +38,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 7, vsync: this);
+    _tabs = TabController(length: 11, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -72,31 +79,207 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
+    provider.fetchTableUsageReport(startDate: startDate, endDate: endDate);
+    provider.fetchDishProfitReport(startDate: startDate, endDate: endDate);
+    provider.fetchPaymentReconciliationReport(startDate: startDate, endDate: endDate);
+    provider.fetchReportReconciliation(startDate: startDate, endDate: endDate);
+  }
+
+  String _jalaliDate(DateTime date) {
+    final j = Jalali.fromDateTime(date);
+    return '${j.year.toString().padLeft(4, '0')}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
+  }
+
+  int? _parseDatePart(String value) {
+    const fa = '۰۱۲۳۴۵۶۷۸۹';
+    const ar = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = value.trim();
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized.replaceAll(fa[i], '$i').replaceAll(ar[i], '$i');
+    }
+    return int.tryParse(normalized);
+  }
+
+  DateTime? _parseJalaliDate(String value) {
+    final parts = value.trim().split(RegExp(r'[/.-]'));
+    if (parts.length != 3) return null;
+    final y = _parseDatePart(parts[0]);
+    final m = _parseDatePart(parts[1]);
+    final d = _parseDatePart(parts[2]);
+    if (y == null || m == null || d == null || y < 1300 || y > 1500 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+    try {
+      final date = Jalali(y, m, d).toDateTime();
+      if (_jalaliDate(date) != '${y.toString().padLeft(4, '0')}/${m.toString().padLeft(2, '0')}/${d.toString().padLeft(2, '0')}') return null;
+      return DateTime(date.year, date.month, date.day);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _pickCustomRange() async {
     final now = DateTime.now();
-    final picked = await showDateRangePicker(
+    final defaultStart = _customDateRange?.start ?? DateTime(now.year, now.month, 1);
+    final defaultEnd = _customDateRange?.end ?? DateTime(now.year, now.month, now.day);
+    final start = TextEditingController(text: _jalaliDate(defaultStart));
+    final end = TextEditingController(text: _jalaliDate(defaultEnd));
+    final form = GlobalKey<FormState>();
+    final picked = await showDialog<DateTimeRange>(
       context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime(now.year, now.month, now.day),
-      initialDateRange: _customDateRange,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: _blue,
-            onPrimary: Colors.white,
-          ),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('انتخاب بازه شمسی'),
+        content: Form(
+          key: form,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextFormField(controller: start, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'از تاریخ (۱۴۰۵/۰۱/۰۱)'), validator: (v) => _parseJalaliDate(v ?? '') == null ? 'تاریخ شمسی معتبر وارد کنید' : null),
+            const SizedBox(height: 12),
+            TextFormField(controller: end, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'تا تاریخ (۱۴۰۵/۰۱/۳۱)'), validator: (v) => _parseJalaliDate(v ?? '') == null ? 'تاریخ شمسی معتبر وارد کنید' : null),
+          ]),
         ),
-        child: child!,
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+          FilledButton(onPressed: () {
+            if (!form.currentState!.validate()) return;
+            final from = _parseJalaliDate(start.text)!;
+            final to = _parseJalaliDate(end.text)!;
+            if (to.isBefore(from)) {
+              ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('تاریخ پایان نباید قبل از تاریخ شروع باشد.')));
+              return;
+            }
+            Navigator.pop(dialogContext, DateTimeRange(start: from, end: to));
+          }, child: const Text('اعمال بازه')),
+        ],
       ),
     );
+    start.dispose();
+    end.dispose();
     if (!mounted || picked == null) return;
     setState(() {
       _customDateRange = picked;
       _selectedFilter = DateRangeFilter.custom;
     });
     _fetchReport();
+  }
+
+  List<List<String>> _buildExportRows() {
+    final provider = context.read<ReportsProvider>();
+    final (from, to) = _getDateRange();
+    final rows = <List<String>>[
+      ['گزارش جامع رستوران'],
+      ['بازه شمسی', '${_jalaliDate(from)} تا ${_jalaliDate(to)}'],
+      ['واحد پول', 'تومان'],
+      [],
+    ];
+    void addSummary(String title, Map<String, dynamic>? summary) {
+      if (summary == null || summary.isEmpty) return;
+      rows.add([title]);
+      summary.forEach((key, value) => rows.add([key, value?.toString() ?? '']));
+      rows.add([]);
+    }
+    void addTable(String title, List<Map<String, dynamic>> data) {
+      if (data.isEmpty) return;
+      final keys = <String>[];
+      for (final item in data) {
+        for (final key in item.keys) {
+          if (!keys.contains(key)) keys.add(key);
+        }
+      }
+      rows.add([title]);
+      rows.add(keys);
+      for (final item in data) {
+        rows.add(keys.map((key) => item[key]?.toString() ?? '').toList());
+      }
+      rows.add([]);
+    }
+    addSummary('خلاصه فروش', provider.salesReport?.summary);
+    addTable('روند فروش', provider.salesReport?.chartData ?? []);
+    addSummary('گزارش مالی', provider.financialReport?.summary);
+    addTable('ترکیب مالی', provider.financialReport?.chartData ?? []);
+    addSummary('گزارش انبار', provider.inventoryReport?.summary);
+    addTable('وضعیت مواد اولیه', provider.inventoryReport?.chartData ?? []);
+    addSummary('سود هر غذا', provider.dishProfitReport?.summary);
+    final dishRows = provider.dishProfitReport?.chartData ?? const <Map<String, dynamic>>[];
+    final dishData = dishRows.isNotEmpty ? dishRows.first : const <String, dynamic>{};
+    addTable('سودآوری غذاها', (dishData['dishes'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('سود روزانه', (dishData['daily'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('سود ماهانه', (dishData['monthly'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addSummary('تطبیق پرداخت و صندوق', provider.paymentReconciliationReport?.summary);
+    final paymentRows = provider.paymentReconciliationReport?.chartData ?? const <Map<String, dynamic>>[];
+    final paymentData = paymentRows.isNotEmpty ? paymentRows.first : const <String, dynamic>{};
+    addTable('روش‌های پرداخت', (paymentData['methods'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('بستن صندوق و مغایرت', (paymentData['closings'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    final reconciliationRows = provider.reportReconciliation?.chartData ?? const <Map<String, dynamic>>[];
+    final reconciliationData = reconciliationRows.isNotEmpty ? reconciliationRows.first : const <String, dynamic>{};
+    addSummary('تطبیق سفارش، پرداخت و انبار', provider.reportReconciliation?.summary);
+    addTable('کنترل سفارش‌ها', (reconciliationData['orders'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('تطبیق مصرف مواد', (reconciliationData['inventory'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('گردش‌های انبار', (reconciliationData['transactions'] as List<dynamic>? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+    addTable('وضعیت سفارش‌ها', provider.orderHealthReport?.chartData ?? []);
+    addTable('استفاده از میزها', provider.tableUsageReport?.chartData ?? []);
+    return rows;
+  }
+
+  Future<void> _exportExcel() async {
+    try {
+      final excel = Excel.createExcel();
+      final sheet = excel['گزارش رستوران'];
+      for (final row in _buildExportRows()) {
+        sheet.appendRow(row.map((cell) => TextCellValue(cell)).toList());
+      }
+      final bytes = excel.save();
+      if (bytes == null) throw Exception('ساخت فایل Excel ناموفق بود');
+      final (from, to) = _getDateRange();
+      final path = await FilePicker.saveFile(
+        fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.xlsx',
+        bytes: Uint8List.fromList(bytes),
+      );
+      if (path != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل Excel آماده و ذخیره شد.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خروجی Excel ناموفق بود: $e')));
+    }
+  }
+
+  Future<void> _exportPdf() async {
+    try {
+      final font = pw.Font.ttf(await rootBundle.load('assets/fonts/Lalezar.ttf'));
+      final pdf = pw.Document();
+      final rows = _buildExportRows().where((row) => row.isNotEmpty).toList();
+      pdf.addPage(pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        theme: pw.ThemeData.withFont(base: font, bold: font),
+        margin: const pw.EdgeInsets.all(24),
+        build: (_) => [
+          pw.Directionality(
+            textDirection: pw.TextDirection.rtl,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                pw.Text('گزارش جامع رستوران', textAlign: pw.TextAlign.center, style: pw.TextStyle(font: font, fontSize: 20)),
+                pw.SizedBox(height: 8),
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey400, width: .4),
+                  children: rows.map((row) => pw.TableRow(children: row.map((cell) => pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text(cell, textAlign: pw.TextAlign.right, style: pw.TextStyle(font: font, fontSize: 8)),
+                  )).toList())).toList(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ));
+      final (from, to) = _getDateRange();
+      final path = await FilePicker.saveFile(
+        fileName: 'restaurant-report-${_jalaliDate(from)}-${_jalaliDate(to)}.pdf',
+        bytes: await pdf.save(),
+      );
+      if (path != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل PDF آماده و ذخیره شد.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خروجی PDF ناموفق بود: $e')));
+    }
   }
 
   num _num(Map<String, dynamic> map, String key) {
@@ -197,6 +380,10 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
                         Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
                         Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
+                        Tab(icon: Icon(Icons.table_restaurant_outlined, size: 18), text: 'میزها و ساعات شلوغی'),
+                        Tab(icon: Icon(Icons.restaurant_menu_outlined, size: 18), text: 'سود هر غذا'),
+                        Tab(icon: Icon(Icons.point_of_sale_outlined, size: 18), text: 'پرداخت و صندوق'),
+                        Tab(icon: Icon(Icons.fact_check_outlined, size: 18), text: 'تطبیق گزارش‌ها'),
                       ],
                     ),
                   ),
@@ -213,6 +400,10 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
+                        _tableUsageTab(context, mobile, provider.tableUsageReport?.summary ?? const {}, provider.tableUsageReport?.chartData.isNotEmpty == true ? provider.tableUsageReport!.chartData.first : const {}, provider.isLoading),
+                        _dishProfitTab(context, mobile, provider.dishProfitReport?.summary ?? const {}, provider.dishProfitReport?.chartData.isNotEmpty == true ? provider.dishProfitReport!.chartData.first : const {}, provider.isLoading),
+                        _paymentReconciliationTab(context, mobile, provider.paymentReconciliationReport?.summary ?? const {}, provider.paymentReconciliationReport?.chartData.isNotEmpty == true ? provider.paymentReconciliationReport!.chartData.first : const {}, provider.isLoading),
+                        _reportReconciliationTab(context, mobile, provider.reportReconciliation?.summary ?? const {}, provider.reportReconciliation?.chartData.isNotEmpty == true ? provider.reportReconciliation!.chartData.first : const {}, provider.isLoading),
                       ],
                     ),
                   ),
@@ -300,6 +491,105 @@ class _ReportsScreenState extends State<ReportsScreen>
     ]);
   }
 
+
+  Widget _tableUsageTab(
+    BuildContext context,
+    bool mobile,
+    Map<String, dynamic> summary,
+    Map<String, dynamic> data,
+    bool loading,
+  ) {
+    final tables = (data['tables'] as List<dynamic>? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final hours = (data['hours'] as List<dynamic>? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final peakHour = _num(summary, 'peak_hour').toInt();
+    final peakLabel = '${peakHour.toString().padLeft(2, '0')}:00';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (loading) const LinearProgressIndicator(minHeight: 2),
+      _metricGrid(context, mobile, [
+        _metric('سفارش‌های سالن', _number(_num(summary, 'total_orders')), Icons.receipt_long_outlined, _blue, 'سفارش‌های غیرلغوشده در بازه'),
+        _metric('مجموع زمان اشغال', '${_number(_num(summary, 'occupied_minutes') / 60)} ساعت', Icons.timer_outlined, const Color(0xFF8B72E8), 'زمان ثبت‌شده برای سفارش‌های سالن'),
+        _metric('میانگین حضور', '${_number(_num(summary, 'average_minutes'))} دقیقه', Icons.hourglass_bottom_rounded, const Color(0xFF39B982), 'میانگین از شروع تا پایان سفارش'),
+        _metric('شلوغ‌ترین ساعت', peakLabel, Icons.schedule_rounded, const Color(0xFFE9A23B), '${_number(_num(summary, 'peak_hour_orders'))} سفارش'),
+      ]),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'ساعات شلوغی رستوران',
+        subtitle: 'تعداد سفارش‌های سالن بر اساس ساعت ثبت سفارش',
+        icon: Icons.bar_chart_rounded,
+        child: hours.isEmpty
+          ? const _NoData(message: 'اطلاعاتی برای ساعات شلوغی وجود ندارد.')
+          : SizedBox(
+              height: 250,
+              child: BarChart(BarChartData(
+                gridData: const FlGridData(show: true, drawVerticalLine: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true, reservedSize: 32,
+                    getTitlesWidget: (v, meta) => Text(_digits(v.toInt()), style: const TextStyle(fontSize: 10, color: Color(0xFF8792A8))),
+                  )),
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true, interval: 3, reservedSize: 30,
+                    getTitlesWidget: (v, meta) {
+                      final i = v.toInt();
+                      if (i < 0 || i >= hours.length) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 7),
+                        child: Text('${hours[i]['label']}', style: const TextStyle(fontSize: 9, color: Color(0xFF8792A8))),
+                      );
+                    },
+                  )),
+                ),
+                barGroups: hours.asMap().entries.map((entry) {
+                  final count = _num(entry.value, 'order_count').toDouble();
+                  return BarChartGroupData(x: entry.key, barRods: [
+                    BarChartRodData(
+                      toY: count, width: mobile ? 6 : 10,
+                      borderRadius: BorderRadius.circular(4),
+                      color: entry.key == peakHour ? const Color(0xFFE9A23B) : _blue,
+                    ),
+                  ]);
+                }).toList(),
+              )),
+            ),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'عملکرد هر میز',
+        subtitle: 'تعداد سفارش، مجموع زمان اشغال و میانگین زمان هر سفارش',
+        icon: Icons.table_restaurant_outlined,
+        child: tables.isEmpty
+          ? const _NoData(message: 'میز فعالی برای گزارش وجود ندارد.')
+          : Column(children: tables.map((item) {
+              final count = _num(item, 'order_count');
+              final minutes = _num(item, 'occupied_minutes');
+              final average = _num(item, 'average_minutes');
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: _paleBlue,
+                  foregroundColor: _blue,
+                  child: Text(_digits(item['table_number'])),
+                ),
+                title: Text('میز ${_digits(item['table_number'])} · ظرفیت ${_digits(item['capacity'])} نفر',
+                  style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+                subtitle: Text('${_number(minutes / 60)} ساعت اشغال · میانگین ${_number(average)} دقیقه'),
+                trailing: Text('${_number(count)} سفارش', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+              );
+            }).toList()),
+      ),
+      const SizedBox(height: 10),
+      const Text(
+        'مبنای گزارش: سفارش‌های سالن متصل به میز. سفارش‌های لغوشده محاسبه نمی‌شوند؛ برای سفارش باز، زمان تا لحظه گزارش لحاظ می‌شود.',
+        style: TextStyle(color: Color(0xFF8792A8), fontSize: 11),
+      ),
+    ]);
+  }
+
   Widget _buildHeader(BuildContext context, bool mobile) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,12 +636,14 @@ class _ReportsScreenState extends State<ReportsScreen>
           ActionChip(
             avatar: const Icon(Icons.date_range_rounded, size: 17),
             label: Text(_customDateRange == null
-                ? 'بازه دلخواه'
-                : '${_digits(_customDateRange!.start.day)}/${_digits(_customDateRange!.start.month)} تا ${_digits(_customDateRange!.end.day)}/${_digits(_customDateRange!.end.month)}'),
+                ? 'بازه شمسی دلخواه'
+                : '${_digits(_jalaliDate(_customDateRange!.start))} تا ${_digits(_jalaliDate(_customDateRange!.end))}'),
             backgroundColor: _selectedFilter == DateRangeFilter.custom ? _paleBlue : Colors.white,
             side: BorderSide(color: _selectedFilter == DateRangeFilter.custom ? _blue : const Color(0xFFE3E9F4)),
             onPressed: _pickCustomRange,
           ),
+          ActionChip(avatar: const Icon(Icons.table_view_outlined, size: 17), label: const Text('خروجی Excel'), onPressed: _exportExcel),
+          ActionChip(avatar: const Icon(Icons.picture_as_pdf_outlined, size: 17), label: const Text('خروجی PDF'), onPressed: _exportPdf),
         ],
       );
 
@@ -430,16 +722,56 @@ class _ReportsScreenState extends State<ReportsScreen>
     num totalTypes,
   ) {
     final chart = context.read<ReportsProvider>().salesReport?.chartData ?? const <Map<String, dynamic>>[];
+    final grossSales = _num(summary, 'gross_sales');
+    final discounts = _num(summary, 'discount_amount');
+    final netSales = _num(summary, 'net_sales');
+    final refunds = _num(summary, 'refund_amount');
+    final netAfterRefunds = _num(summary, 'net_after_refunds');
+    final deliveryFees = _num(summary, 'delivery_fees');
+    final recordedRevenue = _num(summary, 'recorded_revenue');
+    final cashReceived = _num(summary, 'cash_received_in_period');
+    final receivable = _num(summary, 'receivable_balance');
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مجموع فروش', '${_number(sales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
+        _metric('فروش خالص', '${_number(netSales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'فروش ناخالص پس از کسر تخفیف'),
         _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', Icons.calculate_outlined, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
         _metric('تغییر نسبت به قبل', _percentage(growth), Icons.compare_arrows_rounded, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
-        title: 'روند فروش',
-        subtitle: 'مقادیر نمودار بر اساس داده‌ای است که گزارش فروش برمی‌گرداند',
+        title: 'تفکیک مبالغ فروش',
+        subtitle: 'فقط سفارش‌های تکمیل‌شده؛ بازپرداخت‌ها بر اساس زمان پردازش ثبت می‌شوند',
+        icon: Icons.receipt_long_outlined,
+        child: Column(children: [
+          _financialLine('فروش ناخالص', grossSales, _blue),
+          _financialLine('تخفیف‌ها', discounts, const Color(0xFFE9A23B)),
+          const Divider(height: 18),
+          _financialLine('فروش خالص پس از تخفیف', netSales, const Color(0xFF39B982), strong: true),
+          _financialLine('هزینه ارسال', deliveryFees, const Color(0xFF8B72E8)),
+          _financialLine('بازپرداخت انجام‌شده (${_number(_num(summary, 'refund_count'))} مورد)', refunds, const Color(0xFFE45B70)),
+          const Divider(height: 18),
+          _financialLine('خالص پس از بازپرداخت', netAfterRefunds, netAfterRefunds >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
+          const SizedBox(height: 8),
+          const Text('بازپرداخت‌ها جداگانه نمایش داده می‌شوند؛ ممکن است مربوط به سفارش لغوشده‌ای باشند که در فروش سفارش‌های تکمیل‌شده محاسبه نشده است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'درآمد ثبت‌شده و وجه دریافتی',
+        subtitle: 'وجه دریافتی فقط از پرداخت‌هایی محاسبه می‌شود که در جزئیات سفارش ثبت شده‌اند',
+        icon: Icons.account_balance_wallet_outlined,
+        child: Column(children: [
+          _financialLine('درآمد ثبت‌شده سفارش‌های تکمیل‌شده', recordedRevenue, _blue, strong: true),
+          _financialLine('وجه واقعاً دریافت‌شده در این بازه', cashReceived, const Color(0xFF39B982), strong: true),
+          _financialLine('مانده قابل دریافت سفارش‌های این بازه', receivable, const Color(0xFFE9A23B)),
+          const SizedBox(height: 8),
+          const Text('سفارش‌های قدیمی که پرداختشان در پنل ثبت نشده، به‌صورت خودکار پرداخت‌شده فرض نمی‌شوند. وجه دریافتی بر اساس تاریخ ثبت پرداخت و مانده بر اساس سفارش‌های تکمیل‌شده در بازه است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+        ]),
+      ),
+      const SizedBox(height: 18),
+      _sectionCard(
+        title: 'روند فروش خالص',
+        subtitle: 'مبالغ محور نمودار به تومان است؛ فروش خالص روزانه پس از کسر تخفیف‌ها',
         icon: Icons.bar_chart_rounded,
         child: chart.isEmpty
             ? const _NoData(message: 'داده نموداری برای این بازه موجود نیست.')
@@ -462,8 +794,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                   ),
                   barGroups: chart.asMap().entries.map((entry) {
                     final item = entry.value;
-                    final amount = _num(item, 'total_sales') != 0 ? _num(item, 'total_sales') : _num(item, 'sales');
-                    return BarChartGroupData(x: entry.key, barRods: [BarChartRodData(toY: amount.toDouble(), width: mobile ? 13 : 22, borderRadius: BorderRadius.circular(7), color: _blue, backDrawRodData: BackgroundBarChartRodData(show: true, toY: chart.map((e) => (_num(e, 'total_sales') != 0 ? _num(e, 'total_sales') : _num(e, 'sales')).toDouble()).fold<double>(0, (a, b) => a > b ? a : b), color: const Color(0xFFF0F4FC)))]);
+                    final amount = _num(item, 'net_sales') != 0 ? _num(item, 'net_sales') : _num(item, 'amount');
+                    return BarChartGroupData(x: entry.key, barRods: [BarChartRodData(toY: amount.toDouble(), width: mobile ? 13 : 22, borderRadius: BorderRadius.circular(7), color: _blue, backDrawRodData: BackgroundBarChartRodData(show: true, toY: chart.map((e) => (_num(e, 'net_sales') != 0 ? _num(e, 'net_sales') : _num(e, 'amount')).toDouble()).fold<double>(0, (a, b) => a > b ? a : b), color: const Color(0xFFF0F4FC)))]);
                   }).toList(),
                 )),
               ),
@@ -485,7 +817,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _productsTab(BuildContext context, List<Map<String, dynamic>> products, bool loading) {
     return _sectionCard(
       title: 'عملکرد محصولات',
-      subtitle: 'فهرست واقعی محصولات برگشتی از گزارش Supabase',
+      subtitle: 'فروش تجمعی کل دوره‌ها؛ مستقل از فیلتر تاریخ بالای صفحه',
       icon: Icons.fastfood_outlined,
       child: loading && products.isEmpty
           ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
@@ -500,7 +832,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (summary.isEmpty && chart.isEmpty) {
-      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'توزیع مشتریان از داده‌های واقعی', icon: Icons.people_alt_outlined,
+      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'مشتریان دارای سفارش تکمیل‌شده در کل دوره‌ها؛ مستقل از فیلتر تاریخ', icon: Icons.people_alt_outlined,
         child: const _NoData(message: 'گزارش مشتریان هنوز داده‌ای برنگردانده است.'));
     }
     final entries = summary.entries.toList();
@@ -510,7 +842,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           _humanize(entry.key), _number(_asNum(entry.value)), Icons.people_outline_rounded, _blue, 'مقدار برگشتی از گزارش مشتریان',
         )).toList()),
       const SizedBox(height: 18),
-      _sectionCard(title: 'توزیع مشتریان', subtitle: 'دسته‌بندی برگشتی از Supabase', icon: Icons.groups_2_outlined,
+      _sectionCard(title: 'توزیع مشتریان', subtitle: 'تعداد مشتریان یکتا در هر نوع سفارش؛ ممکن است مشتری در چند گروه باشد', icon: Icons.groups_2_outlined,
         child: chart.isEmpty ? const _NoData(message: 'جزئیات دسته‌بندی مشتریان موجود نیست.') : Column(
           children: chart.asMap().entries.map((entry) {
             final row = entry.value;
@@ -538,28 +870,38 @@ class _ReportsScreenState extends State<ReportsScreen>
     }
     final revenue = _asNum(summary['revenue']);
     final stockCost = _asNum(summary['inventory_cost']);
+    final wasteCost = _asNum(summary['waste_cost']);
     final expenses = _asNum(summary['operating_expenses']);
+    final ingredientPurchases = _asNum(summary['ingredient_purchase_expenses']);
     final profit = _asNum(summary['estimated_profit']);
     final costs = _asNum(summary['total_costs']);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
         _metric('درآمد فروش', '${_number(revenue)} تومان', Icons.payments_outlined, _blue, 'فقط سفارش‌های تکمیل‌شده'),
-        _metric('هزینه مواد اولیه', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مصرف ثبت‌شده انبار'),
-        _metric('هزینه‌های جاری', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده'),
-        _metric('سود تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درآمد منهای هزینه‌های ثبت‌شده'),
+        _metric('مواد مصرف‌شده', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مواد مصرف‌شده طبق دستور پخت و سفارش'),
+        _metric('ضایعات مواد', '${_number(wasteCost)} تومان', Icons.delete_sweep_outlined, const Color(0xFFE45B70), 'ضایعات ثبت‌شده در انبار'),
+        _metric('هزینه‌های عملیاتی', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده به‌جز خرید مواد'),
+        _metric('سود عملیاتی تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'فروش منهای مواد مصرفی، ضایعات و هزینه‌های عملیاتی'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: Icons.account_balance_outlined,
-        trailing: TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت هزینه')),
+        trailing: Wrap(spacing: 4, children: [
+          TextButton.icon(onPressed: () => context.push('/expenses'), icon: const Icon(Icons.list_alt_outlined, size: 18), label: const Text('مدیریت هزینه‌ها')),
+          TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت سریع')),
+        ]),
         child: Column(children: [
           _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
-          _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
-          _financialLine('هزینه‌های جاری', expenses, const Color(0xFFE9A23B)),
+          _financialLine('مواد مصرف‌شده در سفارش‌ها', stockCost, const Color(0xFF8B72E8)),
+          _financialLine('ضایعات مواد اولیه', wasteCost, const Color(0xFFE45B70)),
+          _financialLine('هزینه‌های عملیاتی', expenses, const Color(0xFFE9A23B)),
+          _financialLine('خرید مواد ثبت‌شده (جدا از سود)', ingredientPurchases, const Color(0xFF65C99A)),
           const Divider(height: 24),
           _financialLine('مجموع هزینه‌ها', costs, const Color(0xFFE45B70)),
           _financialLine('سود تخمینی', profit, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), strong: true),
           const SizedBox(height: 12),
-          const Text('توجه: سود قطعی حسابداری نیست؛ به ثبت دقیق بهای مواد اولیه، دستور پخت و هزینه‌های جاری وابسته است.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
+          Text('حاشیه سود: ${_digits(_asNum(summary['profit_margin_percent']).toStringAsFixed(2))}٪', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          const Text('توجه: سود تخمینی بر اساس مواد مصرف‌شده، ضایعات ثبت‌شده و هزینه‌های عملیاتی است. خرید مواد جداگانه نمایش داده می‌شود تا با مصرف و ضایعات دوباره‌شماری نشود.', style: TextStyle(color: Color(0xFF8792A8), fontSize: 12)),
         ])),
       if (chart.isNotEmpty) ...[
         const SizedBox(height: 18),
@@ -578,6 +920,137 @@ class _ReportsScreenState extends State<ReportsScreen>
     ]);
   }
 
+
+  Widget _dishProfitTab(BuildContext context, bool mobile, Map<String,dynamic> summary, Map<String,dynamic> data, bool loading) {
+    final dishes=(data['dishes'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final daily=(data['daily'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final monthly=(data['monthly'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    if(loading && summary.isEmpty) return const Center(child:CircularProgressIndicator());
+    return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      _metricGrid(context,mobile,[
+        _metric('فروش خالص غذاها','${_number(_asNum(summary['total_revenue']))} تومان',Icons.payments_outlined,_blue,'پس از تخصیص تخفیف سفارش'),
+        _metric('بهای مواد اولیه','${_number(_asNum(summary['total_cost']))} تومان',Icons.kitchen_outlined,const Color(0xFF8B72E8),'بر اساس دستور پخت و قیمت فعلی انبار'),
+        _metric('سود ناخالص غذاها','${_number(_asNum(summary['total_profit']))} تومان',Icons.trending_up,const Color(0xFF39B982),'قبل از هزینه‌های عملیاتی'),
+      ]),
+      const SizedBox(height:16),
+      _sectionCard(title:'سودآوری هر غذا',subtitle:'فروش، تعداد، بهای تمام‌شده و سود ناخالص هر محصول',icon:Icons.restaurant_menu_outlined,
+        child:dishes.isEmpty?const _NoData(message:'در این بازه فروش تکمیل‌شده‌ای ثبت نشده است.'):Column(children:dishes.map((d){
+          final name=(d['product_name']??'غذای نامشخص').toString();
+          return ListTile(contentPadding:EdgeInsets.zero,title:Text(name,style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text('${_digits(_asNum(d['quantity']).toStringAsFixed(0))} عدد · فروش ${_number(_asNum(d['net_revenue']))} · هزینه ${_number(_asNum(d['total_cost']))} تومان'),
+            trailing:Text('${_number(_asNum(d['gross_profit']))} تومان',style:TextStyle(fontWeight:FontWeight.w800,color:_asNum(d['gross_profit'])>=0?const Color(0xFF279B70):const Color(0xFFE45B70))));
+        }).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'سود روزانه',subtitle:'فروش خالص منهای بهای مواد مصرفی',icon:Icons.calendar_view_day,
+        child:daily.isEmpty?const _NoData(message:'داده روزانه‌ای وجود ندارد.'):Column(children:daily.map((r)=>_financialLine((r['date']??'').toString(),_asNum(r['profit']),const Color(0xFF39B982))).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'سود ماهانه',subtitle:'تجمیع فروش و بهای مواد در هر ماه',icon:Icons.calendar_month,
+        child:monthly.isEmpty?const _NoData(message:'داده ماهانه‌ای وجود ندارد.'):Column(children:monthly.map((r)=>_financialLine((r['month']??'').toString(),_asNum(r['profit']),const Color(0xFF8B72E8))).toList())),
+      const SizedBox(height:8),
+      const Text('توجه: سود هر غذا و سود روزانه/ماهانه در این بخش سود ناخالص پس از بهای مواد دستور پخت است؛ هزینه‌های عملیاتی، ضایعات و کسری‌های ثبت‌نشده در این تفکیک محصولی لحاظ نشده‌اند. برای محصول بدون دستور پخت، بهای مواد صفر گزارش می‌شود.',style:TextStyle(fontSize:12,color:Color(0xFF8792A8))),
+    ]);
+  }
+
+  Future<void> _recordCashClosing(BuildContext context) async {
+    final opening=TextEditingController(text:'0'), counted=TextEditingController(), shift=TextEditingController(text:'شیفت اصلی'), note=TextEditingController();
+    final form=GlobalKey<FormState>();
+    final result=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('ثبت شمارش صندوق'),
+      content:Form(key:form,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+        TextFormField(controller:shift,decoration:const InputDecoration(labelText:'نام شیفت'),validator:(v)=>v==null||v.trim().isEmpty?'نام شیفت الزامی است':null),
+        TextFormField(controller:opening,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'موجودی نقد ابتدای شیفت (تومان)'),validator:(v)=>_asNum(v)<0?'مبلغ نامعتبر است':null),
+        TextFormField(controller:counted,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'وجه نقد شمارش‌شده پایان شیفت (تومان)'),validator:(v)=>_asNum(v)<0?'مبلغ نامعتبر است':null),
+        TextFormField(controller:note,decoration:const InputDecoration(labelText:'توضیحات (اختیاری)')),
+      ]))),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('انصراف')),
+        FilledButton(onPressed:()async{if(!form.currentState!.validate())return;try{
+          final now=DateTime.now(); final date='${now.year.toString().padLeft(4,'0')}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
+          await SupabaseService.client.rpc('record_cash_register_closing',params:{'p_business_date':date,'p_shift_label':shift.text.trim(),'p_opening_cash':_asNum(opening.text),'p_counted_cash':_asNum(counted.text),'p_note':note.text.trim()});
+          if(ctx.mounted)Navigator.pop(ctx,true);
+        }catch(_){if(ctx.mounted)ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content:Text('ثبت بستن صندوق ناموفق بود. دسترسی مدیر و اتصال را بررسی کنید.')));}},child:const Text('ثبت شمارش'))]));
+    opening.dispose();counted.dispose();shift.dispose();note.dispose();
+    if(result==true&&mounted)_fetchReport();
+  }
+
+  Widget _paymentReconciliationTab(BuildContext context,bool mobile,Map<String,dynamic> summary,Map<String,dynamic> data,bool loading){
+    final methods=(data['methods'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    final closings=(data['closings'] as List<dynamic>? ?? const []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+    if(loading&&summary.isEmpty)return const Center(child:CircularProgressIndicator());
+    return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(mainAxisAlignment:MainAxisAlignment.end,children:[FilledButton.icon(onPressed:()=>_recordCashClosing(context),icon:const Icon(Icons.point_of_sale_outlined),label:const Text('ثبت شمارش صندوق'))]),
+      const SizedBox(height:12),
+      _metricGrid(context,mobile,[
+        _metric('کل دریافتی','${_number(_asNum(summary['total_received']))} تومان',Icons.payments_outlined,_blue,'پرداخت‌های ثبت‌شده و دریافت‌شده'),
+        _metric('دریافتی نقدی','${_number(_asNum(summary['cash_received']))} تومان',Icons.money, const Color(0xFF39B982),'فقط روش نقدی'),
+        _metric('غیرنقدی','${_number(_asNum(summary['non_cash_received']))} تومان',Icons.credit_card_outlined,const Color(0xFF8B72E8),'کارت‌خوان، کیف پول و سایر روش‌ها'),
+      ]),
+      const SizedBox(height:16),
+      _sectionCard(title:'تفکیک روش‌های پرداخت',subtitle:'جمع مبالغ پرداخت‌های موفق در بازه انتخابی',icon:Icons.account_balance_wallet_outlined,
+        child:methods.isEmpty?const _NoData(message:'پرداخت ثبت‌شده‌ای در این بازه وجود ندارد.'):Column(children:methods.map((r)=>_financialLine('${r['payment_method']} · ${_digits(_asNum(r['payment_count']).toStringAsFixed(0))} تراکنش',_asNum(r['amount']),_blue)).toList())),
+      const SizedBox(height:16),
+      _sectionCard(title:'مغایرت صندوق',subtitle:'مقایسه وجه نقد شمارش‌شده با موجودی مورد انتظار (ابتدای شیفت + پرداخت نقدی)',icon:Icons.fact_check_outlined,
+        child:closings.isEmpty?const _NoData(message:'هنوز شمارش صندوقی ثبت نشده است. برای محاسبه مغایرت، پایان شیفت وجه نقد واقعی را ثبت کنید.'):Column(children:closings.map((r){
+          final variance=_asNum(r['variance']); final date=(r['business_date']??'').toString(); final shift=(r['shift_label']??'').toString();
+          return ListTile(contentPadding:EdgeInsets.zero,title:Text('$date · $shift',style:const TextStyle(fontWeight:FontWeight.w700)),
+            subtitle:Text('مورد انتظار: ${_number(_asNum(r['expected_cash']))} · شمارش‌شده: ${_number(_asNum(r['counted_cash']))} تومان'),
+            trailing:Text('${variance>0?'+':''}${_number(variance)} تومان',style:TextStyle(fontWeight:FontWeight.w800,color:variance==0?const Color(0xFF279B70):const Color(0xFFE45B70))));
+        }).toList())),
+    ]);
+  }
+
+  Widget _reportReconciliationTab(BuildContext context, bool mobile, Map<String,dynamic> summary, Map<String,dynamic> data, bool loading) {
+    List<Map<String,dynamic>> rows(String key) => (data[key] as List<dynamic>? ?? const []).map((e) => Map<String,dynamic>.from(e as Map)).toList();
+    final orders = rows('orders');
+    final inventory = rows('inventory');
+    final transactions = rows('transactions');
+    if (loading && summary.isEmpty) return const Center(child: CircularProgressIndicator());
+    Color statusColor(String status) => status == 'مطابق' || status == 'ثبت‌شده' ? const Color(0xFF279B70) : status.contains('مانده قابل دریافت') ? const Color(0xFF8B72E8) : const Color(0xFFE45B70);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _metricGrid(context, mobile, [
+        _metric('سفارش بررسی‌شده', _digits(summary['orders_checked'] ?? 0), Icons.receipt_long_outlined, _blue, 'در بازه انتخابی'),
+        _metric('سفارش دارای مغایرت', _digits(summary['orders_with_issues'] ?? 0), Icons.error_outline, const Color(0xFFE45B70), 'نیازمند بررسی مدیر'),
+        _metric('مغایرت پرداخت', _digits(summary['payment_mismatches'] ?? 0), Icons.payments_outlined, const Color(0xFF8B72E8), 'تکمیل‌شده یا لغوشده'),
+        _metric('مغایرت مصرف انبار', _digits(summary['inventory_mismatches'] ?? 0), Icons.inventory_2_outlined, const Color(0xFF39B982), 'مقایسه دستور مصرف با گردش واقعی'),
+      ]),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'تطبیق سفارش‌ها و پرداخت‌ها', subtitle: 'مقایسه مبلغ اقلام، مبلغ سفارش، دریافتی و بازپرداخت', icon: Icons.receipt_long_outlined,
+        child: orders.isEmpty ? const _NoData(message: 'در این بازه سفارشی برای تطبیق وجود ندارد.') : Column(children: orders.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          final id = (r['daily_queue_number'] ?? r['order_id'] ?? '—').toString();
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text('سفارش #${_digits(id)} · ${_statusLabel((r['status'] ?? '').toString())}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('کل سفارش: ${_number(_asNum(r['order_total']))} · دریافتی خالص: ${_number(_asNum(r['net_received']))} · اختلاف: ${_number(_asNum(r['payment_difference']))} تومان\nاقلام: ${_number(_asNum(r['items_total']))} · بدون دستور مصرف: ${_digits(r['products_without_recipe'] ?? 0)}'),
+            isThreeLine: true,
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontWeight: FontWeight.w800, fontSize: 11)));
+        }).toList())),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'تطبیق دستور مصرف با گردش انبار', subtitle: 'مقدار مورد انتظار هر ماده در برابر خروج واقعی ثبت‌شده برای سفارش', icon: Icons.kitchen_outlined,
+        child: inventory.isEmpty ? const _NoData(message: 'برای سفارش‌های این بازه گردش مصرف ثبت نشده یا دستور مصرفی وجود ندارد.') : Column(children: inventory.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text((r['material_name'] ?? 'ماده اولیه').toString(), style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('سفارش #${_digits(r['order_id'] ?? '—')} · مورد انتظار: ${_digits(r['expected_quantity'] ?? 0)} ${r['unit'] ?? ''} · ثبت‌شده: ${_digits(r['actual_quantity'] ?? 0)} ${r['unit'] ?? ''}'),
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontWeight: FontWeight.w800, fontSize: 10)));
+        }).toList())),
+      const SizedBox(height: 16),
+      _sectionCard(title: 'گردش‌های ثبت‌شده انبار', subtitle: 'خرید، مصرف سفارش، ضایعات، برگشت و اصلاح موجودی', icon: Icons.inventory_2_outlined,
+        child: transactions.isEmpty ? const _NoData(message: 'تراکنشی در بازه انتخابی ثبت نشده است.') : Column(children: transactions.map((r) {
+          final status = (r['reconciliation_status'] ?? '').toString();
+          final qty = _asNum(r['quantity_delta']);
+          return ListTile(contentPadding: EdgeInsets.zero,
+            title: Text('${r['material_name'] ?? 'ماده اولیه'} · ${r['transaction_type'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('مقدار: ${_digits(qty)} · هزینه: ${_number(_asNum(r['total_cost']))} تومان · سفارش: ${_digits(r['daily_queue_number'] ?? '—')}'),
+            trailing: Text(status, style: TextStyle(color: statusColor(status), fontSize: 10, fontWeight: FontWeight.w700)));
+        }).toList())),
+      const SizedBox(height: 8),
+      const Text('نکته: مانده پرداخت سفارش‌های باز لزوماً مغایرت نیست. مقایسه مصرف انبار بر اساس دستور مصرف فعلی و تراکنش‌های ثبت‌شده انجام می‌شود؛ سفارش‌های بدون دستور مصرف جداگانه مشخص می‌شوند.', style: TextStyle(fontSize: 12, color: Color(0xFF8792A8))),
+    ]);
+  }
+
+  String _statusLabel(String status) {
+    const labels = {'pending':'در انتظار','confirmed':'تأییدشده','preparing':'در حال آماده‌سازی','ready':'آماده','out_for_delivery':'ارسال‌شده','completed':'تکمیل‌شده','cancelled':'لغوشده'};
+    return labels[status] ?? status;
+  }
+
   Widget _financialLine(String label, num amount, Color color, {bool strong = false}) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 7),
     child: Row(children: [
@@ -592,7 +1065,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
     final amountController = TextEditingController();
-    final categoryController = TextEditingController(text: 'عمومی');
+    var selectedCategory = 'other';
     final notesController = TextEditingController();
     final saved = await showDialog<bool>(
       context: context,
@@ -605,7 +1078,21 @@ class _ReportsScreenState extends State<ReportsScreen>
             const SizedBox(height: 10),
             TextFormField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مبلغ (تومان)'), validator: (v) => (_asNum(v) <= 0) ? 'مبلغ معتبر وارد کنید' : null),
             const SizedBox(height: 10),
-            TextFormField(controller: categoryController, decoration: const InputDecoration(labelText: 'دسته‌بندی')),
+            DropdownButtonFormField<String>(
+              initialValue: selectedCategory,
+              decoration: const InputDecoration(labelText: 'دسته‌بندی هزینه'),
+              items: const [
+                DropdownMenuItem(value: 'personnel', child: Text('حقوق و دستمزد')),
+                DropdownMenuItem(value: 'rent', child: Text('اجاره')),
+                DropdownMenuItem(value: 'utilities', child: Text('آب، برق و گاز')),
+                DropdownMenuItem(value: 'delivery', child: Text('ارسال و پیک')),
+                DropdownMenuItem(value: 'marketing', child: Text('بازاریابی')),
+                DropdownMenuItem(value: 'maintenance', child: Text('تعمیر و نگهداری')),
+                DropdownMenuItem(value: 'ingredients_purchase', child: Text('خرید مواد اولیه')),
+                DropdownMenuItem(value: 'other', child: Text('سایر')),
+              ],
+              onChanged: (value) => selectedCategory = value ?? 'other',
+            ),
             const SizedBox(height: 10),
             TextFormField(controller: notesController, maxLines: 2, decoration: const InputDecoration(labelText: 'توضیحات (اختیاری)')),
           ])),
@@ -619,7 +1106,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               await SupabaseService.client.from('restaurant_expenses').insert({
                 'title': titleController.text.trim(),
                 'amount': _asNum(amountController.text),
-                'category': categoryController.text.trim().isEmpty ? 'other' : categoryController.text.trim(),
+                'category': selectedCategory,
                 'notes': notesController.text.trim(),
                 'created_by': userId,
               });
@@ -637,7 +1124,6 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
     titleController.dispose();
     amountController.dispose();
-    categoryController.dispose();
     notesController.dispose();
     if (saved == true && mounted) _fetchReport();
   }

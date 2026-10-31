@@ -10,6 +10,8 @@ final json = {
 'customer_name': 'علی رضایی',
 'customer_phone': '09123456789',
 'order_type': 'delivery',
+ 'table_id': 'table-uuid-1',
+ 'table_number': 7,
 'status': 'pending',
 'total_amount': 150000.0,
 'estimated_ready_minutes': 30,
@@ -29,6 +31,8 @@ expect(order.userId, 'user-uuid-123');
 expect(order.customerName, 'علی رضایی');
 expect(order.customerPhone, '09123456789');
 expect(order.orderType, 'delivery');
+expect(order.tableId, 'table-uuid-1');
+expect(order.tableNumber, 7);
 expect(order.status, 'pending');
 expect(order.totalAmount, 150000.0);
 expect(order.estimatedReadyMinutes, 30);
@@ -110,12 +114,13 @@ createdAt: DateTime.parse('2023-10-01T12:00:00Z'),
 items: [],
 );
 
-final updated = original.copyWith(status: 'preparing', estimatedReadyMinutes: 20);
+final updated = original.copyWith(status: 'preparing', estimatedReadyMinutes: 20, tableId: 'table-uuid-2');
 
 expect(updated.id, original.id);
 expect(updated.customerName, original.customerName);
 expect(updated.status, 'preparing');
 expect(updated.estimatedReadyMinutes, 20);
+expect(updated.tableId, 'table-uuid-2');
 expect(original.status, 'pending'); // Original unchanged
 });
 });

@@ -20,13 +20,13 @@ class TablesProvider extends ChangeNotifier {
   String? get error => _error;
   List<TableModel> get tables => _tables;
 
-  Future<void> fetchTables() async {
+  Future<void> fetchTables({DateTime? reservationDate}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _tables = await _repository.getTables();
+      _tables = await _repository.getTables(reservationDate: reservationDate);
     } catch (e, st) {
       LoggerService.error('Fetch tables failed in provider', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e, fallback: 'دریافت فهرست میزها ناموفق بود. دوباره تلاش کنید.');

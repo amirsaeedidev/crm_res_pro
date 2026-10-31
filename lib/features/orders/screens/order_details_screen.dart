@@ -16,6 +16,7 @@ import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
 import '../../../shared/dialogs/invoice_print_dialog.dart';
 import '../widgets/order_refund_manager.dart';
+import '../widgets/order_payment_panel.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final String orderId;
@@ -267,6 +268,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 const SizedBox(height: AppSizes.lg),
                 _buildSummary(context, order),
                 const SizedBox(height: AppSizes.lg),
+                OrderPaymentPanel(orderId: order.id, orderTotal: order.totalAmount),
+                const SizedBox(height: AppSizes.lg),
                 OrderRefundManager(orderId: order.id, status: order.status, totalAmount: order.totalAmount),
               ],
             ),
@@ -391,6 +394,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           const SizedBox(height: AppSizes.sm),
           Text('نوع سفارش:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
           Text(_orderTypeLabel(order.orderType), style: Theme.of(context).textTheme.bodyMedium),
+          if (order.orderType == 'dine_in' && order.tableNumber != null) ...[
+            const SizedBox(height: AppSizes.sm),
+            Text('شماره میز:', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+            Text('میز ${_persianDigits(order.tableNumber)}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ],
           
           if (order.adminNote != null && order.adminNote!.isNotEmpty) ...[
             const Divider(height: AppSizes.lg),

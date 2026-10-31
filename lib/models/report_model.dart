@@ -22,7 +22,11 @@ class ReportModel {
       id: (json['id'] ?? json['type'] ?? 'report').toString(),
       type: json['type'] as String,
       summary: json['summary'] as Map<String, dynamic>? ?? {},
-      chartData: (json['chart_data'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [],
+      chartData: json['chart_data'] is List
+          ? (json['chart_data'] as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList()
+          : json['chart_data'] is Map
+              ? [Map<String, dynamic>.from(json['chart_data'] as Map)]
+              : [],
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: DateTime.parse(json['end_date'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),

@@ -15,6 +15,8 @@ enum NotificationType {
   newReservation,
   newCustomer,
   newTicket,
+  lowStock,
+  paymentFailed,
   unknown,
 }
 
@@ -319,6 +321,8 @@ class NotificationsProvider extends ChangeNotifier {
       'new_reservation' => NotificationType.newReservation,
       'new_customer' => NotificationType.newCustomer,
       'new_ticket' => NotificationType.newTicket,
+      'low_stock' => NotificationType.lowStock,
+      'payment_failed' => NotificationType.paymentFailed,
       _ => NotificationType.unknown,
     };
     return NotificationModel(
@@ -382,13 +386,14 @@ class NotificationsProvider extends ChangeNotifier {
     if (_disposed) return;
     final index = _notifications.indexWhere((notification) => notification.id == id);
     if (index == -1 || _notifications[index].isRead) return;
-    _notifications[index] = _notifications[index].copyWith(isRead: true);
-    _notifyIfAlive();
     try {
       await _client.from('admin_notifications').update({
         'is_read': true,
         'read_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', id);
+      if (_disposed) return;
+      _notifications[index] = _notifications[index].copyWith(isRead: true);
+      _notifyIfAlive();
     } catch (e, st) {
       LoggerService.error('Could not persist notification read state', error: e, stackTrace: st);
     }
@@ -399,25 +404,46 @@ class NotificationsProvider extends ChangeNotifier {
     if (_disposed) return;
     final hasUnread = _notifications.any((notification) => !notification.isRead);
     if (!hasUnread) return;
-    for (var i = 0; i < _notifications.length; i++) {
-      if (!_notifications[i].isRead) _notifications[i] = _notifications[i].copyWith(isRead: true);
-    }
-    _notifyIfAlive();
     try {
       await _client.from('admin_notifications').update({
         'is_read': true,
         'read_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('is_read', false);
+      if (_disposed) return;
+      for (var i = 0; i < _notifications.length; i++) {
+        if (!_notifications[i].isRead) {
+          _notifications[i] = _notifications[i].copyWith(isRead: true);
+        }
+      }
+      _notifyIfAlive();
     } catch (e, st) {
       LoggerService.error('Could not persist all-read notification state', error: e, stackTrace: st);
     }
   }
 
-  void clearNotifications() {
+  /// Permanently clears the shared admin inbox in the database.
+  /// The in-memory list is cleared only after the delete succeeds, so a
+  /// temporary network/RLS failure never makes persisted notifications vanish
+  /// from the UI until the next reload.
+  Future<void> clearNotifications() async {
     if (_disposed || _notifications.isEmpty) return;
 
-    _notifications.clear();
-    _notifyIfAlive();
+    try {
+      await _client.from('admin_notifications').delete().neq(
+        'id',
+        '00000000-0000-0000-0000-000000000000',
+      );
+      if (_disposed) return;
+      _notifications.clear();
+      _notifyIfAlive();
+    } catch (e, st) {
+      LoggerService.error(
+        'Could not clear persisted admin notifications',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
   }
 
   // ---------------------------------------------------------------------------

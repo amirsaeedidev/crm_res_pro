@@ -2,20 +2,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/logger_service.dart';
 import '../core/services/supabase_service.dart';
 import '../models/table_model.dart';
-import 'reservations_repository.dart';
 
 class TablesRepository {
   final SupabaseClient _client;
-  final ReservationsRepository _reservationsRepository;
-  TablesRepository({SupabaseClient? client, ReservationsRepository? reservationsRepository})
-      : _client = client ?? SupabaseService.client,
-        _reservationsRepository = reservationsRepository ?? ReservationsRepository(client: client);
+  TablesRepository({SupabaseClient? client}) : _client = client ?? SupabaseService.client;
 
-  Future<List<TableModel>> getTables() async {
+  Future<List<TableModel>> getTables({DateTime? reservationDate}) async {
     try {
       final rows = await _client.from('restaurant_tables').select('*').order('table_number');
-      final reservedNumbers = await _reservationsRepository.getTableNumbersReservedToday();
-      final activeOrders = await _client.from('orders').select('id,table_id,status').inFilter('status', ['pending','confirmed','preparing','ready','out_for_delivery']);
+      final reservationStates = await _getReservationTableStates(reservationDate ?? DateTime.now());
+      final arrivedTableIds = reservationStates.arrived;
+      final reservedTableIds = reservationStates.reserved;
+      final activeOrders = await _client.from('orders').select('id,table_id,status')
+          .eq('order_type', 'dine_in')
+          .inFilter('status', ['pending','confirmed','preparing','ready']);
       final orderByTable = <String, String>{};
       for (final order in activeOrders) {
         final tableId = order['table_id']?.toString();
@@ -23,10 +23,10 @@ class TablesRepository {
       }
       return rows.map((row) {
         final map = Map<String, dynamic>.from(row);
-        final number = (map['table_number'] ?? '').toString();
+        final tableId = map['id'].toString();
         final activeOrderId = orderByTable[map['id'].toString()];
-        final occupied = (map['is_occupied'] as bool? ?? false) || activeOrderId != null;
-        map['status'] = occupied ? 'occupied' : (reservedNumbers.contains(number) ? 'reserved' : 'free');
+        final occupied = (map['is_occupied'] as bool? ?? false) || activeOrderId != null || arrivedTableIds.contains(tableId);
+        map['status'] = occupied ? 'occupied' : (reservedTableIds.contains(tableId) ? 'reserved' : 'free');
         map['current_order_id'] = activeOrderId;
         return TableModel.fromJson(map);
       }).toList();
@@ -34,6 +34,29 @@ class TablesRepository {
       LoggerService.error('Fetch tables failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'دریافت میزها'));
     }
+  }
+
+  Future<({Set<String> reserved, Set<String> arrived})> _getReservationTableStates(DateTime date) async {
+    final dateValue = date.toIso8601String().substring(0, 10);
+    final rows = await _client
+        .from('reservations')
+        .select('table_id,status,order_id')
+        .eq('reservation_date', dateValue)
+        .inFilter('status', ['pending', 'confirmed', 'delayed', 'arrived']);
+    final reserved = <String>{};
+    final arrived = <String>{};
+    for (final row in rows) {
+      final tableId = row['table_id']?.toString();
+      if (tableId == null || tableId.isEmpty) continue;
+      if (row['status'] == 'arrived') {
+        // The active linked order owns occupancy after conversion.
+        // Once that order is completed/cancelled, the table can be released.
+        if (row['order_id'] == null) arrived.add(tableId);
+      } else {
+        reserved.add(tableId);
+      }
+    }
+    return (reserved: reserved, arrived: arrived);
   }
 
   Future<TableModel> createTable({required int tableNumber, required int capacity, bool isActive = true}) async {

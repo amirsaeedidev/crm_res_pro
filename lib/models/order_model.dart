@@ -11,6 +11,7 @@ class OrderModel {
   final double discountAmount;
   final String? discountCode;
   final int? tableNumber;
+  final String? tableId;
   final int? dailyQueueNumber;
   final int? estimatedReadyMinutes;
   final String? adminNote;
@@ -22,7 +23,7 @@ class OrderModel {
   const OrderModel({required this.id, required this.userId, required this.customerName,
     required this.customerPhone, required this.orderType, required this.status,
     required this.totalAmount, this.subtotalAmount = 0, this.discountAmount = 0, this.discountCode,
-    this.tableNumber, this.dailyQueueNumber, this.assignedStaffId, this.estimatedReadyMinutes, this.adminNote, this.completedAt,
+    this.tableNumber, this.tableId, this.dailyQueueNumber, this.assignedStaffId, this.estimatedReadyMinutes, this.adminNote, this.completedAt,
     required this.createdAt, this.updatedAt, required this.items});
 
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
@@ -35,6 +36,7 @@ class OrderModel {
     discountAmount: (json['discount_amount'] as num? ?? 0).toDouble(),
     discountCode: json['discount_code']?.toString(),
     tableNumber: (json['table_number'] as num?)?.toInt(),
+    tableId: json['table_id']?.toString(),
     dailyQueueNumber: (json['daily_queue_number'] as num?)?.toInt(),
     estimatedReadyMinutes: (json['estimated_ready_minutes'] as num?)?.toInt(), adminNote: json['admin_note'] as String?,
     completedAt: DateTime.tryParse((json['completed_at'] ?? '').toString()),
@@ -46,13 +48,13 @@ class OrderModel {
   OrderModel copyWith({String? id, String? userId, String? customerName, String? customerPhone,
     String? orderType, String? status, String? assignedStaffId, double? totalAmount, int? estimatedReadyMinutes,
     String? adminNote, DateTime? completedAt, DateTime? createdAt, DateTime? updatedAt, List<OrderItem>? items,
-    double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, int? dailyQueueNumber}) => OrderModel(
+    double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, String? tableId, int? dailyQueueNumber}) => OrderModel(
       id: id ?? this.id, userId: userId ?? this.userId, customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone, orderType: orderType ?? this.orderType,
       status: status ?? this.status, assignedStaffId: assignedStaffId ?? this.assignedStaffId, totalAmount: totalAmount ?? this.totalAmount,
       subtotalAmount: subtotalAmount ?? this.subtotalAmount, discountAmount: discountAmount ?? this.discountAmount,
       discountCode: discountCode ?? this.discountCode, tableNumber: tableNumber ?? this.tableNumber,
-      dailyQueueNumber: dailyQueueNumber ?? this.dailyQueueNumber,
+      tableId: tableId ?? this.tableId, dailyQueueNumber: dailyQueueNumber ?? this.dailyQueueNumber,
       estimatedReadyMinutes: estimatedReadyMinutes ?? this.estimatedReadyMinutes, adminNote: adminNote ?? this.adminNote,
       completedAt: completedAt ?? this.completedAt, createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt, items: items ?? this.items);
@@ -70,6 +72,7 @@ class OrderModel {
     'discount_amount': discountAmount,
     'discount_code': discountCode,
     'table_number': tableNumber,
+    'table_id': tableId,
     'daily_queue_number': dailyQueueNumber,
     'estimated_ready_minutes': estimatedReadyMinutes,
     'admin_note': adminNote,

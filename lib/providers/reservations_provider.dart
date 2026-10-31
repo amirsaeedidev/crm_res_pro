@@ -17,7 +17,9 @@ class ReservationsProvider extends ChangeNotifier {
   int _totalPages = 1;
   String _searchQuery = '';
   String _statusFilter = 'all'; // 'all', 'pending', 'confirmed', etc.
-  final int _pageSize = 15;
+  String? _dateFrom;
+  String? _dateTo;
+  final int _pageSize = 1000;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -28,6 +30,8 @@ class ReservationsProvider extends ChangeNotifier {
   int get totalPages => _totalPages;
   String get searchQuery => _searchQuery;
   String get statusFilter => _statusFilter;
+  String? get dateFrom => _dateFrom;
+  String? get dateTo => _dateTo;
 
   Future<void> fetchReservations() async {
     _isLoading = true;
@@ -40,6 +44,8 @@ class ReservationsProvider extends ChangeNotifier {
         pageSize: _pageSize,
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
         status: _statusFilter == 'all' ? null : _statusFilter,
+        dateFrom: _dateFrom,
+        dateTo: _dateTo,
       );
       
       _totalPages = _reservations.length == _pageSize ? _currentPage + 1 : _currentPage;
@@ -51,6 +57,13 @@ class ReservationsProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> setDateRange({required DateTime from, required DateTime to}) async {
+    _dateFrom = from.toIso8601String().substring(0, 10);
+    _dateTo = to.toIso8601String().substring(0, 10);
+    _currentPage = 1;
+    await fetchReservations();
   }
 
   Future<void> setSearchQuery(String query) async {
@@ -71,13 +84,19 @@ class ReservationsProvider extends ChangeNotifier {
     await fetchReservations();
   }
 
-  Future<bool> updateReservationStatus(String id, String newStatus) async {
+  Future<bool> updateReservationStatus(
+    String id,
+    String newStatus, {
+    int? delayMinutes,
+    String? note,
+  }) async {
     _isUpdating = true;
+    _error = null;
     notifyListeners();
-
     try {
-      await _repository.updateReservationStatus(id, newStatus);
-      
+      await _repository.updateReservationStatus(
+        id, newStatus, delayMinutes: delayMinutes, note: note,
+      );
       await fetchReservations();
       return true;
     } catch (e, st) {
@@ -89,6 +108,27 @@ class ReservationsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<String?> convertReservationToOrder(String reservationId) async {
+    _isUpdating = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final orderId = await _repository.convertReservationToOrder(reservationId);
+      await fetchReservations();
+      return orderId;
+    } catch (e, st) {
+      LoggerService.error('Convert reservation to order failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e);
+      return null;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<ReservationStatusHistoryModel>> getReservationStatusHistory(String id) =>
+      _repository.getReservationStatusHistory(id);
 
   Future<bool> createReservation({required String userId, required String tableId, required int guestCount, required DateTime date, required String time, String? note}) async {
     _isUpdating = true; _error = null; notifyListeners();

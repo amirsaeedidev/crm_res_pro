@@ -19,6 +19,7 @@ import '../features/customers/screens/customer_details_screen.dart';
 import '../features/orders/screens/orders_list_screen.dart';
 import '../features/orders/screens/order_details_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
+import '../features/reports/screens/expenses_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../features/reservations/screens/reservations_list_screen.dart';
 import '../features/tables/screens/tables_grid_screen.dart';
@@ -64,6 +65,7 @@ class AppRouter {
           GoRoute(path: AppRoutes.reservations, name: AppRoutes.reservations, pageBuilder: (context, state) => const NoTransitionPage(child: ReservationsListScreen())),
           GoRoute(path: AppRoutes.tables, name: AppRoutes.tables, pageBuilder: (context, state) => const NoTransitionPage(child: TablesGridScreen())),
           GoRoute(path: AppRoutes.reports, name: AppRoutes.reports, pageBuilder: (context, state) => const NoTransitionPage(child: ReportsScreen())),
+          GoRoute(path: '/expenses', name: 'expenses', pageBuilder: (context, state) => const NoTransitionPage(child: ExpensesScreen())),
           GoRoute(path: AppRoutes.settings, name: AppRoutes.settings, pageBuilder: (context, state) => const NoTransitionPage(child: SettingsScreen())),
           GoRoute(path: AppRoutes.tickets, name: AppRoutes.tickets, pageBuilder: (context, state) => const NoTransitionPage(child: TicketsListScreen())),
           GoRoute(path: AppRoutes.files, name: AppRoutes.files, pageBuilder: (context, state) => const NoTransitionPage(child: FileManagerScreen())),
