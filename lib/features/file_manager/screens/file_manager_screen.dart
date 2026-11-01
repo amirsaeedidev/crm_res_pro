@@ -5,9 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/services/supabase_service.dart';
-import '../../../core/services/upload_service.dart';
 import '../../../core/utils/app_error_message.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../shared/dialogs/delete_dialog.dart';
 
@@ -20,11 +18,9 @@ class FileManagerScreen extends StatefulWidget {
 
 class _FileManagerScreenState extends State<FileManagerScreen> {
   static const _buckets = <String>['products', 'categories', 'banners'];
-  String _selectedBucket = 'products';
   String _bucketFilter = 'all';
   final TextEditingController _searchController = TextEditingController();
   String _fileTypeFilter = 'all';
-  bool _isUploading = false;
   bool _isLoading = false;
   String? _error;
   List<Map<String, dynamic>> _files = [];
@@ -133,38 +129,26 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     return '${_persianDigits((bytes / (1024 * 1024)).toStringAsFixed(1))} مگابایت';
   }
 
-  Future<void> _pickAndUploadFile() async {
-    final file = await UploadService.pickFile();
-    if (file == null || !mounted) return;
-    final extension = file.name.contains('.') ? file.name.split('.').last.toLowerCase() : '';
-    if (!const {'png','jpg','jpeg','webp','gif','avif'}.contains(extension)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('برای باکت‌های عمومی فقط فایل تصویری مجاز است.')));
-      return;
-    }
-    setState(() => _isUploading = true);
-    try {
-      final url = await UploadService.uploadFile(
-        file: file,
-        folderName: 'uploads',
-        bucketName: _selectedBucket,
-      );
-      if (url.isEmpty) throw Exception('بارگذاری تصویر انجام نشد؛ دسترسی بارگذاری فایل را بررسی کنید.');
-      await _loadFiles();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تصویر با موفقیت ذخیره شد.')));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'بارگذاری تصویر ناموفق بود. دوباره تلاش کنید.'))));
-    } finally {
-      if (mounted) setState(() => _isUploading = false);
-    }
-  }
-
   Future<void> _deleteFile(Map<String, dynamic> file) async {
     try {
       await SupabaseService.storage.from(file['bucket'] as String).remove([file['path'] as String]);
       if (!mounted) return;
       await _loadFiles();
       if (!mounted || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فایل با موفقیت حذف شد.')));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(child: Text('فایل با موفقیت حذف شد.')),
+              ],
+            ),
+          ),
+        );
     } on StorageException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMessage.from(e, fallback: 'حذف فایل ناموفق بود. لطفاً دوباره تلاش کنید.'))));
     } catch (e) {
@@ -193,31 +177,6 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           color: AppColors.getPrimaryText(context),
           fontWeight: FontWeight.bold,
         ),
-      ),
-      const SizedBox(height: AppSizes.md),
-      Wrap(
-        spacing: AppSizes.sm,
-        runSpacing: AppSizes.sm,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          SizedBox(
-            width: 220,
-            child: DropdownButtonFormField<String>(
-              initialValue: _selectedBucket,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'محل آپلود'),
-              items: _buckets.map((b) => DropdownMenuItem(value: b, child: Text(_bucketLabel(b)))).toList(),
-              onChanged: (value) { if (value != null) setState(() => _selectedBucket = value); },
-            ),
-          ),
-          AppButton(
-            label: _isUploading ? 'در حال آپلود...' : 'آپلود تصاویر',
-            icon: Icons.cloud_upload_outlined,
-            isLoading: _isUploading,
-            onPressed: _isUploading ? null : _pickAndUploadFile,
-            width: 170,
-          ),
-        ],
       ),
       const SizedBox(height: AppSizes.md),
       AppCard(
@@ -283,8 +242,6 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                 ],
               );
             }),
-            const SizedBox(height: AppSizes.xs),
-            Text('برای آپلود، محل ذخیره را از بالای صفحه انتخاب کنید.', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),
