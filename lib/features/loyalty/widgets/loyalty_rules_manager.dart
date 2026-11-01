@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/services/supabase_service.dart';
 class LoyaltyRulesManager extends StatefulWidget {
  const LoyaltyRulesManager({super.key});
@@ -21,11 +22,11 @@ class _LoyaltyRulesManagerState extends State<LoyaltyRulesManager>{
  Future<void> _expire() async {final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('اجرای انقضای امتیازها'),content:const Text('امتیازهای کسب‌شده‌ای که تاریخ انقضایشان گذشته، از موجودی کیف امتیاز کسر و در گردش امتیاز ثبت می‌شوند. ادامه می‌دهید؟'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('انصراف')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('اجرای انقضا'))]));if(ok!=true)return;try{final n=await _client.rpc('admin_expire_loyalty_points');_notify('تعداد $n امتیاز منقضی شد.');}catch(e){_notify('اجرای انقضا ناموفق بود: $e',true);}}
  Widget _field(String label,TextEditingController c,{String suffix=''})=>TextFormField(controller:c,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:InputDecoration(labelText:label,suffixText:suffix,border:const OutlineInputBorder()));
  @override Widget build(BuildContext context){if(_loading)return const Card(child:Padding(padding:EdgeInsets.all(16),child:LinearProgressIndicator()));return Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
- Row(children:[const Icon(Icons.loyalty_outlined),const SizedBox(width:8),Expanded(child:Text('قوانین باشگاه مشتریان',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.bold))),Switch(value:_enabled,onChanged:(v)=>setState(()=>_enabled=v))]),
+ Row(children:[const HugeIcon(icon: HugeIcons.strokeRoundedTicket01),const SizedBox(width:8),Expanded(child:Text('قوانین باشگاه مشتریان',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.bold))),Switch(value:_enabled,onChanged:(v)=>setState(()=>_enabled=v))]),
  Text('تنظیم نحوه کسب، ارزش، انقضا و تبدیل امتیاز به تخفیف. همه مبالغ به تومان هستند.',style:Theme.of(context).textTheme.bodySmall),const SizedBox(height:12),
  LayoutBuilder(builder:(context,box){final width=box.maxWidth;final columns=width>700?3:width>420?2:1;return GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisCount:columns,childAspectRatio:width>420?3.5:4.2,crossAxisSpacing:10,mainAxisSpacing:10,children:[
  _field('به‌ازای هر مبلغ خرید',_earnAmount,suffix:'تومان'),_field('امتیاز کسب‌شده',_earnPoints,suffix:'امتیاز'),_field('ارزش هر امتیاز',_pointValue,suffix:'تومان'),_field('حداقل امتیاز قابل تبدیل',_minimum,suffix:'امتیاز'),_field('سقف تخفیف سفارش',_maxPercent,suffix:'درصد'),_field('مدت اعتبار امتیاز',_expiryDays,suffix:'روز')]);}),
- const SizedBox(height:12),Wrap(spacing:8,runSpacing:8,children:[FilledButton.icon(onPressed:_saving?null:_save,icon:const Icon(Icons.save_outlined),label:Text(_saving?'در حال ذخیره':'ذخیره قوانین')),OutlinedButton.icon(onPressed:_expire,icon:const Icon(Icons.hourglass_disabled),label:const Text('اجرای انقضای امتیازها'))]),
+ const SizedBox(height:12),Wrap(spacing:8,runSpacing:8,children:[FilledButton.icon(onPressed:_saving?null:_save,icon:const HugeIcon(icon: HugeIcons.strokeRoundedFloppyDisk),label:Text(_saving?'در حال ذخیره':'ذخیره قوانین')),OutlinedButton.icon(onPressed:_expire,icon:const HugeIcon(icon: HugeIcons.strokeRoundedHourglass),label:const Text('اجرای انقضای امتیازها'))]),
  const SizedBox(height:6),const Text('اجرای انقضا در این نسخه دستی است. تبدیل امتیاز در پنل فقط مبلغ تخفیف را محاسبه می‌کند؛ کسر قطعی امتیاز باید هنگام ثبت سفارش در اپ مشتریان به‌صورت اتمیک متصل شود.',style:TextStyle(fontSize:11,color:Colors.grey))
  ])));}
 }
