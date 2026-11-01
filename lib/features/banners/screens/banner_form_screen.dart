@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/upload_service.dart';
@@ -138,7 +139,7 @@ class _BannerFormScreenState extends State<BannerFormScreen> {
     final url = logo ? _logoUrl : _imageUrl;
     final selected = logo ? _logo : _image;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      OutlinedButton.icon(onPressed: _saving ? null : () => _pickImage(logo: logo), icon: Icon(logo ? Icons.verified_outlined : Icons.image_outlined), label: Text(selected?.name ?? (logo ? (url?.isNotEmpty == true ? 'لوگوی فعلی موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب لوگوی بنر (اختیاری)') : (url?.isNotEmpty == true ? 'تصویر بنر موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب تصویر اصلی بنر')))),
+      OutlinedButton.icon(onPressed: _saving ? null : () => _pickImage(logo: logo), icon: HugeIcon(icon: logo ? HugeIcons.strokeRoundedCheckmarkBadge01 : HugeIcons.strokeRoundedImage01), label: Text(selected?.name ?? (logo ? (url?.isNotEmpty == true ? 'لوگوی فعلی موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب لوگوی بنر (اختیاری)') : (url?.isNotEmpty == true ? 'تصویر بنر موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب تصویر اصلی بنر')))),
       if (bytes != null) Padding(padding: const EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerRight, child: Image.memory(bytes, height: logo ? 110 : 190, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.'))))
       else if (url?.isNotEmpty == true) Padding(padding: const EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerRight, child: Image.network(url!, height: logo ? 90 : 170, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر قبلی قابل نمایش نیست.')))),
     ]);
@@ -168,7 +169,7 @@ class _BannerFormScreenState extends State<BannerFormScreen> {
       const SizedBox(height: 12),
       SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('فعال برای نمایش در اپ رستوران')),
       const SizedBox(height: 20),
-      FilledButton.icon(onPressed: _saving ? null : _submit, icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_outlined), label: Text(_saving ? 'در حال ذخیره…' : 'ذخیره بنر')),
+      FilledButton.icon(onPressed: _saving ? null : _submit, icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const HugeIcon(icon: HugeIcons.strokeRoundedFloppyDisk), label: Text(_saving ? 'در حال ذخیره…' : 'ذخیره بنر')),
     ])))),
   );
 }
