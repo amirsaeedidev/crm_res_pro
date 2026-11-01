@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/supabase_service.dart';
@@ -342,12 +343,12 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
               Wrap(spacing: 8, runSpacing: 8, children: [
                 FilledButton.icon(
                   onPressed: _busy ? null : _pickAndImport,
-                  icon: _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.upload_file),
+                  icon: _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const HugeIcon(icon: HugeIcons.strokeRoundedFileUpload),
                   label: Text(_busy ? 'در حال پردازش…' : 'انتخاب و ایمپورت اکسل'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _downloadTemplate,
-                  icon: const Icon(Icons.download_outlined),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01),
                   label: const Text('دریافت قالب اکسل'),
                 ),
               ]),
@@ -364,7 +365,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
         const SizedBox(height: 16),
         Row(children: [
           Expanded(child: Text('فایل‌های ایمپورت‌شده', style: Theme.of(context).textTheme.titleLarge)),
-          IconButton(onPressed: _loadBatches, tooltip: 'تازه‌سازی', icon: const Icon(Icons.refresh)),
+          IconButton(onPressed: _loadBatches, tooltip: 'تازه‌سازی', icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh)),
         ]),
         if (_batches.isEmpty)
           const Card(child: Padding(padding: EdgeInsets.all(20), child: Text('هنوز فایلی ثبت نشده است.')))
@@ -380,13 +381,13 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
             final details = '${batch['import_type'] == 'materials' ? 'مواد اولیه' : 'دستور غذا'} · $status · موفق ${batch['rows_success'] ?? 0} / ناموفق ${batch['rows_failed'] ?? 0} · ${date == null ? '' : '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}'}';
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.description_outlined),
+                leading: const HugeIcon(icon: HugeIcons.strokeRoundedFile02),
                 title: Text((batch['file_name'] ?? 'فایل اکسل').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text(details),
                 trailing: Wrap(children: [
                   IconButton(tooltip: 'دانلود مجدد فایل', onPressed: () => _downloadArchivedFile(batch), icon: const Icon(Icons.download_outlined)),
-                  IconButton(tooltip: 'مشاهده جزئیات خطاها', onPressed: () => _showBatchDetails(batch), icon: const Icon(Icons.info_outline)),
-                  IconButton(tooltip: 'حذف فایل و سابقه', onPressed: () => _deleteBatch(batch), icon: const Icon(Icons.delete_outline, color: Colors.red)),
+                  IconButton(tooltip: 'مشاهده جزئیات خطاها', onPressed: () => _showBatchDetails(batch), icon: const HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle)),
+                  IconButton(tooltip: 'حذف فایل و سابقه', onPressed: () => _deleteBatch(batch), icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.red)),
                 ]),
               ),
             );
