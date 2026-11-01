@@ -39,6 +39,13 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     return result;
   }
 
+  String _formatThousands(Object? value) {
+    final raw = value?.toString() ?? '0';
+    final integer = raw.split('.').first.replaceAll(',', '');
+    final grouped = integer.replaceAllMapped(RegExp(r'\\B(?=(\\d{3})+(?!\\d))'), (_) => ',');
+    return _persianDigits(grouped);
+  }
+
   String _formatDate(DateTime value) => _persianDigits(
         _dateFormatter.format(value),
       );
@@ -243,7 +250,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           Expanded(
             flex: 1,
             child: Text(
-              discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان',
+              discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_formatThousands(discount.value)} تومان',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
