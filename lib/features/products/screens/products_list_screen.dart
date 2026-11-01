@@ -3,6 +3,7 @@ import 'package:crm_panel/core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -235,7 +236,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                         )),
                       ),
                       errorWidget: (_, _, _) =>
-                          const Icon(Icons.broken_image, size: 40),
+                          const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 40),
                     ),
                   )
                 else
@@ -246,7 +247,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                       color: AppColors.getBackground(context),
                       borderRadius: BorderRadius.circular(AppRadius.small),
                     ),
-                    child: Icon(Icons.image_outlined, color: AppColors.getSecondaryText(context)),
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedImage01, color: AppColors.getSecondaryText(context)),
                   ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
@@ -297,7 +298,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             flex: 1,
             child: Row(
               children: [
-                Icon(Icons.star, size: 16, color: Colors.amber[700]),
+                HugeIcon(icon: HugeIcons.strokeRoundedStar, size: 16, color: Colors.amber[700]),
                 const SizedBox(width: 4),
                 Text(
                   product.rating != null 
@@ -321,19 +322,19 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.visibility_outlined, color: AppColors.info),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedView, color: AppColors.info),
                   onPressed: () {
                     context.push('/products/details/${product.id}');
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                   onPressed: () {
                     context.push('/products/edit/${product.id}');
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: AppColors.error),
                   onPressed: () {
                     DeleteDialog.show(
                       context: context,
@@ -384,7 +385,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                           )),
                         ),
                         errorWidget: (_, _, _) =>
-                            const Icon(Icons.broken_image, size: 60),
+                            const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 60),
                       ),
                     )
                   else
@@ -427,7 +428,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                         const SizedBox(height: AppSizes.xs),
                         Row(
                           children: [
-                            Icon(Icons.star, size: 14, color: Colors.amber[700]),
+                            HugeIcon(icon: HugeIcons.strokeRoundedStar, size: 14, color: Colors.amber[700]),
                             const SizedBox(width: 4),
                             Text(
                               product.rating != null 
