@@ -232,14 +232,6 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedActivity01,
-                  label: 'ثبت فعالیت‌ها',
-                  isActive: navProvider.selectedIndex == 18,
-                  onTap: () { navProvider.updateIndex(18); if (drawerMode) Navigator.of(context).pop();
-                    context.push(AppRoutes.activityLogs); },
-                ),
-                NavigationItem(
-                  forceWhite: drawerMode,
                   icon: HugeIcons.strokeRoundedSettings01,
                   label: AppStrings.settings,
                   isActive: navProvider.selectedIndex == 6,
@@ -248,6 +240,14 @@ class AppSidebar extends StatelessWidget {
                     if (drawerMode) Navigator.of(context).pop();
                     context.push(AppRoutes.settings);
                   },
+                ),
+                NavigationItem(
+                  forceWhite: drawerMode,
+                  icon: HugeIcons.strokeRoundedActivity01,
+                  label: 'ثبت فعالیت‌ها',
+                  isActive: navProvider.selectedIndex == 18,
+                  onTap: () { navProvider.updateIndex(18); if (drawerMode) Navigator.of(context).pop();
+                    context.push(AppRoutes.activityLogs); },
                 ),
               ],
             ),
