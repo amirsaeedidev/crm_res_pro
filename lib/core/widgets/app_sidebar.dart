@@ -94,7 +94,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedServingFood,
+                  icon: HugeIcons.strokeRoundedChefHat,
                   label: AppStrings.products,
                   isActive: navProvider.selectedIndex == 2,
                   onTap: () {
