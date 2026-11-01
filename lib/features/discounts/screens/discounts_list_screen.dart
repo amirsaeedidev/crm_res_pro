@@ -42,7 +42,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
   String _formatThousands(Object? value) {
     final raw = value?.toString() ?? '0';
     final integer = raw.split('.').first.replaceAll(',', '');
-    final grouped = integer.replaceAllMapped(RegExp(r'\\B(?=(\\d{3})+(?!\\d))'), (_) => ',');
+    final grouped = integer.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
     return _persianDigits(grouped);
   }
 
