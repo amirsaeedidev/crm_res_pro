@@ -327,7 +327,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
               _buildMobileRow(
                 context,
                 const HugeIcon(icon: HugeIcons.strokeRoundedFilter, size: 16),
-                'مقدار: ${discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان'}',
+                'مقدار: ${discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_formatThousands(discount.value)} تومان'}',
               ),
               _buildMobileRow(context, const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, size: 16), 'پایان: ${_formatDate(discount.endDate)}'),
               const SizedBox(height: AppSizes.md),
