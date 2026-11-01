@@ -408,7 +408,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             ),
                           ),
                         ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -428,12 +430,17 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ),
                     ),
                     const SizedBox(height: AppSizes.lg),
-                    Wrap(
-                      spacing: AppSizes.md,
-                      runSpacing: AppSizes.md,
-                      children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fieldWidth = constraints.maxWidth < 600
+                            ? constraints.maxWidth
+                            : 320.0;
+                        return Wrap(
+                          spacing: AppSizes.md,
+                          runSpacing: AppSizes.md,
+                          children: [
                         SizedBox(
-                          width: 250,
+                          width: fieldWidth,
                           child: AppTextField(
                             controller: _minPurchaseController,
                             labelText: 'حداقل مبلغ خرید (تومان)',
@@ -445,7 +452,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ),
                         ),
                         SizedBox(
-                          width: 250,
+                          width: fieldWidth,
                           child: AppTextField(
                             controller: _maxDiscountController,
                             labelText: 'حداکثر مبلغ تخفیف (تومان)',
@@ -454,15 +461,22 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             validator: (value) => _validatePositiveNumber(value),
                           ),
                         ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: AppSizes.md),
-                    Wrap(
-                      spacing: AppSizes.md,
-                      runSpacing: AppSizes.md,
-                      children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fieldWidth = constraints.maxWidth < 600
+                            ? constraints.maxWidth
+                            : 320.0;
+                        return Wrap(
+                          spacing: AppSizes.md,
+                          runSpacing: AppSizes.md,
+                          children: [
                         SizedBox(
-                          width: 250,
+                          width: fieldWidth,
                           child: AppTextField(
                             controller: _totalUsageController,
                             labelText: 'سقف کل استفاده',
