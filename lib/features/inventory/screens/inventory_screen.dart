@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_sizes.dart';
@@ -979,7 +980,7 @@ class _InventoryScreenState extends State<InventoryScreen>
               IconButton(
                 tooltip: 'همگام‌سازی',
                 onPressed: _loadData,
-                icon: const Icon(Icons.refresh),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
               ),
             ],
           ),
@@ -1003,19 +1004,19 @@ class _InventoryScreenState extends State<InventoryScreen>
                   isScrollable: true,
                   tabs: const [
                     Tab(
-                      icon: Icon(Icons.inventory_2_outlined),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedPackage),
                       text: 'مواد اولیه',
                     ),
                     Tab(
-                      icon: Icon(Icons.restaurant_menu),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedRestaurant01),
                       text: 'دستور مصرف غذا',
                     ),
-                    Tab(icon: Icon(Icons.history), text: 'گردش انبار'),
-                    Tab(icon: Icon(Icons.upload_file_outlined), text: 'ایمپورت اکسل'),
-                    Tab(icon: Icon(Icons.local_shipping_outlined), text: 'تامین‌کنندگان و خرید'),
-                    Tab(icon: Icon(Icons.fact_check_outlined), text: 'شمارش دوره‌ای'),
-                    Tab(icon: Icon(Icons.notifications_active_outlined), text: 'هشدار موجودی'),
-                    Tab(icon: Icon(Icons.analytics_outlined), text: 'گزارش هر ماده'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedHistory), text: 'گردش انبار'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedFileUpload), text: 'ایمپورت اکسل'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedTruck), text: 'تامین‌کنندگان و خرید'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedClipboardCheck), text: 'شمارش دوره‌ای'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedAlert02), text: 'هشدار موجودی'),
+                    Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedChartLineData01), text: 'گزارش هر ماده'),
                   ],
                 ),
                 Expanded(
@@ -1065,7 +1066,7 @@ class _InventoryScreenState extends State<InventoryScreen>
               const Spacer(),
               FilledButton.icon(
                 onPressed: () => _editMaterial(),
-                icon: const Icon(Icons.add),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01),
                 label: const Text('افزودن ماده'),
               ),
             ],
@@ -1080,11 +1081,11 @@ class _InventoryScreenState extends State<InventoryScreen>
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'جست‌وجوی نام ماده یا کد انبار',
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
                   suffixIcon: query.isEmpty ? null : IconButton(
                     tooltip: 'پاک‌کردن جست‌وجو',
                     onPressed: () { _materialSearchController.clear(); setState(() {}); },
-                    icon: const Icon(Icons.close),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                   ),
                   border: const OutlineInputBorder(),
                   isDense: true,
@@ -1098,7 +1099,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                 children: [
                   FilterChip(
                     selected: _showLowStockOnly,
-                    avatar: const Icon(Icons.warning_amber_rounded, size: 18),
+                    avatar: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 18),
                     label: const Text('فقط مواد کم‌موجود'),
                     onSelected: (value) => setState(() => _showLowStockOnly = value),
                   ),
@@ -1377,7 +1378,7 @@ class _InventoryScreenState extends State<InventoryScreen>
 
                     return Card(
                       child: ListTile(
-                        leading: const Icon(Icons.restaurant_menu),
+                        leading: const HugeIcon(icon: HugeIcons.strokeRoundedRestaurant01),
                         title: Text(
                           '${product?['name'] ?? 'غذای حذف‌شده'} ← ${material?['name'] ?? 'ماده حذف‌شده'}',
                         ),
@@ -1445,7 +1446,7 @@ class _InventoryScreenState extends State<InventoryScreen>
 
         return ListTile(
           leading: Icon(
-            delta < 0 ? Icons.south_west : Icons.north_east,
+            delta < 0 ? HugeIcons.strokeRoundedArrowDownLeft01 : HugeIcons.strokeRoundedArrowUpRight01,
             color: delta < 0 ? Colors.red : Colors.green,
           ),
           title: Text('${material?['name'] ?? 'ماده'} · $type'),
