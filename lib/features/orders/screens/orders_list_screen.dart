@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -192,10 +193,15 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
             ('all', 'همه سفارش‌ها'), ('pending', 'در انتظار'), ('confirmed', 'تأییدشده'),
             ('preparing', 'در حال آماده‌سازی'), ('ready', 'آماده'), ('out_for_delivery', 'در حال ارسال'),
             ('completed', 'تکمیل‌شده'), ('cancelled', 'لغوشده'),
-          ].map((item) => ChoiceChip(
-            label: Text(item.$2), selected: context.watch<OrdersProvider>().statusFilter == item.$1,
-            onSelected: (_) => context.read<OrdersProvider>().setStatusFilter(item.$1),
-          )).toList()),
+          ].map((item) {
+            final selected = context.watch<OrdersProvider>().statusFilter == item.$1;
+            final color = item.$1 == 'pending' ? AppColors.warning : (item.$1 == 'confirmed' || item.$1 == 'preparing' ? AppColors.info : (item.$1 == 'ready' || item.$1 == 'out_for_delivery' ? AppColors.primary : (item.$1 == 'completed' ? AppColors.success : (item.$1 == 'cancelled' ? AppColors.error : AppColors.getSecondaryText(context)))));
+            return ChoiceChip(label: Text(item.$2), selected: selected,
+              onSelected: (_) => context.read<OrdersProvider>().setStatusFilter(item.$1),
+              backgroundColor: color.withValues(alpha: 0.07), selectedColor: color,
+              side: BorderSide(color: color), labelStyle: TextStyle(color: selected ? Colors.white : color, fontWeight: FontWeight.w600),
+              shape: const StadiumBorder(), showCheckmark: false);
+          }).toList()),
           const SizedBox(height: AppSizes.sm),
 
           // Search Bar
