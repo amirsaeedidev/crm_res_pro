@@ -29,7 +29,10 @@ class AppSidebar extends StatelessWidget {
         : 'مدیر';
     final displayEmail = user?.email ?? '—';
 
-    return Container(
+    return SafeArea(
+      top: drawerMode,
+      bottom: drawerMode,
+      child: Container(
       width: AppSizes.sidebarWidth,
       color: drawerMode
           ? (Theme.of(context).brightness == Brightness.dark
@@ -91,7 +94,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedPackage,
+                  icon: HugeIcons.strokeSharpServingFood,
                   label: AppStrings.products,
                   isActive: navProvider.selectedIndex == 2,
                   onTap: () {
@@ -113,7 +116,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedGrid,
+                  icon: HugeIcons.strokeRoundedAiSwap,
                   label: AppStrings.categories,
                   isActive: navProvider.selectedIndex == 4,
                   onTap: () {
@@ -124,7 +127,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedPieChart,
+                  icon: HugeIcons.solidStandardChart01,
                   label: AppStrings.reports,
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {
@@ -286,6 +289,7 @@ class AppSidebar extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
