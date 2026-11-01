@@ -126,11 +126,7 @@ class _AppTopbarState extends State<AppTopbar> {
                 const CircleAvatar(
                   radius: 17,
                   backgroundColor: AppColors.primary,
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: AppSizes.iconSm,
-                  ),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.white, size: AppSizes.iconSm),
                 ),
               ],
             ],
@@ -200,7 +196,7 @@ class _AppTopbarState extends State<AppTopbar> {
           color: AppColors.getSecondaryText(context),
         ),
         prefixIcon: Icon(
-          Icons.search,
+          HugeIcons.strokeRoundedSearch01,
           color: AppColors.getSecondaryText(context),
           size: AppSizes.iconSm,
         ),
@@ -271,7 +267,7 @@ class _AppTopbarState extends State<AppTopbar> {
               hintStyle: AppTypography.bodyMedium.copyWith(
                 color: AppColors.getSecondaryText(dialogContext),
               ),
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
               filled: true,
               fillColor: AppColors.getBackground(dialogContext),
               border: OutlineInputBorder(
@@ -534,15 +530,15 @@ class _AppTopbarState extends State<AppTopbar> {
   List<List<dynamic>> _getNotifIcon(NotificationType type) {
     switch (type) {
       case NotificationType.newOrder:
-        return Icons.shopping_cart_checkout;
+        return HugeIcons.strokeRoundedShoppingCart01;
       case NotificationType.newReservation:
-        return Icons.event_seat;
+        return HugeIcons.strokeRoundedCalendarCheckIn01;
       case NotificationType.newCustomer:
-        return Icons.person_add;
+        return HugeIcons.strokeRoundedUserAdd01;
       case NotificationType.newTicket:
-        return Icons.support_agent;
+        return HugeIcons.strokeRoundedHeadset;
       case NotificationType.unknown:
-        return Icons.notifications;
+        return HugeIcons.strokeRoundedNotification01;
     }
   }
 
