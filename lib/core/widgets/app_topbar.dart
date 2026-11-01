@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
@@ -309,11 +310,15 @@ class _AppTopbarState extends State<AppTopbar> {
             maxWidth: popupMaxWidth,
           ),
           position: PopupMenuPosition.under,
-          onSelected: (value) {
+          onSelected: (value) async {
             if (value == 'mark_all_read') {
               widget.onMarkAllNotificationsRead?.call();
+            } else if (value == 'open_notifications') {
+              if (context.mounted) context.push('/notifications');
             } else {
+              await context.read<NotificationsProvider>().markAsRead(value);
               widget.onNotificationSelected?.call(value);
+              if (context.mounted) context.push('/notifications');
             }
           },
           itemBuilder: (context) => _buildNotificationItems(
@@ -331,7 +336,9 @@ class _AppTopbarState extends State<AppTopbar> {
   ) {
     final provider = context.read<NotificationsProvider>();
 
-    if (provider.notifications.isEmpty) {
+    final unreadNotifications = provider.notifications.where((item) => !item.isRead).toList();
+
+    if (unreadNotifications.isEmpty) {
       return [
         PopupMenuItem<String>(
           enabled: false,
@@ -345,7 +352,7 @@ class _AppTopbarState extends State<AppTopbar> {
                 HugeIcon(icon: HugeIcons.strokeRoundedNotificationOff01, size: 36, color: AppColors.getSecondaryText(context)),
                 SizedBox(height: AppSizes.sm),
                 Text(
-                  'اعلان جدیدی وجود ندارد',
+                  'اعلان خوانده‌نشده‌ای وجود ندارد',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.getSecondaryText(context),
@@ -372,7 +379,7 @@ class _AppTopbarState extends State<AppTopbar> {
       const PopupMenuDivider(),
     ];
 
-    for (final notif in provider.notifications.take(5)) {
+    for (final notif in unreadNotifications.take(5)) {
       items.add(
         PopupMenuItem<String>(
           value: notif.id,
@@ -388,6 +395,13 @@ class _AppTopbarState extends State<AppTopbar> {
       );
     }
 
+    items.add(const PopupMenuDivider());
+    items.add(
+      const PopupMenuItem<String>(
+        value: 'open_notifications',
+        child: Center(child: Text('مشاهده همه اعلان‌ها')),
+      ),
+    );
     items.add(const PopupMenuDivider());
 
     items.add(
