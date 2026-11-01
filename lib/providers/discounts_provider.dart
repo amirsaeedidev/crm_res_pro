@@ -15,7 +15,7 @@ class DiscountsProvider extends ChangeNotifier {
   int _currentPage = 1;
   int _totalPages = 1;
   String _searchQuery = '';
-  final int _pageSize = 15;
+  final int _pageSize = 15;\n  int _requestVersion = 0;\n  int _searchVersion = 0;\n  bool _disposed = false;
 
   bool get isLoading => _isLoading;
   bool get isSaving => _isSaving;
@@ -31,12 +31,12 @@ class DiscountsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _discounts = await _repository.getDiscounts(
+      final results = await _repository.getDiscounts(
         page: _currentPage,
         pageSize: _pageSize,
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
       );
-      _totalPages = _discounts.length == _pageSize ? _currentPage + 1 : _currentPage;
+      if (_disposed || requestVersion != _requestVersion) return;\n      _discounts = results;\n      _totalPages = _discounts.length == _pageSize ? _currentPage + 1 : _currentPage;
     } catch (e, st) {
       LoggerService.error('Fetch discounts failed', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e);
@@ -66,7 +66,7 @@ class DiscountsProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createDiscount(Map<String, dynamic> data) async {
+  @override\n  void dispose() {\n    _disposed = true;\n    ++_searchVersion;\n    ++_requestVersion;\n    super.dispose();\n  }\n\n  Future<bool> createDiscount(Map<String, dynamic> data) async {
     _isSaving = true;
     _error = null;
     notifyListeners();
