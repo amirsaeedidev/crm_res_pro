@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
@@ -87,7 +88,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         if (discount != null) {
           _titleController.text = discount.title;
           _codeController.text = discount.code;
-          _valueController.text = discount.value.toString();
+          _valueController.text = discount.type == 'percentage' ? discount.value.toString() : discount.value.toStringAsFixed(0);
           if (discount.type != 'percentage') _valueController.value = _moneyFormatter.formatEditUpdate(const TextEditingValue(), _valueController.value);
           _minPurchaseController.text = discount.minPurchaseAmount?.toString() ?? '';
           _minPurchaseController.value = _moneyFormatter.formatEditUpdate(const TextEditingValue(), _minPurchaseController.value);
@@ -388,7 +389,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                               child: AppTextField(
                                 labelText: 'تاریخ شروع *',
                                 hintText: _startDate == null ? 'انتخاب تاریخ' : _persianDigits(Jalali.fromDateTime(_startDate!).formatCompactDate()),
-                                prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
+                                prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, size: 20),
                               ),
                             ),
                           ),
@@ -495,7 +496,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       controller: _customerSearchController,
                       labelText: 'جست‌وجوی مشتری با شماره یا نام *',
                       hintText: 'شماره موبایل یا نام مشتری را وارد کنید',
-                      prefixIcon: const Icon(Icons.person_search_outlined),
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserSearch),
                       onChanged: _searchCustomers,
                     ),
                     if (_customerSearchLoading)
@@ -518,7 +519,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                               leading: CircleAvatar(radius: 17, child: Text(customer.fullName.isNotEmpty ? customer.fullName[0] : 'م')),
                               title: Text(customer.fullName, maxLines: 1, overflow: TextOverflow.ellipsis),
                               subtitle: Text('تلفن: ${customer.phone ?? 'ثبت نشده'}\nشناسه: ${customer.id}', maxLines: 2, overflow: TextOverflow.ellipsis),
-                              trailing: Icon(selected ? Icons.check_circle : Icons.add_circle_outline, color: selected ? Colors.green : null),
+                              trailing: HugeIcon(icon: selected ? HugeIcons.strokeRoundedCheckmarkCircle02 : HugeIcons.strokeRoundedAdd01, color: selected ? Colors.green : null),
                               onTap: selected ? null : () => _selectCustomer(customer),
                             );
                           },
@@ -534,7 +535,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           spacing: 8,
                           runSpacing: 8,
                           children: _selectedCustomers.values.map((customer) => InputChip(
-                            avatar: const Icon(Icons.person, size: 16),
+                            avatar: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup, size: 16),
                             label: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 210),
                               child: Text('${customer.fullName} • ${customer.phone}', overflow: TextOverflow.ellipsis),
