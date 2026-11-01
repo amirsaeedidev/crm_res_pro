@@ -18,9 +18,9 @@ class CustomersRepository {
     if (page < 1 || pageSize < 1) throw ArgumentError('page and pageSize must be positive');
     try {
       var query = _client.from('profiles').select('id,email,first_name,last_name,phone,avatar_url,role,status,marketing_sms_opt_in,created_at').eq('role', 'customer');
-      final search = searchQuery?.trim();
+      final search = _normalizeSearch(searchQuery);
       if (search != null && search.isNotEmpty) {
-        final safe = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('%', r'\%').replaceAll('_', r'\_');
+        final safe = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('(', r'\(').replaceAll(')', r'\)').replaceAll('%', r'\%').replaceAll('_', r'\_');
         query = query.or('first_name.ilike.%$safe%,last_name.ilike.%$safe%,email.ilike.%$safe%,phone.ilike.%$safe%');
       }
       if (statusFilter != null && statusFilter != 'all') query = query.eq('status', statusFilter);
@@ -33,6 +33,19 @@ class CustomersRepository {
     }
   }
 
+
+  String? _normalizeSearch(String? value) {
+    final raw = value?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    const latin = '0123456789';
+    var result = raw;
+    for (var i = 0; i < 10; i++) {
+      result = result.replaceAll(persian[i], latin[i]).replaceAll(arabic[i], latin[i]);
+    }
+    return result;
+  }
 
   Future<({List<UserModel> customers, int totalCount})> getCustomersWithPurchaseMetrics({
     int page = 1,
