@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../constants/app_colors.dart';
@@ -92,7 +93,7 @@ class _AppTopbarState extends State<AppTopbar> {
                 ),
               ] else ...[
                 _buildActionButton(
-                  icon: Icons.search,
+                  icon: HugeIcons.strokeRoundedSearch01,
                   tooltip: 'جستجو',
                   onPressed: () => _showSearchDialog(context),
                   color: AppColors.getPrimaryText(context),
@@ -107,8 +108,8 @@ class _AppTopbarState extends State<AppTopbar> {
                 builder: (context, themeProvider, child) {
                   return _buildActionButton(
                     icon: themeProvider.isDarkMode
-                        ? Icons.light_mode_outlined
-                        : Icons.dark_mode_outlined,
+                        ? HugeIcons.strokeRoundedSun01
+                        : HugeIcons.strokeRoundedMoon01,
                     tooltip: themeProvider.isDarkMode
                         ? 'حالت روشن'
                         : 'حالت تاریک',
@@ -149,10 +150,7 @@ class _AppTopbarState extends State<AppTopbar> {
         minWidth: 40,
         minHeight: 40,
       ),
-      icon: Icon(
-        Icons.menu,
-        color: AppColors.getPrimaryText(context),
-      ),
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedMenu01, color: AppColors.getPrimaryText(context), size: 23, strokeWidth: 1.8),
     );
   }
 
@@ -169,7 +167,7 @@ class _AppTopbarState extends State<AppTopbar> {
   }
 
   Widget _buildActionButton({
-    required IconData icon,
+    required List<List<dynamic>> icon,
     required String tooltip,
     required VoidCallback onPressed,
     required Color color,
@@ -183,10 +181,7 @@ class _AppTopbarState extends State<AppTopbar> {
         minWidth: 40,
         minHeight: 40,
       ),
-      icon: Icon(
-        icon,
-        color: color,
-      ),
+      icon: HugeIcon(icon: icon, color: color, size: 21, strokeWidth: 1.8),
     );
   }
 
@@ -319,10 +314,7 @@ class _AppTopbarState extends State<AppTopbar> {
               clipBehavior: Clip.none,
               children: [
                 Center(
-                  child: Icon(
-                    Icons.notifications_none,
-                    color: AppColors.getPrimaryText(context),
-                  ),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: AppColors.getPrimaryText(context), size: 22, strokeWidth: 1.8),
                 ),
                 if (unreadCount > 0)
                   Positioned(
@@ -399,11 +391,7 @@ class _AppTopbarState extends State<AppTopbar> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.notifications_off_outlined,
-                  size: 36,
-                  color: AppColors.getSecondaryText(context),
-                ),
+                HugeIcon(icon: HugeIcons.strokeRoundedNotificationOff01, size: 36, color: AppColors.getSecondaryText(context)),
                 SizedBox(height: AppSizes.sm),
                 Text(
                   'اعلان جدیدی وجود ندارد',
@@ -543,7 +531,7 @@ class _AppTopbarState extends State<AppTopbar> {
     );
   }
 
-  IconData _getNotifIcon(NotificationType type) {
+  List<List<dynamic>> _getNotifIcon(NotificationType type) {
     switch (type) {
       case NotificationType.newOrder:
         return Icons.shopping_cart_checkout;
