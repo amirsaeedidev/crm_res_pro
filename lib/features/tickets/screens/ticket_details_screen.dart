@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -119,8 +120,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedAlert02,
                         color: AppColors.error,
                         size: 44,
                       ),
@@ -131,7 +132,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         onPressed: provider.isLoading
                             ? null
                             : () => provider.fetchTicket(widget.ticketId),
-                        icon: const Icon(Icons.refresh),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                         label: const Text('تلاش دوباره'),
                       ),
                     ],
@@ -322,8 +323,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   color: AppColors.primary.withValues(alpha: 0.10),
                                   borderRadius: AppRadius.mediumAll,
                                 ),
-                                child: const Icon(
-                                  Icons.reply_rounded,
+                                child: const HugeIcon(
+                                  icon: HugeIcons.strokeRoundedRepeat,
                                   color: AppColors.primary,
                                 ),
                               ),
@@ -360,7 +361,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               labelText: 'متن پاسخ',
                               hintText: 'پاسخ واضح و کامل خود را بنویسید…',
                               alignLabelWithHint: true,
-                              prefixIcon: Icon(Icons.edit_note_rounded),
+                              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedEdit02),
                             ),
                           ),
                           const SizedBox(height: AppSizes.md),
@@ -376,7 +377,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       height: 18,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.send_rounded),
+                                  : const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
                               label: Text(
                                 provider.isWorking ? 'در حال ارسال…' : 'ارسال پاسخ',
                               ),
@@ -390,7 +391,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.lock_outline, color: AppColors.getSecondaryText(context)),
+                          HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.getSecondaryText(context)),
                           const SizedBox(width: AppSizes.sm),
                           const Expanded(
                             child: Text(
