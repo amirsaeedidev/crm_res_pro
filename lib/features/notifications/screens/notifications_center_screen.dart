@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:hugeicons/hugeicons.dart';
+import '../../../providers/notifications_provider.dart';
 
 import '../../../core/services/supabase_service.dart';
 
@@ -88,6 +91,73 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                   Text(
                     'مخاطبان اعلان و میزان اهمیت آن را مشخص کنید. ثبت اعلان‌ها از طریق تابع امن Supabase انجام می‌شود.',
                     style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 24),
+                  Consumer<NotificationsProvider>(
+                    builder: (context, provider, _) {
+                      final notifications = provider.notifications;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text('صندوق اعلان‌ها',
+                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                  ),
+                                  Text('${notifications.length} اعلان'),
+                                  const SizedBox(width: 8),
+                                  if (provider.unreadCount > 0)
+                                    TextButton(
+                                      onPressed: provider.markAllAsRead,
+                                      child: const Text('خواندن همه'),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (provider.isLoading && notifications.isEmpty)
+                                const Center(child: Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: CircularProgressIndicator(),
+                                ))
+                              else if (notifications.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(child: Text('هنوز اعلانی ثبت نشده است.')),
+                                )
+                              else
+                                ...notifications.map((notification) => ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: HugeIcon(
+                                    icon: switch (notification.type) {
+                                      NotificationType.newOrder => HugeIcons.strokeRoundedShoppingCart01,
+                                      NotificationType.newReservation => HugeIcons.strokeRoundedCalendarCheckIn01,
+                                      NotificationType.newCustomer => HugeIcons.strokeRoundedUserGroup,
+                                      NotificationType.newTicket => HugeIcons.strokeRoundedHeadset,
+                                      NotificationType.unknown => HugeIcons.strokeRoundedNotification01,
+                                    },
+                                    color: notification.isRead
+                                        ? theme.colorScheme.onSurfaceVariant
+                                        : theme.colorScheme.primary,
+                                  ),
+                                  title: Text(notification.title,
+                                    style: TextStyle(fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold)),
+                                  subtitle: Text(notification.description),
+                                  trailing: notification.isRead
+                                      ? const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02)
+                                      : TextButton(
+                                          onPressed: () => provider.markAsRead(notification.id),
+                                          child: const Text('خوانده شد'),
+                                        ),
+                                )),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   Card(
