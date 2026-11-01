@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/utils/app_error_message.dart';
 import '../../../models/reservation_model.dart';
 import '../../../models/table_model.dart';
@@ -151,7 +152,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           decoration: InputDecoration(
             labelText: 'جست‌وجوی مشتری با نام یا شماره تلفن',
             hintText: 'نام یا شماره موبایل را وارد کنید',
-            prefixIcon: const Icon(Icons.person_search_outlined),
+            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserSearch),
             suffixIcon: customerSearchController.text.isEmpty
                 ? null
                 : IconButton(
@@ -160,7 +161,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                       customerSearchController.clear();
                       searchCustomers('', setDialogState, dialogContext);
                     },
-                    icon: const Icon(Icons.close),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                   ),
             border: const OutlineInputBorder(),
           ),
@@ -180,7 +181,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  const Icon(Icons.verified_user_outlined, size: 18),
+                  const HugeIcon(icon: HugeIcons.strokeRoundedUserCheck01, size: 18),
                   const SizedBox(width: 8),
                   Expanded(child: Text(selectedCustomer!.fullName, style: const TextStyle(fontWeight: FontWeight.w700))),
                   TextButton(
@@ -267,7 +268,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
               );
               if (selected != null) setDialogState(() => date = selected.toDateTime());
             },
-            icon: const Icon(Icons.calendar_month_outlined),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01),
             label: Text(_formatDate(date)),
           )),
           const SizedBox(width: 8),
@@ -286,7 +287,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
               );
               if (selected != null) setDialogState(() => time = selected);
             },
-            icon: const Icon(Icons.schedule),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedClock01),
             label: Text(time.format(dialogContext)),
           )),
         ]),
@@ -329,8 +330,8 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
 
   @override
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [Expanded(child: Text('مدیریت رزرو میزها', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))), FilledButton.icon(onPressed: () => _showReservationForm(), icon: const Icon(Icons.add), label: const Text('رزرو جدید'))]),
-    const SizedBox(height: 14), TextField(controller: _search, decoration: InputDecoration(labelText: 'جست‌وجوی مشتری، تلفن یا شماره میز', prefixIcon: const Icon(Icons.search), suffixIcon: IconButton(onPressed: () { _search.clear(); context.read<ReservationsProvider>().setSearchQuery(''); }, icon: const Icon(Icons.clear)), border: const OutlineInputBorder()), onSubmitted: (v) => context.read<ReservationsProvider>().setSearchQuery(v)),
+    Row(children: [Expanded(child: Text('مدیریت رزرو میزها', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))), FilledButton.icon(onPressed: () => _showReservationForm(), icon: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01), label: const Text('رزرو جدید'))]),
+    const SizedBox(height: 14), TextField(controller: _search, decoration: InputDecoration(labelText: 'جست‌وجوی مشتری، تلفن یا شماره میز', prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01), suffixIcon: IconButton(onPressed: () { _search.clear(); context.read<ReservationsProvider>().setSearchQuery(''); }, icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01)), border: const OutlineInputBorder()), onSubmitted: (v) => context.read<ReservationsProvider>().setSearchQuery(v)),
     const SizedBox(height: 12),
     SizedBox(
       height: 42,
@@ -342,6 +343,23 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
             child: ChoiceChip(
               label: Text(status == 'all' ? 'همه' : _statusLabel(status)),
               selected: provider.statusFilter == status,
+              selectedColor: status == 'all' ? Theme.of(context).colorScheme.primary : _statusColor(status),
+              backgroundColor: status == 'all'
+                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                  : _statusColor(status).withValues(alpha: 0.10),
+              labelStyle: TextStyle(
+                color: provider.statusFilter == status
+                    ? Colors.white
+                    : status == 'all'
+                        ? Theme.of(context).colorScheme.onSurface
+                        : _statusColor(status),
+                fontWeight: FontWeight.w600,
+              ),
+              side: BorderSide(
+                color: status == 'all'
+                    ? Theme.of(context).dividerColor
+                    : _statusColor(status).withValues(alpha: 0.45),
+              ),
               onSelected: (_) => provider.setStatusFilter(status),
             ),
           )).toList(),
@@ -357,9 +375,9 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [Expanded(child: Text(reservation.customerName.isEmpty ? 'مشتری بدون نام' : reservation.customerName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: _statusColor(reservation.status.name).withValues(alpha: .12), borderRadius: BorderRadius.circular(20)), child: Text(_statusLabel(reservation.status.name), style: TextStyle(color: _statusColor(reservation.status.name))))]),
           const SizedBox(height: 8), Text('تلفن: ${reservation.customerPhone.isEmpty ? 'ثبت نشده' : reservation.customerPhone}'), Text('تاریخ: ${_formatDate(reservation.date)} • ساعت: ${_persianDigits(reservation.time)} • نفرات: ${_persianDigits(reservation.partySize)}'), Text('میز: ${reservation.tableNumber.isEmpty ? 'نامشخص' : reservation.tableNumber}'), if (reservation.note?.isNotEmpty == true) Text('یادداشت: ${reservation.note}'),
-          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const Icon(Icons.edit_outlined), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => const [PopupMenuItem(value: 'pending', child: Text('در انتظار')), PopupMenuItem(value: 'confirmed', child: Text('تأیید')), PopupMenuItem(value: 'completed', child: Text('تکمیل')), PopupMenuItem(value: 'cancelled', child: Text('لغو'))], child: const Chip(avatar: Icon(Icons.sync_alt, size: 18), label: Text('وضعیت')))])
+          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => const [PopupMenuItem(value: 'pending', child: Text('در انتظار')), PopupMenuItem(value: 'confirmed', child: Text('تأیید')), PopupMenuItem(value: 'completed', child: Text('تکمیل')), PopupMenuItem(value: 'cancelled', child: Text('لغو'))], child: const Chip(avatar: Icon(Icons.sync_alt, size: 18), label: Text('وضعیت')))])
         ])));
-      })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const Icon(Icons.chevron_right)), Text('صفحه ${_persianDigits(provider.currentPage)}'), IconButton(onPressed: provider.reservations.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const Icon(Icons.chevron_left))])]);
+      })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01)), Text('صفحه ${_persianDigits(provider.currentPage)}'), IconButton(onPressed: provider.reservations.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01))])]);
     }))
   ]));
 }
