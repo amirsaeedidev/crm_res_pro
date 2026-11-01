@@ -108,8 +108,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 if (table.status == TableStatus.occupied &&
                     table.currentOrderId != null)
                   ListTile(
-                    leading: const Icon(
-                      HugeIcons.strokeRoundedReceipt,
+                    leading: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedReceipt,
                       color: AppColors.info,
                     ),
                     title: const Text('مشاهده سفارش فعال'),
@@ -119,8 +119,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                     },
                   ),
                 ListTile(
-                  leading: const Icon(
-                    HugeIcons.strokeRoundedEdit02,
+                  leading: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedEdit02,
                     color: AppColors.info,
                   ),
                   title: const Text('ویرایش شماره و ظرفیت'),
@@ -131,8 +131,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 ),
                 if (table.status == TableStatus.occupied)
                   ListTile(
-                    leading: const Icon(
-                      HugeIcons.strokeRoundedRefresh,
+                    leading: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedRefresh,
                       color: AppColors.success,
                     ),
                     title: const Text('آزاد کردن میز'),
@@ -158,8 +158,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                   ),
                 if (table.status == TableStatus.reserved)
                   ListTile(
-                    leading: const Icon(
-                      HugeIcons.strokeRoundedCalendar01,
+                    leading: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendar01,
                       color: AppColors.warning,
                     ),
                     title: const Text('مدیریت رزروهای میز'),
@@ -169,8 +169,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                     },
                   ),
                 ListTile(
-                  leading: Icon(
-                    table.isActive
+                  leading: HugeIcon(
+                    icon: table.isActive
                         ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedView,
                     color: table.isActive ? AppColors.error : AppColors.success,
