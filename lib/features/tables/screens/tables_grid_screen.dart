@@ -583,13 +583,6 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                                 table.isActive
                                                     ? _getStatusIcon(table.status)
                                                     : const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
-                                                /*Icon(
-                                                  table.isActive
-                                                      ? _getStatusIcon(table.status)
-                                                      : const HugeIcon(icon: HugeIcons.strokeRoundedViewOff),
-                                                  size: 16,
-                                                  color: statusColor,
-                                                ),*/
                                                 const SizedBox(width: AppSizes.xs),
                                                 Expanded(
                                                   child: Text(
