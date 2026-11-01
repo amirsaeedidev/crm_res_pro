@@ -15,7 +15,10 @@ class DiscountsProvider extends ChangeNotifier {
   int _currentPage = 1;
   int _totalPages = 1;
   String _searchQuery = '';
-  final int _pageSize = 15;\n  int _requestVersion = 0;\n  int _searchVersion = 0;\n  bool _disposed = false;
+  final int _pageSize = 15;
+  int _requestVersion = 0;
+  int _searchVersion = 0;
+  bool _disposed = false;
 
   bool get isLoading => _isLoading;
   bool get isSaving => _isSaving;
@@ -26,6 +29,7 @@ class DiscountsProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   Future<void> fetchDiscounts() async {
+    final requestVersion = ++_requestVersion;
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -36,24 +40,29 @@ class DiscountsProvider extends ChangeNotifier {
         pageSize: _pageSize,
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
       );
-      if (_disposed || requestVersion != _requestVersion) return;\n      _discounts = results;\n      _totalPages = _discounts.length == _pageSize ? _currentPage + 1 : _currentPage;
+      if (_disposed || requestVersion != _requestVersion) return;
+      _discounts = results;
+      _totalPages = _discounts.length == _pageSize ? _currentPage + 1 : _currentPage;
     } catch (e, st) {
       LoggerService.error('Fetch discounts failed', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e);
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_disposed && requestVersion == _requestVersion) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> setSearchQuery(String query) async {
+    if (_disposed) return;
     _searchQuery = query;
     _currentPage = 1;
     await fetchDiscounts();
   }
 
   Future<void> changePage(int page) async {
-    if (page < 1 || page > _totalPages) return;
+    if (_disposed || page < 1 || page > _totalPages) return;
     _currentPage = page;
     await fetchDiscounts();
   }
@@ -66,7 +75,16 @@ class DiscountsProvider extends ChangeNotifier {
     }
   }
 
-  @override\n  void dispose() {\n    _disposed = true;\n    ++_searchVersion;\n    ++_requestVersion;\n    super.dispose();\n  }\n\n  Future<bool> createDiscount(Map<String, dynamic> data) async {
+  @override
+  void dispose() {
+    _disposed = true;
+    ++_searchVersion;
+    ++_requestVersion;
+    super.dispose();
+  }
+
+  Future<bool> createDiscount(Map<String, dynamic> data) async {
+    if (_disposed) return false;
     _isSaving = true;
     _error = null;
     notifyListeners();
@@ -87,6 +105,7 @@ class DiscountsProvider extends ChangeNotifier {
   }
 
   Future<bool> updateDiscount(String id, Map<String, dynamic> data) async {
+    if (_disposed) return false;
     _isSaving = true;
     _error = null;
     notifyListeners();
@@ -110,6 +129,7 @@ class DiscountsProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteDiscount(String id) async {
+    if (_disposed) return false;
     try {
       await _repository.deleteDiscount(id);
       _discounts.removeWhere((d) => d.id == id);
@@ -123,6 +143,7 @@ class DiscountsProvider extends ChangeNotifier {
   }
 
   Future<bool> toggleDiscountStatus(String id, bool isActive) async {
+    if (_disposed) return false;
     try {
       await _repository.updateDiscount(id, {'is_active': isActive});
       final index = _discounts.indexWhere((d) => d.id == id);
