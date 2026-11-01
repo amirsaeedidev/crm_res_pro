@@ -1306,8 +1306,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  child: Icon(
-                    (member['is_active'] == true)
+                  child: HugeIcon(
+                    icon: (member['is_active'] == true)
                         ? HugeIcons.strokeRoundedUser
                         : HugeIcons.strokeRoundedUserRemove01,
                   ),
@@ -1440,9 +1440,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       spacing: 10,
                       runSpacing: 8,
                       children: [
-                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', HugeIcons.strokeRoundedCursorPointer),
-                        _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', HugeIcons.strokeRoundedShoppingBag01),
-                        _metric('سفارش با کد تخفیف', couponOrders.toString(), HugeIcons.strokeRoundedDiscount),
+                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedCursorPointer)),
+                        _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedShoppingBag01)),
+                        _metric('سفارش با کد تخفیف', couponOrders.toString(), const HugeIcon(icon: HugeIcons.strokeRoundedDiscount)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -1596,8 +1596,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                     : AppColors.primary;
                 return ExpansionTile(
                   tilePadding: EdgeInsets.zero,
-                  leading: Icon(
-                    status == 'sent'
+                  leading: HugeIcon(
+                    icon: status == 'sent'
                         ? HugeIcons.strokeRoundedCheckmarkCircle02
                         : status == 'failed'
                         ? HugeIcons.strokeRoundedAlert02
@@ -1682,8 +1682,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       (a) => ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          a['success'] == true
+                        leading: HugeIcon(
+                          icon: a['success'] == true
                               ? HugeIcons.strokeRoundedCheckmarkCircle02
                               : HugeIcons.strokeRoundedCancelCircle,
                           color: a['success'] == true
