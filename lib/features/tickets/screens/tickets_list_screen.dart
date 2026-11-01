@@ -157,7 +157,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         width: cardWidth,
                         title: 'خوانده‌نشده',
                         value: provider.counts['unread'] ?? 0,
-                        icon: HugeIcons.strokeRoundedAlert02,
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
                         color: AppColors.error,
                       ),
                       _countCard(
@@ -254,7 +254,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(HugeIcons.strokeRoundedPackage, size: 48),
+                        HugeIcon(icon: HugeIcons.strokeRoundedPackage, size: 48),
                         SizedBox(height: AppSizes.md),
                         Text('برای این فیلتر تیکتی ثبت نشده است.'),
                       ],
@@ -290,8 +290,8 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                                     CircleAvatar(
                                       backgroundColor:
                                           statusColor.withValues(alpha: 0.12),
-                                      child: Icon(
-                                        Icons.support_agent,
+                                      child: HugeIcon(
+                                        icon: HugeIcons.strokeRoundedUserGroup,
                                         color: statusColor,
                                       ),
                                     ),
