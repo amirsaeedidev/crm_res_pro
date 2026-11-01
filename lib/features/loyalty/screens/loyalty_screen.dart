@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/utils/app_error_message.dart';
 
 import '../../../core/constants/app_sizes.dart';
@@ -196,8 +197,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 children: [
                   SegmentedButton<bool>(
                     segments: const [
-                      ButtonSegment(value: true, label: Text('افزایش'), icon: Icon(Icons.add)),
-                      ButtonSegment(value: false, label: Text('کاهش'), icon: Icon(Icons.remove)),
+                      ButtonSegment(value: true, label: Text('افزایش'), icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01)),
+                      ButtonSegment(value: false, label: Text('کاهش'), icon: HugeIcon(icon: HugeIcons.strokeRoundedMinusSign)),
                     ],
                     selected: {isAdding},
                     onSelectionChanged: (value) => setDialogState(() => isAdding = value.first),
@@ -263,7 +264,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
           children: [
             Row(children: [
               Expanded(child: Text('باشگاه مشتریان و امتیازها', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))),
-              IconButton(tooltip: 'به‌روزرسانی', onPressed: _reload, icon: const Icon(Icons.refresh)),
+              IconButton(tooltip: 'به‌روزرسانی', onPressed: _reload, icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh)),
             ]),
             const SizedBox(height: AppSizes.md),
             const LoyaltyRulesManager(),
@@ -272,8 +273,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'جست‌وجوی مشتری یا شماره تماس',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(onPressed: () { _searchController.clear(); _reload(); }, icon: const Icon(Icons.clear)),
+                prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
+                suffixIcon: IconButton(onPressed: () { _searchController.clear(); _reload(); }, icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01)),
                 border: const OutlineInputBorder(),
               ),
               onSubmitted: (_) => _reload(),
@@ -295,7 +296,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                       final wallet = wallets[index];
                       return Card(child: Padding(padding: const EdgeInsets.all(AppSizes.md), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
-                          const CircleAvatar(child: Icon(Icons.loyalty_outlined)), const SizedBox(width: AppSizes.md),
+                          const CircleAvatar(child: HugeIcon(icon: HugeIcons.strokeRoundedTicket01)), const SizedBox(width: AppSizes.md),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(wallet.customerName.isEmpty ? 'مشتری بدون نام' : wallet.customerName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                             Text(wallet.customerPhone.isEmpty ? 'شماره تماس ثبت نشده' : wallet.customerPhone),
@@ -305,9 +306,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         ]),
                         const SizedBox(height: AppSizes.sm),
                         Wrap(spacing: AppSizes.sm, runSpacing: AppSizes.sm, children: [
-                          OutlinedButton.icon(onPressed: () => _showTransactions(wallet), icon: const Icon(Icons.history), label: const Text('گردش امتیاز')),
-                          OutlinedButton.icon(onPressed: () => _quoteDiscount(wallet), icon: const Icon(Icons.discount_outlined), label: const Text('محاسبه تخفیف')),
-                          FilledButton.tonalIcon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح امتیاز')),
+                          OutlinedButton.icon(onPressed: () => _showTransactions(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedClock01), label: const Text('گردش امتیاز')),
+                          OutlinedButton.icon(onPressed: () => _quoteDiscount(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedDiscount), label: const Text('محاسبه تخفیف')),
+                          FilledButton.tonalIcon(onPressed: () => _adjustPoints(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedSettings04), label: const Text('اصلاح امتیاز')),
                         ]),
                       ])));
                     },
