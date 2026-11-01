@@ -171,7 +171,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                           TextFormField(
                             controller: _titleController,
                             maxLength: 160,
-                            decoration: const InputDecoration(labelText: 'عنوان اعلان', border: OutlineInputBorder(), prefixIcon: Icon(Icons.title)),
+                            decoration: const InputDecoration(labelText: 'عنوان اعلان', border: OutlineInputBorder(), prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedText)),
                             validator: (value) => value == null || value.trim().isEmpty ? 'عنوان اعلان را وارد کنید.' : null,
                           ),
                           const SizedBox(height: 12),
@@ -180,7 +180,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                             minLines: 4,
                             maxLines: 7,
                             maxLength: 4000,
-                            decoration: const InputDecoration(labelText: 'متن اعلان', alignLabelWithHint: true, border: OutlineInputBorder(), prefixIcon: Icon(Icons.notes)),
+                            decoration: const InputDecoration(labelText: 'متن اعلان', alignLabelWithHint: true, border: OutlineInputBorder(), prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedNote)),
                             validator: (value) => value == null || value.trim().isEmpty ? 'متن اعلان را وارد کنید.' : null,
                           ),
                         ],
@@ -200,19 +200,19 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                             value: 'all_customers',
                             title: 'تمام مشتریان فعال',
                             subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
-                            icon: Icons.groups_outlined,
+                            icon: HugeIcons.strokeRoundedUserGroup,
                           ),
                           _audienceTile(
                             value: 'inactive_30d',
                             title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
                             subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
-                            icon: Icons.person_off_outlined,
+                            icon: HugeIcons.strokeRoundedUserRemove01,
                           ),
                           _audienceTile(
                             value: 'admins',
                             title: 'مدیران CRM',
                             subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
-                            icon: Icons.admin_panel_settings_outlined,
+                            icon: HugeIcons.strokeRoundedShieldUser,
                           ),
                         ],
                       ),
@@ -233,7 +233,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                             onChanged: (value) => setState(() => _priority = value!),
                             title: const Text('عادی'),
                             subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
-                            secondary: const Icon(Icons.notifications_none, color: Colors.blueGrey),
+                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: Colors.blueGrey),
                             contentPadding: EdgeInsets.zero,
                           ),
                           RadioListTile<String>(
@@ -242,7 +242,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                             onChanged: (value) => setState(() => _priority = value!),
                             title: const Text('مهم'),
                             subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
-                            secondary: const Icon(Icons.priority_high, color: Colors.orange),
+                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.orange),
                             contentPadding: EdgeInsets.zero,
                           ),
                           RadioListTile<String>(
@@ -251,7 +251,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                             onChanged: (value) => setState(() => _priority = value!),
                             title: const Text('فوری'),
                             subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
-                            secondary: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ],
@@ -265,7 +265,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                       onPressed: _sending ? null : _send,
                       icon: _sending
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.send_outlined),
+                          : const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
                       label: Text(_sending ? 'در حال ثبت...' : 'ثبت و ارسال اعلان'),
                     ),
                   ),
@@ -282,7 +282,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
     required String value,
     required String title,
     required String subtitle,
-    required IconData icon,
+    required List<List<dynamic>> icon,
   }) {
     return RadioListTile<String>(
       value: value,
@@ -290,7 +290,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
       onChanged: (next) => setState(() => _audience = next!),
       title: Text(title),
       subtitle: Text(subtitle),
-      secondary: Icon(icon),
+      secondary: HugeIcon(icon: icon),
       contentPadding: EdgeInsets.zero,
     );
   }
