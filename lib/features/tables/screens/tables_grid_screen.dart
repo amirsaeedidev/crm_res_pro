@@ -159,7 +159,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 if (table.status == TableStatus.reserved)
                   ListTile(
                     leading: const Icon(
-                      Icons.event_available_outlined,
+                      HugeIcons.strokeRoundedCalendar01,
                       color: AppColors.warning,
                     ),
                     title: const Text('مدیریت رزروهای میز'),
@@ -171,7 +171,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 ListTile(
                   leading: Icon(
                     table.isActive
-                        ? HugeIcons.strokeRoundedViewOff
+                        ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedView,
                     color: table.isActive ? AppColors.error : AppColors.success,
                   ),
@@ -582,7 +582,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                               children: [
                                                 table.isActive
                                                     ? _getStatusIcon(table.status)
-                                                    : const HugeIcon(icon: HugeIcons.strokeRoundedViewOff),
+                                                    : const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                                                 /*Icon(
                                                   table.isActive
                                                       ? _getStatusIcon(table.status)
