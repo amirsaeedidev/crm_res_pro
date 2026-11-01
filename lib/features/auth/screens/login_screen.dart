@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
           AppTextField(
             controller: _passwordController,
             labelText: AppStrings.password,
-            hintText: '********',
+            hintText: 'password',
             obscureText: _obscurePassword,
             prefixIcon: const Icon(Icons.lock_outline, size: 20),
             suffixIcon: IconButton(
