@@ -74,7 +74,7 @@ class CustomersRepository {
     }
     try {
       final response = await _client.rpc('get_customer_purchase_metrics', params: {
-        'p_search': searchQuery,
+        'p_search': _normalizeSearch(searchQuery),
         'p_status_filter': statusFilter,
         'p_marketing_filter': marketingOptInFilter,
         'p_min_orders': minOrders,
