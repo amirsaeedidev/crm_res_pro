@@ -5,7 +5,7 @@ import '../constants/app_strings.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
 
-class AppSearch extends StatelessWidget {
+class AppSearch extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onClear;
@@ -22,24 +22,66 @@ class AppSearch extends StatelessWidget {
   });
 
   @override
+  State<AppSearch> createState() => _AppSearchState();
+}
+
+class _AppSearchState extends State<AppSearch> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? TextEditingController();
+    _controller.addListener(_handleControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppSearch oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _controller.removeListener(_handleControllerChanged);
+      if (oldWidget.controller == null) _controller.dispose();
+      _controller = widget.controller ?? TextEditingController();
+      _controller.addListener(_handleControllerChanged);
+    }
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _clear() {
+    _controller.clear();
+    widget.onChanged?.call('');
+    widget.onClear?.call();
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_handleControllerChanged);
+    if (widget.controller == null) _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      autofocus: autoFocus,
+      controller: _controller,
+      onChanged: widget.onChanged,
+      autofocus: widget.autoFocus,
+      textInputAction: TextInputAction.search,
+      autocorrect: false,
+      enableSuggestions: true,
       style: AppTypography.bodyMedium.copyWith(color: AppColors.getPrimaryText(context)),
       decoration: InputDecoration(
-        hintText: hintText,
+        hintText: widget.hintText,
         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.getSecondaryText(context)),
         prefixIcon: Icon(Icons.search, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
-        suffixIcon: controller != null && controller!.text.isNotEmpty
+        suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
+                tooltip: 'پاک‌کردن جست‌وجو',
                 icon: Icon(Icons.close, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
-                onPressed: () {
-                  controller?.clear();
-                  onChanged?.call('');
-                  onClear?.call();
-                },
+                onPressed: _clear,
               )
             : null,
         filled: true,
