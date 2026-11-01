@@ -13,6 +13,7 @@ class AppButton extends StatelessWidget {
   final AppButtonType type;
   final bool isLoading;
   final IconData? icon;
+  final Widget? iconWidget;
   final double? width;
   final double height;
 
@@ -23,6 +24,7 @@ class AppButton extends StatelessWidget {
     this.type = AppButtonType.primary,
     this.isLoading = false,
     this.icon,
+    this.iconWidget,
     this.width,
     this.height = AppSizes.buttonHeight,
   });
@@ -84,8 +86,8 @@ class AppButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: AppSizes.iconSm),
+                  if (icon != null || iconWidget != null) ...[
+                    if (iconWidget != null) iconWidget! else Icon(icon, size: AppSizes.iconSm),
                     const SizedBox(width: AppSizes.sm),
                   ],
                   Text(
