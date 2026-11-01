@@ -1,3 +1,4 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -345,7 +346,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [BoxShadow(color: _blue.withValues(alpha: .18), blurRadius: 16, offset: const Offset(0, 7))],
           ),
-          child: const Icon(Icons.pie_chart_rounded, color: Colors.white, size: 25),
+          child: const HugeIcon(icon: HugeIcons.solidStandardChart01, color: Colors.white, size: 25),
         ),
         const SizedBox(width: 13),
         Expanded(
