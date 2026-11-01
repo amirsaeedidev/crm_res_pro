@@ -385,7 +385,7 @@ class _InventoryImportManagerState extends State<InventoryImportManager> {
                 title: Text((batch['file_name'] ?? 'فایل اکسل').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text(details),
                 trailing: Wrap(children: [
-                  IconButton(tooltip: 'دانلود مجدد فایل', onPressed: () => _downloadArchivedFile(batch), icon: const Icon(Icons.download_outlined)),
+                  IconButton(tooltip: 'دانلود مجدد فایل', onPressed: () => _downloadArchivedFile(batch), icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01)),
                   IconButton(tooltip: 'مشاهده جزئیات خطاها', onPressed: () => _showBatchDetails(batch), icon: const HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle)),
                   IconButton(tooltip: 'حذف فایل و سابقه', onPressed: () => _deleteBatch(batch), icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.red)),
                 ]),
