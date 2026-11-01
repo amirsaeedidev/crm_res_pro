@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/services/supabase_service.dart';
 
@@ -142,7 +143,7 @@ class _InventoryMaterialReportManagerState
                     unawaited(_load());
                   }
                 },
-                icon: const Icon(Icons.date_range),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar03),
                 label: Text(
                   '${_digits(_range.start.toIso8601String().substring(0, 10))} تا '
                   '${_digits(_range.end.toIso8601String().substring(0, 10))}',
@@ -150,7 +151,7 @@ class _InventoryMaterialReportManagerState
               ),
               FilledButton.icon(
                 onPressed: _loading ? null : _load,
-                icon: const Icon(Icons.refresh),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                 label: const Text('به‌روزرسانی'),
               ),
             ],
