@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../theme/app_radius.dart';
@@ -15,6 +16,7 @@ class AppTextField extends StatelessWidget {
   final int? minLines;
   final int? maxLines;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization; // Added
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
@@ -34,6 +36,7 @@ class AppTextField extends StatelessWidget {
     this.minLines,
     this.maxLines = 1,
     this.keyboardType,
+    this.inputFormatters,
     this.textCapitalization = TextCapitalization.none, // Added
     this.validator,
     this.onChanged,
@@ -50,6 +53,7 @@ class AppTextField extends StatelessWidget {
       minLines: obscureText ? 1 : minLines,
       maxLines: obscureText ? 1 : maxLines,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       textCapitalization: textCapitalization, // Added
       validator: validator,
       onChanged: onChanged,
