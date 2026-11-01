@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/services/supabase_service.dart';
 
 class InventoryStockCountManager extends StatefulWidget {
@@ -123,9 +124,9 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
       const Text('موجودی واقعی هر ماده را وارد کنید. با ثبت نهایی، اختلاف به‌صورت گردش اصلاح موجودی ثبت می‌شود. همه مبالغ به تومان هستند.'),
       const SizedBox(height:12),
       Wrap(spacing:8,runSpacing:8,children:[
-        OutlinedButton.icon(onPressed:()=>setState(()=>_showAll=true),icon:const Icon(Icons.list_alt),label:const Text('همه مواد')),
-        OutlinedButton.icon(onPressed:()=>setState(()=>_showAll=false),icon:const Icon(Icons.compare_arrows),label:const Text('فقط اختلاف‌ها')),
-        OutlinedButton.icon(onPressed:_load,icon:const Icon(Icons.refresh),label:const Text('بارگذاری مجدد')),
+        OutlinedButton.icon(onPressed:()=>setState(()=>_showAll=true),icon:const HugeIcon(icon: HugeIcons.strokeRoundedListView),label:const Text('همه مواد')),
+        OutlinedButton.icon(onPressed:()=>setState(()=>_showAll=false),icon:const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeftRight),label:const Text('فقط اختلاف‌ها')),
+        OutlinedButton.icon(onPressed:_load,icon:const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),label:const Text('بارگذاری مجدد')),
       ]),
       const SizedBox(height:12),
       if(_materials.isEmpty) const Card(child:Padding(padding:EdgeInsets.all(16),child:Text('ماده اولیه فعالی برای شمارش وجود ندارد.'))),
@@ -146,7 +147,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
           TextFormField(
             controller:_countControllers[id],
             keyboardType:const TextInputType.numberWithOptions(decimal:true),
-            decoration:InputDecoration(labelText:'موجودی واقعی (${_unit(m['unit'])})',border:const OutlineInputBorder(),suffixIcon:IconButton(tooltip:'کپی موجودی سیستم',onPressed:()=>setState(()=>_countControllers[id]!.text=system.toString()),icon:const Icon(Icons.copy_outlined))),
+            decoration:InputDecoration(labelText:'موجودی واقعی (${_unit(m['unit'])})',border:const OutlineInputBorder(),suffixIcon:IconButton(tooltip:'کپی موجودی سیستم',onPressed:()=>setState(()=>_countControllers[id]!.text=system.toString()),icon:const HugeIcon(icon: HugeIcons.strokeRoundedCopy01))),
             onChanged:(_)=>setState((){}),
           ),
         ])));
@@ -154,7 +155,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
       const SizedBox(height:8),
       TextField(controller:_notes,maxLines:2,decoration:const InputDecoration(labelText:'یادداشت شمارش (اختیاری)',border:OutlineInputBorder(),hintText:'مثلاً شمارش پایان ماه')),
       const SizedBox(height:12),
-      FilledButton.icon(onPressed:_saving||_materials.isEmpty?null:_completeCount,icon:_saving?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.fact_check_outlined),label:Text(_saving?'در حال ثبت...':'ثبت شمارش و تطبیق موجودی')),
+      FilledButton.icon(onPressed:_saving||_materials.isEmpty?null:_completeCount,icon:_saving?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const HugeIcon(icon: HugeIcons.strokeRoundedClipboardCheck),label:Text(_saving?'در حال ثبت...':'ثبت شمارش و تطبیق موجودی')),
       const SizedBox(height:24),
       Text('سوابق شمارش',style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.bold)),
       const SizedBox(height:8),
@@ -163,7 +164,7 @@ class _InventoryStockCountManagerState extends State<InventoryStockCountManager>
         final lines=h['inventory_stock_count_items'] is List?(h['inventory_stock_count_items'] as List):const [];
         final number=h['count_number']??'—';
         return Card(child:ExpansionTile(
-          leading:const Icon(Icons.history),
+          leading:const HugeIcon(icon: HugeIcons.strokeRoundedHistory),
           title:Text('شمارش شماره ${_digits(number)} · ${_digits(h['count_date'])}'),
           subtitle:Text('${_digits(h['item_count']??0)} ماده · ${_digits(h['discrepancy_count']??0)} اختلاف · ارزش اختلاف: ${_money(h['total_discrepancy_cost'])} تومان'),
           children:[
