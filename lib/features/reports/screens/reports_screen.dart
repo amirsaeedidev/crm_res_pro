@@ -260,19 +260,6 @@ class _ReportsScreenState extends State<ReportsScreen>
     final cancelledAmount = _num(summary, 'cancelled_amount');
     final delayed = _num(summary, 'delayed_count');
     final repeatCustomers = _num(summary, 'repeat_customer_count');
-    Widget metric(String title, String value, IconData icon, Color color) => Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5EBF7))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, color: color), const SizedBox(height: 10),
-          Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: _ink)),
-          const SizedBox(height: 4),
-          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF75819A))),
-        ]),
-      ),
-    );
     final cancelledRows = rows.where((r) => r['category'] == 'cancelled').toList();
     final delayedRows = rows.where((r) => r['category'] == 'delayed').toList();
     final repeatRows = rows.where((r) => r['category'] == 'repeat_customer').toList();
@@ -306,17 +293,37 @@ class _ReportsScreenState extends State<ReportsScreen>
         }).toList()));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (loading) const LinearProgressIndicator(minHeight: 2),
-      Row(children: [
-        metric('سفارش لغوشده', _number(cancelled), Icons.cancel_outlined, const Color(0xFFE45B70)),
-        const SizedBox(width: 10),
-        metric('سفارش تأخیردار', _number(delayed), Icons.timer_outlined, const Color(0xFFB7791F)),
+      _metricGrid(context, mobile, [
+        _metric('سفارش لغوشده', _number(cancelled), Icons.cancel_outlined, const Color(0xFFE45B70), 'در بازه انتخابی'),
+        _metric('سفارش تأخیردار', _number(delayed), Icons.timer_outlined, const Color(0xFFB7791F), 'نیازمند پیگیری'),
+        _metric('مشتری پرتکرار', _number(repeatCustomers), Icons.repeat_rounded, _blue, 'حداقل ۳ سفارش'),
+        _metric('مبلغ لغوشده', '${_number(cancelledAmount)} تومان', Icons.payments_outlined, const Color(0xFF8B72E8), 'مجموع مبلغ لغوها'),
       ]),
-      const SizedBox(height: 10),
-      Row(children: [
-        metric('مشتری پرتکرار (۳+ سفارش)', _number(repeatCustomers), Icons.repeat_rounded, _blue),
-        const SizedBox(width: 10),
-        metric('مبلغ سفارش‌های لغوشده', '${_number(cancelledAmount)} تومان', Icons.payments_outlined, const Color(0xFF8B72E8)),
-      ]),
+      const SizedBox(height: 18),
+      _sectionCard(title: 'نمودار شاخص‌های سفارش', subtitle: 'تعداد لغوها، تأخیرها و مشتریان پرتکرار', icon: Icons.bar_chart_rounded,
+        child: SizedBox(
+          height: mobile ? 220 : 250,
+          child: BarChart(BarChartData(
+            gridData: const FlGridData(show: true, drawVerticalLine: false),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, getTitlesWidget: (value, meta) => Text(_digits(value.round()), style: const TextStyle(fontSize: 9, color: Color(0xFF8792A8))))),
+              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 38, getTitlesWidget: (value, meta) {
+                const labels = ['لغوشده', 'تأخیردار', 'مشتری پرتکرار'];
+                final i = value.toInt();
+                if (i < 0 || i >= labels.length) return const SizedBox.shrink();
+                return Padding(padding: const EdgeInsets.only(top: 7), child: Text(labels[i], style: const TextStyle(fontSize: 10, color: Color(0xFF75819A))));
+              })),
+            ),
+            barGroups: [
+              _inventoryBar(0, cancelled, const Color(0xFFE45B70), mobile),
+              _inventoryBar(1, delayed, const Color(0xFFE9A23B), mobile),
+              _inventoryBar(2, repeatCustomers, _blue, mobile),
+            ],
+          )),
+        )),
       const SizedBox(height: 18),
       reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', Icons.cancel_outlined, cancelledRows, 'cancelled'),
       const SizedBox(height: 16),
@@ -338,7 +345,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [BoxShadow(color: _blue.withValues(alpha: .18), blurRadius: 16, offset: const Offset(0, 7))],
           ),
-          child: const Icon(Icons.insights_rounded, color: Colors.white, size: 25),
+          child: const Icon(Icons.pie_chart_rounded, color: Colors.white, size: 25),
         ),
         const SizedBox(width: 13),
         Expanded(
@@ -589,7 +596,47 @@ class _ReportsScreenState extends State<ReportsScreen>
         ])),
       if (chart.isNotEmpty) ...[
         const SizedBox(height: 18),
-        _sectionCard(title: 'ترکیب مالی', subtitle: 'مقایسه فروش و هزینه‌های ثبت‌شده', icon: Icons.bar_chart_rounded,
+        _sectionCard(
+          title: 'مقایسه مالی',
+          subtitle: 'مقایسه تصویری درآمد، هزینه‌ها و سود تخمینی',
+          icon: Icons.bar_chart_rounded,
+          child: SizedBox(
+            height: mobile ? 220 : 270,
+            child: BarChart(BarChartData(
+              gridData: const FlGridData(show: true, drawVerticalLine: false),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: mobile ? 38 : 48,
+                  getTitlesWidget: (value, meta) => Text(_compact(value), style: const TextStyle(fontSize: 9, color: Color(0xFF8792A8))),
+                )),
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: mobile ? 42 : 34,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index < 0 || index >= chart.length) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 7),
+                      child: Text((chart[index]['label'] ?? 'شاخص').toString(), textAlign: TextAlign.center, style: TextStyle(fontSize: mobile ? 9 : 11, color: const Color(0xFF75819A))),
+                    );
+                  },
+                )),
+              ),
+              barGroups: chart.asMap().entries.map((entry) {
+                final amount = _asNum(entry.value['amount']).toDouble();
+                final label = (entry.value['label'] ?? '').toString();
+                final color = label.contains('سود') ? const Color(0xFF39B982) : label.contains('هزینه') ? const Color(0xFF8B72E8) : _blue;
+                return BarChartGroupData(x: entry.key, barRods: [
+                  BarChartRodData(toY: amount, width: mobile ? 22 : 34, borderRadius: BorderRadius.circular(8), color: color),
+                ]);
+              }).toList(),
+            )),
+          ),
+        ),
+        const SizedBox(height: 14),
+        _sectionCard(title: 'جزئیات ترکیب مالی', subtitle: 'مقادیر دقیق هر شاخص', icon: Icons.receipt_long_outlined,
           child: Column(children: chart.map((item) {
             final label = (item['label'] ?? 'شاخص').toString();
             final amount = _asNum(item['amount']);
@@ -602,6 +649,25 @@ class _ReportsScreenState extends State<ReportsScreen>
           }).toList())),
       ],
     ]);
+  }
+
+  BarChartGroupData _inventoryBar(int x, num value, Color color, bool mobile) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: value.toDouble(),
+          width: mobile ? 22 : 34,
+          borderRadius: BorderRadius.circular(8),
+          color: color,
+          backDrawRodData: const BackgroundBarChartRodData(
+            show: true,
+            toY: 1,
+            color: Color(0xFFF0F4FC),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _financialLine(String label, num amount, Color color, {bool strong = false}) => Padding(
@@ -684,13 +750,66 @@ class _ReportsScreenState extends State<ReportsScreen>
         _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', Icons.restaurant_outlined, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'گردش مواد اولیه', subtitle: 'خرید، مصرف، ضایعات و برگشت ثبت‌شده در بازه', icon: Icons.swap_vert_rounded,
-        child: Column(children: [
-          _financialLine('خرید مواد', _asNum(summary['purchases_cost']), _blue),
-          _financialLine('مصرف در سفارش‌ها', _asNum(summary['consumption_cost']), const Color(0xFF8B72E8)),
-          _financialLine('ضایعات', _asNum(summary['waste_cost']), const Color(0xFFE45B70)),
-          _financialLine('برگشت مواد', _asNum(summary['return_cost']), const Color(0xFF39B982)),
-        ])),
+      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: Icons.pie_chart_outline_rounded,
+        child: Builder(builder: (context) {
+          final active = _asNum(summary['active_materials']).toDouble();
+          final low = _asNum(summary['low_stock_materials']).clamp(0, active).toDouble();
+          final healthy = (active - low).clamp(0, active).toDouble();
+          if (active <= 0) return const _NoData(message: 'برای نمایش نمودار، ابتدا مواد اولیه فعال ثبت کنید.');
+          return LayoutBuilder(builder: (context, constraints) {
+            final compact = constraints.maxWidth < 430;
+            final pie = SizedBox(
+              width: compact ? double.infinity : 220,
+              height: 190,
+              child: PieChart(PieChartData(
+                sectionsSpace: 4,
+                centerSpaceRadius: 42,
+                sections: [
+                  if (healthy > 0) PieChartSectionData(value: healthy, color: const Color(0xFF3977EE), title: _digits(healthy.round()), radius: 48, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  if (low > 0) PieChartSectionData(value: low, color: const Color(0xFFE45B70), title: _digits(low.round()), radius: 48, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ],
+              )),
+            );
+            final legend = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _legend(const Color(0xFF3977EE), 'موجودی عادی: ${_digits(healthy.round())}'),
+                const SizedBox(height: 12),
+                _legend(const Color(0xFFE45B70), 'نیازمند شارژ: ${_digits(low.round())}'),
+                const SizedBox(height: 12),
+                Text('کل مواد فعال: ${_digits(active.round())}', style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
+              ],
+            );
+            return compact ? Column(children: [pie, legend]) : Row(children: [Expanded(child: pie), Expanded(child: legend)]);
+          });
+        })),
+      const SizedBox(height: 18),
+      _sectionCard(title: 'نمودار گردش انبار', subtitle: 'مقایسه مبلغ خرید، مصرف، ضایعات و برگشت', icon: Icons.bar_chart_rounded,
+        child: SizedBox(
+          height: mobile ? 220 : 260,
+          child: BarChart(BarChartData(
+            gridData: const FlGridData(show: true, drawVerticalLine: false),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 42, getTitlesWidget: (value, meta) => Text(_compact(value), style: const TextStyle(fontSize: 9, color: Color(0xFF8792A8))))),
+              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 38, getTitlesWidget: (value, meta) {
+                const labels = ['خرید', 'مصرف', 'ضایعات', 'برگشت'];
+                final i = value.toInt();
+                if (i < 0 || i >= labels.length) return const SizedBox.shrink();
+                return Padding(padding: const EdgeInsets.only(top: 7), child: Text(labels[i], style: const TextStyle(fontSize: 10, color: Color(0xFF75819A))));
+              })),
+            ),
+            barGroups: [
+              _inventoryBar(0, _asNum(summary['purchases_cost']), _blue, mobile),
+              _inventoryBar(1, _asNum(summary['consumption_cost']), const Color(0xFF8B72E8), mobile),
+              _inventoryBar(2, _asNum(summary['waste_cost']), const Color(0xFFE45B70), mobile),
+              _inventoryBar(3, _asNum(summary['return_cost']), const Color(0xFF39B982), mobile),
+            ],
+          )),
+        )),
       const SizedBox(height: 18),
       _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: Icons.list_alt_rounded,
         child: rows.isEmpty ? const _NoData(message: 'ماده اولیه‌ای برای نمایش وجود ندارد.') : Column(children: rows.asMap().entries.map((entry) {
