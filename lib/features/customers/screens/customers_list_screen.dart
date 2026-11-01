@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -164,7 +165,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     borderRadius: AppRadius.mediumAll,
                   ),
                   child: const Icon(
-                    Icons.people_alt_outlined,
+                    HugeIcons.strokeRoundedUserGroup,
                     color: AppColors.primary,
                     size: 26,
                   ),
@@ -191,7 +192,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 IconButton(
                   tooltip: 'به‌روزرسانی فهرست',
                   onPressed: provider.isLoading ? null : provider.fetchCustomers,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                 ),
               ],
             ),
@@ -212,7 +213,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     onChanged: provider.setSearchQuery,
                     decoration: InputDecoration(
                       hintText: 'جست‌وجو بر اساس نام، تلفن یا ایمیل',
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
                       suffixIcon: _searchController.text.isEmpty
                           ? null
                           : IconButton(
@@ -222,7 +223,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                 provider.setSearchQuery('');
                                 setState(() {});
                               },
-                              icon: const Icon(Icons.close_rounded),
+                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                             ),
                     ),
                   ),
@@ -243,7 +244,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                               initialValue: provider.statusFilter,
                               decoration: const InputDecoration(
                                 labelText: 'وضعیت مشتری',
-                                prefixIcon: Icon(Icons.manage_accounts_outlined),
+                                prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedUserSettings01),
                               ),
                               items: const [
                                 DropdownMenuItem(value: 'all', child: Text('همه وضعیت‌ها')),
@@ -262,7 +263,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                               initialValue: provider.marketingFilter,
                               decoration: const InputDecoration(
                                 labelText: 'رضایت پیامک تبلیغاتی',
-                                prefixIcon: Icon(Icons.sms_outlined),
+                                prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
                               ),
                               items: const [
                                 DropdownMenuItem(value: 'all', child: Text('همه مشتریان')),
@@ -276,7 +277,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                           ),
                           OutlinedButton.icon(
                             onPressed: provider.isLoading ? null : provider.fetchCustomers,
-                            icon: const Icon(Icons.refresh_rounded),
+                            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                             label: const Text('به‌روزرسانی'),
                           ),
                         ],
@@ -372,7 +373,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   Wrap(spacing: AppSizes.sm, runSpacing: AppSizes.sm, children: [
                     FilledButton.icon(
                       onPressed: provider.isLoading ? null : () => _applyPurchaseFilters(provider),
-                      icon: const Icon(Icons.filter_alt_outlined),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedFilter),
                       label: const Text('اعمال فیلتر خرید'),
                     ),
                     OutlinedButton.icon(
@@ -388,7 +389,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                         });
                         provider.resetPurchaseFilters();
                       },
-                      icon: const Icon(Icons.filter_alt_off_outlined),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedFilterRemove),
                       label: const Text('پاک‌کردن فیلتر خرید'),
                     ),
                     Chip(label: Text('تعداد نتایج: ${_persianDigits(provider.totalCount)}')),
@@ -402,13 +403,13 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.cloud_off_outlined, size: 44),
+                      const HugeIcon(icon: HugeIcons.strokeRoundedCloudOff, size: 44),
                       const SizedBox(height: AppSizes.sm),
                       Text(provider.error!, textAlign: TextAlign.center),
                       const SizedBox(height: AppSizes.md),
                       FilledButton.icon(
                         onPressed: provider.fetchCustomers,
-                        icon: const Icon(Icons.refresh_rounded),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                         label: const Text('تلاش دوباره'),
                       ),
                     ],
@@ -552,7 +553,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                 value: 'details',
                                 child: ListTile(
                                   dense: true,
-                                  leading: Icon(Icons.open_in_new_rounded),
+                                  leading: HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
                                   title: Text('جزئیات مشتری'),
                                 ),
                               ),
@@ -561,7 +562,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                   value: 'active',
                                   child: ListTile(
                                     dense: true,
-                                    leading: Icon(Icons.check_circle_outline),
+                                    leading: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02),
                                     title: Text('فعال کردن'),
                                   ),
                                 ),
@@ -570,7 +571,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                   value: 'inactive',
                                   child: ListTile(
                                     dense: true,
-                                    leading: Icon(Icons.pause_circle_outline),
+                                    leading: HugeIcon(icon: HugeIcons.strokeRoundedPauseCircle),
                                     title: Text('غیرفعال کردن'),
                                   ),
                                 ),
@@ -579,7 +580,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                   value: 'blocked',
                                   child: ListTile(
                                     dense: true,
-                                    leading: Icon(Icons.block_outlined, color: Colors.red),
+                                    leading: HugeIcon(icon: HugeIcons.strokeRoundedBlocked, color: Colors.red),
                                     title: Text('مسدود کردن'),
                                   ),
                                 ),
@@ -599,7 +600,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     onPressed: provider.currentPage > 1
                         ? () => provider.changePage(provider.currentPage - 1)
                         : null,
-                    icon: const Icon(Icons.chevron_right),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01),
                   ),
                   Text(
                     'صفحه ${_persianDigits(provider.currentPage)} از '
@@ -610,7 +611,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     onPressed: provider.currentPage < provider.totalPages
                         ? () => provider.changePage(provider.currentPage + 1)
                         : null,
-                    icon: const Icon(Icons.chevron_left),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
                   ),
                 ],
               ),
