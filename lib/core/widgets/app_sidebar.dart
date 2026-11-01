@@ -94,7 +94,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeSharpServingFood,
+                  icon: HugeIcons.strokeRoundedServingFood,
                   label: AppStrings.products,
                   isActive: navProvider.selectedIndex == 2,
                   onTap: () {
@@ -127,7 +127,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.solidStandardChart01,
+                  icon: HugeIcons.strokeRoundedChart01,
                   label: AppStrings.reports,
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {
