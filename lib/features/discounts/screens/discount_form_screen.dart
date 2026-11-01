@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import '../../../core/utils/app_error_message.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +19,23 @@ import '../../../models/user_model.dart';
 import '../../../repositories/customers_repository.dart';
 import '../../../providers/discounts_provider.dart';
 import '../../../repositories/discounts_repository.dart';
+
+class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    var digits = newValue.text.replaceAll(',', '').replaceAll('٬', '');
+    digits = digits.replaceAllMapped(RegExp(r'[^0-9۰-۹٠-٩]'), (m) {
+      final char = m.group(0)!;
+      final p = persian.indexOf(char);
+      final a = arabic.indexOf(char);
+      return (p >= 0 ? p : a >= 0 ? a : int.tryParse(char) ?? '').toString();
+    });
+    final formatted = digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+    return TextEditingValue(text: formatted, selection: TextSelection.collapsed(offset: formatted.length));
+  }
+}
 
 class DiscountFormScreen extends StatefulWidget {
   final String? discountId;
@@ -44,6 +63,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   bool _customerSearchLoading = false;
   int _customerSearchRequest = 0;
   
+  final _moneyFormatter = _ThousandsSeparatorInputFormatter();
+
   String? _selectedType;
   DateTime? _startDate;
   DateTime? _endDate;
@@ -67,8 +88,11 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           _titleController.text = discount.title;
           _codeController.text = discount.code;
           _valueController.text = discount.value.toString();
+          if (discount.type != 'percentage') _valueController.value = _moneyFormatter.formatEditUpdate(const TextEditingValue(), _valueController.value);
           _minPurchaseController.text = discount.minPurchaseAmount?.toString() ?? '';
+          _minPurchaseController.value = _moneyFormatter.formatEditUpdate(const TextEditingValue(), _minPurchaseController.value);
           _maxDiscountController.text = discount.maxDiscountAmount?.toString() ?? '';
+          _maxDiscountController.value = _moneyFormatter.formatEditUpdate(const TextEditingValue(), _maxDiscountController.value);
           _totalUsageController.text = discount.totalUsageLimit?.toString() ?? '';
           _perUserUsageController.text = discount.perUserUsageLimit?.toString() ?? '';
           _targetPhonesController.text = discount.targetPhones.join('\n');
@@ -193,11 +217,23 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     return result;
   }
 
+  String _normalizedNumber(String value) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    var result = value.replaceAll(',', '').replaceAll('٬', '').trim();
+    for (var i = 0; i < 10; i++) {
+      result = result.replaceAll(persian[i], '$i').replaceAll(arabic[i], '$i');
+    }
+    return result;
+  }
+
+  double _parseNumber(String value) => double.parse(_normalizedNumber(value));
+
   String? _validatePositiveNumber(String? value, {bool isRequired = false}) {
     if (value == null || value.isEmpty) {
       return isRequired ? 'وارد کردن این مقدار الزامی است.' : null;
     }
-    final num = double.tryParse(value);
+    final num = double.tryParse(_normalizedNumber(value));
     if (num == null) return 'یک عدد معتبر وارد کنید.';
     if (num < 0 || (isRequired && num == 0)) return isRequired ? 'مقدار باید بیشتر از صفر باشد.' : 'مقدار نمی‌تواند منفی باشد.';
     return null;
@@ -223,7 +259,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تاریخ پایان باید بعد از تاریخ شروع باشد.'), backgroundColor: AppColors.error));
         return;
       }
-      final parsedValue = double.tryParse(_valueController.text) ?? 0;
+      final parsedValue = double.tryParse(_normalizedNumber(_valueController.text)) ?? 0;
       if (_selectedType == 'Percentage' && parsedValue > 100) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('درصد تخفیف نباید بیشتر از ۱۰۰ باشد.'), backgroundColor: AppColors.error));
         return;
@@ -234,9 +270,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         'title': _titleController.text,
         'code': _codeController.text.toUpperCase(),
         'type': _selectedType == 'Percentage' ? 'percentage' : 'fixed_amount',
-        'value': double.parse(_valueController.text),
-        'min_purchase_amount': _minPurchaseController.text.isEmpty ? null : double.parse(_minPurchaseController.text),
-        'max_discount_amount': _maxDiscountController.text.isEmpty ? null : double.parse(_maxDiscountController.text),
+        'value': _parseNumber(_valueController.text),
+        'min_purchase_amount': _minPurchaseController.text.isEmpty ? null : _parseNumber(_minPurchaseController.text),
+        'max_discount_amount': _maxDiscountController.text.isEmpty ? null : _parseNumber(_maxDiscountController.text),
         'total_usage_limit': _totalUsageController.text.isEmpty ? null : int.parse(_totalUsageController.text),
         'per_user_usage_limit': _perUserUsageController.text.trim().isEmpty ? null : int.parse(_perUserUsageController.text.trim()),
         'restricted_to_customers': _restrictedToCustomers,
@@ -334,6 +370,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       labelText: _selectedType == 'Fixed Amount' ? 'مبلغ (تومان) *' : 'مقدار (درصد) *',
                       hintText: '۰',
                       keyboardType: TextInputType.number,
+                      inputFormatters: _selectedType == 'Fixed Amount' ? [_moneyFormatter] : const [],
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedDiscount),
                       validator: (value) => _validatePositiveNumber(value, isRequired: true),
                     ),
                     const SizedBox(height: AppSizes.md),
@@ -400,6 +438,8 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             labelText: 'حداقل مبلغ خرید (تومان)',
                             hintText: '۰',
                             keyboardType: TextInputType.number,
+                            inputFormatters: [_moneyFormatter],
+                            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedWallet01),
                             validator: (value) => _validatePositiveNumber(value),
                           ),
                         ),
