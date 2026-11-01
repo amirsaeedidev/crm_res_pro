@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -114,7 +115,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh),
+                      : const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                 ),
               ),
             ],
@@ -142,28 +143,28 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         width: cardWidth,
                         title: 'کل تیکت‌ها',
                         value: provider.counts['total'] ?? 0,
-                        icon: Icons.inbox_outlined,
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedPackage),
                         color: AppColors.primary,
                       ),
                       _countCard(
                         width: cardWidth,
                         title: 'تیکت‌های باز',
                         value: provider.counts['received'] ?? 0,
-                        icon: Icons.mark_email_unread_outlined,
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
                         color: AppColors.warning,
                       ),
                       _countCard(
                         width: cardWidth,
                         title: 'خوانده‌نشده',
                         value: provider.counts['unread'] ?? 0,
-                        icon: Icons.markunread_outlined,
+                        icon: HugeIcons.strokeRoundedAlert02,
                         color: AppColors.error,
                       ),
                       _countCard(
                         width: cardWidth,
                         title: 'پاسخ‌داده‌شده',
                         value: provider.counts['answered'] ?? 0,
-                        icon: Icons.mark_email_read_outlined,
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02),
                         color: AppColors.success,
                       ),
                     ],
@@ -182,14 +183,14 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       labelText: 'جست‌وجو در عنوان تیکت',
-                      prefixIcon: const Icon(Icons.search_rounded),
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
                       suffixIcon: IconButton(
                         tooltip: 'پاک کردن جست‌وجو',
                         onPressed: () {
                           _searchController.clear();
                           provider.setSearch('');
                         },
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                       ),
                     ),
                     onChanged: provider.setSearch,
@@ -199,7 +200,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                     initialValue: provider.status,
                     decoration: const InputDecoration(
                       labelText: 'وضعیت تیکت',
-                      prefixIcon: Icon(Icons.filter_alt_outlined),
+                      prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedFilter),
                     ),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('همه تیکت‌ها')),
@@ -253,7 +254,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.inbox_outlined, size: 48),
+                        Icon(HugeIcons.strokeRoundedPackage, size: 48),
                         SizedBox(height: AppSizes.md),
                         Text('برای این فیلتر تیکتی ثبت نشده است.'),
                       ],
@@ -400,7 +401,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                                     provider.currentPage - 1,
                                   )
                               : null,
-                          icon: const Icon(Icons.chevron_right),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01),
                         ),
                         Text(
                           'صفحه ${_persianDigits(provider.currentPage)} از '
@@ -413,7 +414,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                                     provider.currentPage + 1,
                                   )
                               : null,
-                          icon: const Icon(Icons.chevron_left),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
                         ),
                       ],
                     ),
@@ -431,7 +432,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
     required double width,
     required String title,
     required int value,
-    required IconData icon,
+    required Widget icon,
     required Color color,
   }) {
     return Container(
@@ -445,7 +446,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
+          icon,
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
@@ -476,13 +477,13 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: AppColors.error, size: 42),
+            const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: AppColors.error, size: 42),
             const SizedBox(height: AppSizes.sm),
             Text(error, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
               onPressed: retry,
-              icon: const Icon(Icons.refresh),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
               label: const Text('تلاش دوباره'),
             ),
           ],
