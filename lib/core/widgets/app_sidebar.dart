@@ -45,7 +45,7 @@ class AppSidebar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(HugeIcons.strokeRoundedDashboardSquare01, color: drawerMode ? Colors.white : AppColors.primary, size: AppSizes.iconLg),
+                HugeIcon(icon: HugeIcons.strokeRoundedDashboardSquare01, color: drawerMode ? Colors.white : AppColors.primary, size: AppSizes.iconLg),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   AppStrings.appName,
@@ -252,7 +252,7 @@ class AppSidebar extends StatelessWidget {
               children: [
                 const CircleAvatar(
                   backgroundColor: AppColors.primary,
-                  child: Icon(HugeIcons.strokeRoundedUser, color: Colors.white),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.white),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
@@ -275,7 +275,7 @@ class AppSidebar extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(HugeIcons.strokeRoundedLogout01, color: drawerMode ? Colors.white : AppColors.textSecondaryDark, size: AppSizes.iconSm),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLogout01, color: drawerMode ? Colors.white : AppColors.textSecondaryDark, size: AppSizes.iconSm),
                   tooltip: 'خروج',
                   onPressed: () {
                     context.read<AuthProvider>().logout();
