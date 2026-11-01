@@ -139,7 +139,7 @@ class _BannerFormScreenState extends State<BannerFormScreen> {
     final url = logo ? _logoUrl : _imageUrl;
     final selected = logo ? _logo : _image;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      OutlinedButton.icon(onPressed: _saving ? null : () => _pickImage(logo: logo), icon: HugeIcon(icon: logo ? HugeIcons.strokeRoundedCheckmarkBadge01 : HugeIcons.strokeRoundedImage01), label: Text(selected?.name ?? (logo ? (url?.isNotEmpty == true ? 'لوگوی فعلی موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب لوگوی بنر (اختیاری)') : (url?.isNotEmpty == true ? 'تصویر بنر موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب تصویر اصلی بنر')))),
+      OutlinedButton.icon(onPressed: _saving ? null : () => _pickImage(logo: logo), icon: HugeIcon(icon: logo ? HugeIcons.strokeRoundedStore01 : HugeIcons.strokeRoundedImage01), label: Text(selected?.name ?? (logo ? (url?.isNotEmpty == true ? 'لوگوی فعلی موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب لوگوی بنر (اختیاری)') : (url?.isNotEmpty == true ? 'تصویر بنر موجود است؛ برای جایگزینی انتخاب کنید' : 'انتخاب تصویر اصلی بنر')))),
       if (bytes != null) Padding(padding: const EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerRight, child: Image.memory(bytes, height: logo ? 110 : 190, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.'))))
       else if (url?.isNotEmpty == true) Padding(padding: const EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerRight, child: Image.network(url!, height: logo ? 90 : 170, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر قبلی قابل نمایش نیست.')))),
     ]);
@@ -149,15 +149,15 @@ class _BannerFormScreenState extends State<BannerFormScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(_editing ? 'ویرایش بنر' : 'افزودن بنر')),
     body: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 760), child: Form(key: _formKey, child: ListView(padding: const EdgeInsets.all(20), children: [
-      TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'عنوان اصلی بنر *', border: OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'عنوان اصلی را وارد کنید.' : null),
+      TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'عنوان اصلی بنر *', prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedText), border: OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'عنوان اصلی را وارد کنید.' : null),
       const SizedBox(height: 14),
-      TextFormField(controller: _subtitle, decoration: const InputDecoration(labelText: 'عنوان کوچک / زیرعنوان', border: OutlineInputBorder())),
+      TextFormField(controller: _subtitle, decoration: const InputDecoration(labelText: 'عنوان کوچک / زیرعنوان', prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedNote), border: OutlineInputBorder())),
       const SizedBox(height: 14),
-      TextFormField(controller: _promoTitle, decoration: const InputDecoration(labelText: 'عنوان تخفیف جمعی', hintText: 'مثلاً تخفیف ویژه آخر هفته', border: OutlineInputBorder())),
+      TextFormField(controller: _promoTitle, decoration: const InputDecoration(labelText: 'عنوان تخفیف جمعی', hintText: 'مثلاً تخفیف ویژه آخر هفته', prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedDiscount), border: OutlineInputBorder())),
       const SizedBox(height: 14),
-      TextFormField(controller: _discountCode, textCapitalization: TextCapitalization.characters, decoration: const InputDecoration(labelText: 'کد تخفیف (اختیاری)', border: OutlineInputBorder())),
+      TextFormField(controller: _discountCode, textCapitalization: TextCapitalization.characters, decoration: const InputDecoration(labelText: 'کد تخفیف (اختیاری)', prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedCoupon01), border: OutlineInputBorder())),
       const SizedBox(height: 14),
-      TextFormField(controller: _order, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش', border: OutlineInputBorder()), validator: _nonNegativeInt),
+      TextFormField(controller: _order, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش', prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSorting01), border: OutlineInputBorder()), validator: _nonNegativeInt),
       const SizedBox(height: 18),
       Text('تصویر اصلی بنر', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 8),
