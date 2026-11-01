@@ -123,8 +123,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.analytics_outlined,
-                  imageAssetPath: 'assets/images/dashboard_reports.webp',
+                  icon: Icons.pie_chart_rounded,
                   label: AppStrings.reports,
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {
