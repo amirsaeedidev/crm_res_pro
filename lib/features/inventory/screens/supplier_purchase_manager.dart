@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/services/supabase_service.dart';
 import '../utils/inventory_unit_converter.dart';
 
@@ -125,14 +126,14 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
         Align(alignment:Alignment.centerRight,child:TextButton.icon(onPressed:() async {
           final picked=await showDatePicker(context:ctx,initialDate:purchaseDate,firstDate:DateTime(2020),lastDate:DateTime.now(),helpText:'انتخاب تاریخ خرید');
           if(picked!=null)setDialog(()=>purchaseDate=picked);
-        },icon:const Icon(Icons.date_range),label:Text('تاریخ خرید: ${_fa(purchaseDate.toIso8601String().substring(0,10))}'))),
+        },icon:const HugeIcon(icon: HugeIcons.strokeRoundedCalendar03),label:Text('تاریخ خرید: ${_fa(purchaseDate.toIso8601String().substring(0,10))}'))),
         const SizedBox(height:12),
         ...lines.asMap().entries.map((entry) {
           final i=entry.key; final line=entry.value;
           final material=_materials.firstWhere((m)=>m['id'].toString()==line['material_id']);
           final compatibleUnits = _compatibleUnits(material['unit'].toString());
                     return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
-            Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const Icon(Icons.delete_outline))]),
+            Row(children:[Expanded(child:Text(material['name'].toString(),style:const TextStyle(fontWeight:FontWeight.bold))),IconButton(onPressed:()=>setDialog(()=>lines.removeAt(i)),icon:const HugeIcon(icon: HugeIcons.strokeRoundedDelete02))]),
             DropdownButtonFormField<String>(
               key: ValueKey('purchase-material-$i-${line['material_id']}'),
               initialValue: material['id'].toString(),
@@ -182,7 +183,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           final available=_materials.where((m)=>!lines.any((l)=>l['material_id']==m['id'].toString())).toList();
           if(available.isEmpty){_message('همه مواد اولیه به فاکتور اضافه شده‌اند.');return;}
           setDialog(()=>lines.add({'material_id':available.first['id'].toString(),'quantity':1.0,'unit_cost':double.tryParse('${available.first['unit_cost']}')??0.0,'purchase_unit':available.first['unit'].toString()}));
-        },icon:const Icon(Icons.add),label:const Text('افزودن ماده اولیه'))),
+        },icon:const HugeIcon(icon: HugeIcons.strokeRoundedAdd01),label:const Text('افزودن ماده اولیه'))),
         TextFormField(controller:discount,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'تخفیف فاکتور (تومان)')),
         TextFormField(controller:shipping,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'هزینه حمل (تومان)')),
         TextFormField(controller:paid,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'مبلغ پرداخت‌شده (تومان)')),
@@ -241,15 +242,15 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
     return RefreshIndicator(onRefresh:_load,child:ListView(padding:const EdgeInsets.all(12),children:[
       if(_error!=null) Text('بارگذاری اطلاعات ناموفق بود: $_error',style:TextStyle(color:Theme.of(context).colorScheme.error)),
       Wrap(spacing:8,runSpacing:8,children:[
-        FilledButton.icon(onPressed:_purchaseDialog,icon:const Icon(Icons.add_shopping_cart),label:const Text('ثبت خرید')),
-        OutlinedButton.icon(onPressed:()=>_supplierDialog(),icon:const Icon(Icons.person_add_alt_1),label:const Text('افزودن تامین‌کننده')),
-        OutlinedButton.icon(onPressed:_load,icon:const Icon(Icons.refresh),label:const Text('بروزرسانی')),
+        FilledButton.icon(onPressed:_purchaseDialog,icon:const HugeIcon(icon: HugeIcons.strokeRoundedShoppingCart01),label:const Text('ثبت خرید')),
+        OutlinedButton.icon(onPressed:()=>_supplierDialog(),icon:const HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01),label:const Text('افزودن تامین‌کننده')),
+        OutlinedButton.icon(onPressed:_load,icon:const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),label:const Text('بروزرسانی')),
       ]),
       const SizedBox(height:16),
       Text('تامین‌کنندگان (${_fa(_suppliers.length)})',style:Theme.of(context).textTheme.titleLarge),
       if(_suppliers.isEmpty) const ListTile(title:Text('تامین‌کننده‌ای ثبت نشده است.')),
       ..._suppliers.map((s)=>Card(child:ListTile(
-        leading:const CircleAvatar(child:Icon(Icons.storefront_outlined)),
+        leading:const CircleAvatar(child:HugeIcon(icon: HugeIcons.strokeRoundedStore01)),
         title:Text(s['name'].toString()),
         subtitle:Text(['${s['contact_name']??''}','${s['phone']??''}','${s['email']??''}',s['is_active']==true?'فعال':'غیرفعال'].where((x)=>x.trim().isNotEmpty).join(' · ')),
         trailing:PopupMenuButton<String>(tooltip:'مدیریت تأمین‌کننده',onSelected:(action){if(action=='edit')unawaited(_supplierDialog(s));if(action=='toggle')unawaited(_setSupplierActive(s,s['is_active']!=true));},itemBuilder:(ctx)=>[
@@ -279,7 +280,7 @@ class _SupplierPurchaseManagerState extends State<SupplierPurchaseManager> {
           return '$name: ${_quantityLabel(quantity)} ${_unitName(unit)} × ${_money(displayedUnitCost)} تومان ($unitCostLabel) · بهای تمام‌شده اقلام: ${_money(lineTotal)} تومان';
         }).join('، ');
         return Card(child:ExpansionTile(
-          leading:const Icon(Icons.receipt_long_outlined),
+          leading:const HugeIcon(icon: HugeIcons.strokeRoundedReceipt),
           title:Text('فاکتور ${p['invoice_number'].toString().isEmpty?'شماره ${_fa(p['purchase_number'])}':'${p['invoice_number']}'} · ${_money(p['total_amount'])} تومان'),
           subtitle:Text('$supplier · ${_fa(p['purchase_date'])} · ${_paymentStatusName(p['payment_status'])}'),
           children:[Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
