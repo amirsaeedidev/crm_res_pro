@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_radius.dart';
 
 class NavigationItem extends StatelessWidget {
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final String? imageAssetPath;
   final String label;
   final bool isActive;
@@ -47,17 +48,18 @@ class NavigationItem extends StatelessWidget {
                   width: AppSizes.iconMd + 12,
                   height: AppSizes.iconMd + 12,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    icon,
+                  errorBuilder: (context, error, stackTrace) => HugeIcon(
+                    icon: icon,
                     color: forceWhite ? Colors.white : (isActive ? AppColors.primary : AppColors.getSecondaryText(context)),
                     size: AppSizes.iconMd + 12,
                   ),
                 )
               else
-                Icon(
-                  icon,
+                HugeIcon(
+                  icon: icon,
                   color: forceWhite ? Colors.white : (isActive ? AppColors.primary : AppColors.getSecondaryText(context)),
                   size: AppSizes.iconMd + 4,
+                  strokeWidth: 1.8,
                 ),
               const SizedBox(width: AppSizes.md),
               Expanded(
