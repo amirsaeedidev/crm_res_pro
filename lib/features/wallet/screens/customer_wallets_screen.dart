@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -87,8 +88,8 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
           Align(alignment: Alignment.centerRight, child: Text('موجودی فعلی: ${_money(wallet.balance)} تومان', style: const TextStyle(fontWeight: FontWeight.bold))),
           const SizedBox(height: AppSizes.md),
           SegmentedButton<bool>(segments: const [
-            ButtonSegment(value: true, label: Text('شارژ کیف پول'), icon: Icon(Icons.add_circle_outline)),
-            ButtonSegment(value: false, label: Text('کاهش موجودی'), icon: Icon(Icons.remove_circle_outline)),
+            ButtonSegment(value: true, label: Text('شارژ کیف پول'), icon: HugeIcon(icon: HugeIcons.strokeRoundedAddCircle)),
+            ButtonSegment(value: false, label: Text('کاهش موجودی'), icon: HugeIcon(icon: HugeIcons.strokeRoundedMinusSignCircle)),
           ], selected: {adding}, onSelectionChanged: (value) => setDialogState(() => adding = value.first)),
           const SizedBox(height: AppSizes.md),
           TextFormField(controller: amountController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'مبلغ (تومان)', border: OutlineInputBorder()),
@@ -165,24 +166,24 @@ class _CustomerWalletsScreenState extends State<CustomerWalletsScreen> {
 
   @override
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.all(AppSizes.md), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [Expanded(child: Text('مدیریت کیف پول مشتریان', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))), IconButton(tooltip: 'به‌روزرسانی', onPressed: _reload, icon: const Icon(Icons.refresh))]),
+    Row(children: [Expanded(child: Text('مدیریت کیف پول مشتریان', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold))), IconButton(tooltip: 'به‌روزرسانی', onPressed: _reload, icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh))]),
     const SizedBox(height: AppSizes.sm),
     const Text('این موجودی پولی مستقل از امتیازهای باشگاه مشتریان است. هر تغییر همراه دلیل و رکورد حسابداری ثبت می‌شود.'),
     const SizedBox(height: AppSizes.md),
-    TextField(controller: _search, onSubmitted: (_) => _reload(), decoration: InputDecoration(prefixIcon: const Icon(Icons.search), labelText: 'جست‌وجوی نام، تلفن یا ایمیل', suffixIcon: IconButton(onPressed: () { _search.clear(); _reload(); }, icon: const Icon(Icons.clear)), border: const OutlineInputBorder())),
+    TextField(controller: _search, onSubmitted: (_) => _reload(), decoration: InputDecoration(prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01), labelText: 'جست‌وجوی نام، تلفن یا ایمیل', suffixIcon: IconButton(onPressed: () { _search.clear(); _reload(); }, icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01)), border: const OutlineInputBorder())),
     const SizedBox(height: AppSizes.md),
     Expanded(child: FutureBuilder<List<CustomerWalletModel>>(future: _future, builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-      if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت فهرست کیف پول‌ها ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh), label: const Text('تلاش مجدد'))]));
+      if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(AppErrorMessage.from(snapshot.error!, fallback: 'دریافت فهرست کیف پول‌ها ناموفق بود. دوباره تلاش کنید.'), textAlign: TextAlign.center), const SizedBox(height: 12), FilledButton.icon(onPressed: _reload, icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh), label: const Text('تلاش مجدد'))]));
       final wallets = snapshot.data ?? const <CustomerWalletModel>[];
       if (wallets.isEmpty) return const Center(child: Text('کیف پولی برای نمایش وجود ندارد.')); 
       return ListView.separated(itemCount: wallets.length, separatorBuilder: (_, _) => const SizedBox(height: 8), itemBuilder: (context, index) {
         final wallet = wallets[index];
         return Card(child: Padding(padding: const EdgeInsets.all(AppSizes.md), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [const CircleAvatar(child: Icon(Icons.account_balance_wallet_outlined)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(wallet.customerName, style: const TextStyle(fontWeight: FontWeight.bold)), Text(wallet.customerPhone.isEmpty ? (wallet.email ?? 'تلفن ثبت نشده') : wallet.customerPhone)])),
+          Row(children: [const CircleAvatar(child: HugeIcon(icon: HugeIcons.strokeRoundedWallet01)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(wallet.customerName, style: const TextStyle(fontWeight: FontWeight.bold)), Text(wallet.customerPhone.isEmpty ? (wallet.email ?? 'تلفن ثبت نشده') : wallet.customerPhone)])),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${_money(wallet.balance)} تومان', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const Text('موجودی کیف پول')])]),
           const Divider(),
-          Wrap(spacing: 8, runSpacing: 8, children: [FilledButton.icon(onPressed: () => _editBalance(wallet), icon: const Icon(Icons.add_card), label: const Text('شارژ / اصلاح موجودی')), OutlinedButton.icon(onPressed: () => _showHistory(wallet), icon: const Icon(Icons.history), label: const Text('گردش تراکنش‌ها'))]),
+          Wrap(spacing: 8, runSpacing: 8, children: [FilledButton.icon(onPressed: () => _editBalance(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedCreditCard), label: const Text('شارژ / اصلاح موجودی')), OutlinedButton.icon(onPressed: () => _showHistory(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedClock01), label: const Text('گردش تراکنش‌ها'))]),
         ])));
       });
     })),
