@@ -302,7 +302,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       final orderId = tx['order_id']?.toString();
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(positive ? HugeIcons.strokeRoundedAdd01_circle_outline : HugeIcons.strokeRoundedMinusSign_circle_outline, color: positive ? Colors.green : Colors.red),
+                        leading: Icon(positive ? HugeHugeIcons.strokeRoundedAddCircle : HugeHugeIcons.strokeRoundedMinusSignCircle, color: positive ? Colors.green : Colors.red),
                         title: Text('${_cashTypeLabel((tx['transaction_type'] ?? '').toString())} · ${positive ? '+' : ''}${_money(delta)} تومان'),
                         subtitle: Text('${(tx['reason'] ?? '').toString()}\n${_displayDate(tx['created_at'])}${orderId == null ? '' : '\nسفارش: ${orderId.substring(0, orderId.length > 8 ? 8 : orderId.length)}'}'),
                         isThreeLine: true,
