@@ -378,7 +378,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           _filterChip('این هفته', DateRangeFilter.thisWeek),
           _filterChip('این ماه', DateRangeFilter.thisMonth),
           ActionChip(
-            avatar: const HugeIcon(icon:HugeIcons.strokeRoundedCalendar03, size: 17),
+            avatar: const HugeIcon(icon:HugeIcons.strokeRoundedCalendar01, size: 17),
             label: Text(_customDateRange == null
                 ? 'بازه دلخواه'
                 : '${_jalaliDateLabel(_customDateRange!.start)} تا ${_jalaliDateLabel(_customDateRange!.end)}'),
@@ -415,9 +415,9 @@ class _ReportsScreenState extends State<ReportsScreen>
   ) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('فروش تکمیل‌شده', '${_number(sales)} تومان', HugeIcons.strokeRoundedMoney03, _blue, 'مجموع فروش در بازه انتخابی'),
-        _metric('سفارش‌های تکمیل‌شده', _number(orders), HugeIcons.strokeRoundedReceipt, const Color(0xFF8B72E8), 'تعداد سفارش‌های نهایی‌شده'),
-        _metric('رشد فروش', _percentage(growth), HugeIcons.strokeRoundedChartLineData01, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'در مقایسه با بازه قبل'),
+        _metric('فروش تکمیل‌شده', '${_number(sales)} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'مجموع فروش در بازه انتخابی'),
+        _metric('سفارش‌های تکمیل‌شده', _number(orders), HugeIcons.strokeRoundedPackage, const Color(0xFF8B72E8), 'تعداد سفارش‌های نهایی‌شده'),
+        _metric('رشد فروش', _percentage(growth), HugeIcons.strokeRoundedChartIncrease, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'در مقایسه با بازه قبل'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
@@ -466,9 +466,9 @@ class _ReportsScreenState extends State<ReportsScreen>
     final chart = context.read<ReportsProvider>().salesReport?.chartData ?? const <Map<String, dynamic>>[];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مجموع فروش', '${_number(sales)} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
+        _metric('مجموع فروش', '${_number(sales)} تومان', HugeIcons.strokeRoundedMoney03, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
         _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
-        _metric('تغییر نسبت به قبل', _percentage(growth), HugeIcons.strokeRoundedArrowLeftRight, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
+        _metric('تغییر نسبت به قبل', _percentage(growth), HugeIcons.strokeRoundedArrowUpRight01, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
@@ -520,7 +520,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     return _sectionCard(
       title: 'عملکرد محصولات',
       subtitle: 'فهرست واقعی محصولات برگشتی از گزارش Supabase',
-      icon: HugeIcons.strokeRoundedFood,
+      icon: HugeIcons.strokeRoundedChefHat,
       child: loading && products.isEmpty
           ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
           : products.isEmpty
