@@ -195,8 +195,8 @@ class _AppTopbarState extends State<AppTopbar> {
         hintStyle: AppTypography.bodyMedium.copyWith(
           color: AppColors.getSecondaryText(context),
         ),
-        prefixIcon: Icon(
-          HugeIcons.strokeRoundedSearch01,
+        prefixIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedSearch01,
           color: AppColors.getSecondaryText(context),
           size: AppSizes.iconSm,
         ),
@@ -476,8 +476,8 @@ class _AppTopbarState extends State<AppTopbar> {
               color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              _getNotifIcon(notif.type),
+            child: HugeIcon(
+              icon: _getNotifIcon(notif.type),
               color: color,
               size: 16,
             ),
