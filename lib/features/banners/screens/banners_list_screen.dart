@@ -38,8 +38,8 @@ class _BannersListScreenState extends State<BannersListScreen> {
         return Card(clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Expanded(child: Stack(fit: StackFit.expand, children: [
             banner.imageUrl == null || banner.imageUrl!.isEmpty
-                ? const Center(child: Icon(Icons.image_outlined, size: 48))
-                : Image.network(banner.imageUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Center(child: Icon(Icons.broken_image_outlined, size: 48))),
+                ? const Center(child: HugeIcon(icon: HugeIcons.strokeRoundedImage01, size: 48))
+                : Image.network(banner.imageUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Center(child: HugeIcon(icon: HugeIcons.strokeRoundedImage01, size: 48))),
             if (banner.logoUrl?.isNotEmpty == true) Positioned(right: 10, top: 10, child: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .92), borderRadius: BorderRadius.circular(10)), child: Image.network(banner.logoUrl!, width: 46, height: 46, fit: BoxFit.contain, errorBuilder: (_, _, _) => const HugeIcon(icon: HugeIcons.strokeRoundedStore01, size: 40)))),
             if ((banner.promoTitle ?? '').isNotEmpty || (banner.discountCode ?? '').isNotEmpty) Positioned(left: 10, bottom: 10, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.black.withValues(alpha: .72), borderRadius: BorderRadius.circular(10)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [if ((banner.promoTitle ?? '').isNotEmpty) Text(banner.promoTitle!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), if ((banner.discountCode ?? '').isNotEmpty) Text('کد: ${banner.discountCode}', style: const TextStyle(color: Colors.white))]))),
           ])),
