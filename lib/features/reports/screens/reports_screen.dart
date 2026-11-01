@@ -740,13 +740,13 @@ class _ReportsScreenState extends State<ReportsScreen>
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مواد فعال', _number(_asNum(summary['active_materials'])), HugeIcons.strokeRoundedAiSwap, _blue, 'مواد اولیه فعال'),
+        _metric('مواد فعال', _number(_asNum(summary['active_materials'])), HugeIcons.strokeRoundedPackage, _blue, 'مواد اولیه فعال'),
         _metric('موجودی کم', _number(_asNum(summary['low_stock_materials'])), HugeIcons.strokeRoundedAlert02, const Color(0xFFE45B70), 'برابر یا کمتر از حد سفارش'),
-        _metric('ارزش فعلی انبار', '${_number(_asNum(summary['stock_value']))} تومان', HugeIcons.strokeRoundedPackage, const Color(0xFF39B982), 'موجودی × بهای واحد'),
-        _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', HugeIcons.strokeRoundedRestaurant01, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
+        _metric('ارزش فعلی انبار', '${_number(_asNum(summary['stock_value']))} تومان', HugeIcons.strokeRoundedWallet01, const Color(0xFF39B982), 'موجودی × بهای واحد'),
+        _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', HugeIcons.strokeRoundedChefHat, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: HugeIcons.strokeRoundedChartPie,
+      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: HugeIcons.strokeRoundedChartDonut,
         child: Builder(builder: (context) {
           final active = _asNum(summary['active_materials']).toDouble();
           final low = _asNum(summary['low_stock_materials']).clamp(0, active).toDouble();
@@ -807,7 +807,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           )),
         )),
       const SizedBox(height: 18),
-      _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: HugeIcons.strokeRoundedListView,
+      _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: HugeIcons.strokeRoundedPackage,
         child: rows.isEmpty ? const _NoData(message: 'ماده اولیه‌ای برای نمایش وجود ندارد.') : Column(children: rows.asMap().entries.map((entry) {
           final item = entry.value;
           final low = item['is_low_stock'] == true;
