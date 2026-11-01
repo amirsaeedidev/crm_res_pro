@@ -115,7 +115,7 @@ class _AppTopbarState extends State<AppTopbar> {
                   return _buildActionButton(
                     icon: themeProvider.isDarkMode
                         ? HugeIcons.strokeRoundedSun01
-                        : HugeIcons.solidSharpMoon02,
+                        : HugeIcons.strokeRoundedMoon02,
                     tooltip: themeProvider.isDarkMode
                         ? 'حالت روشن'
                         : 'حالت تاریک',
