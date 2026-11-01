@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -92,59 +93,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _pickColor(bool isPrimary) async {
-    final provider = context.read<SettingsProvider>();
-    final current = isPrimary ? provider.primaryColor : provider.secondaryColor;
-    final selected = await showDialog<Color>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(isPrimary ? 'انتخاب رنگ اصلی' : 'انتخاب رنگ ثانویه'),
-        content: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: const [
-            Colors.blue,
-            Colors.red,
-            Colors.green,
-            Colors.orange,
-            Colors.purple,
-            Colors.teal,
-            Colors.pink,
-            Colors.indigo,
-          ].map((color) => GestureDetector(
-                onTap: () => Navigator.of(dialogContext).pop(color),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.fromBorderSide(
-                      BorderSide(color: current == color ? Colors.black : Colors.transparent, width: 3),
-                    ),
-                  ),
-                ),
-              )).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('انصراف'),
-          ),
-        ],
-      ),
-    );
-
-    if (selected == null || !mounted) return;
-    final success = isPrimary
-        ? await provider.setPrimaryColor(selected)
-        : await provider.setSecondaryColor(selected);
-    _showMessage(
-      success ? 'رنگ برند ذخیره شد.' : (provider.error ?? 'ذخیره رنگ انجام نشد.'),
-      isError: !success,
-    );
-  }
-
   Future<void> _saveSettings() async {
     final provider = context.read<SettingsProvider>();
     final success = await provider.saveSettings({
@@ -188,13 +136,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderRadius: BorderRadius.circular(AppRadius.medium),
               ),
               child: Row(children: [
-                const Icon(Icons.info_outline, color: AppColors.error),
+                const HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, color: AppColors.error),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(child: Text(settings.error!, style: const TextStyle(color: AppColors.error))),
                 IconButton(
                   tooltip: 'تلاش مجدد',
                   onPressed: settings.isLoading ? null : settings.reload,
-                  icon: const Icon(Icons.refresh),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, color: AppColors.info),
                 ),
               ]),
             ),
@@ -210,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 radius: 28,
                 backgroundColor: AppColors.primary,
                 backgroundImage: currentUser?.avatarUrl == null ? null : NetworkImage(currentUser!.avatarUrl!),
-                child: currentUser?.avatarUrl == null ? const Icon(Icons.person, color: Colors.white, size: 28) : null,
+                child: currentUser?.avatarUrl == null ? const HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.white, size: 28) : null,
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -230,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold)),
             const Divider(height: AppSizes.lg),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Row(children: [Icon(Icons.dark_mode_outlined), SizedBox(width: AppSizes.sm), Text('حالت تیره')]),
+              const Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedMoon02), SizedBox(width: AppSizes.sm), Text('حالت تیره')]),
               CustomSwitch(value: themeProvider.isDarkMode, onChanged: (_) => context.read<ThemeProvider>().toggleTheme()),
             ]),
           ])),
@@ -261,36 +209,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ])),
           const SizedBox(height: AppSizes.lg),
 
-          AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('برندینگ و رنگ‌ها', style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.getPrimaryText(context), fontWeight: FontWeight.bold)),
-            const Divider(height: AppSizes.lg),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.md),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [settings.primaryColor, settings.secondaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-              ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Flexible(child: Text(
-                  _companyNameController.text.trim().isEmpty ? 'نام فروشگاه ثبت نشده' : _companyNameController.text.trim(),
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                )),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.circular)),
-                  child: Text('پیش‌نمایش', style: TextStyle(color: settings.primaryColor, fontWeight: FontWeight.bold)),
-                ),
-              ]),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Wrap(spacing: AppSizes.lg, runSpacing: AppSizes.md, children: [
-              _colorPickerItem(context, 'رنگ اصلی', settings.primaryColor, () => _pickColor(true)),
-              _colorPickerItem(context, 'رنگ ثانویه', settings.secondaryColor, () => _pickColor(false)),
-            ]),
-          ])),
-          const SizedBox(height: AppSizes.lg),
           const ReceiptSettingsCard(),
           const SizedBox(height: AppSizes.lg),
           Align(alignment: Alignment.centerRight, child: AppButton(
