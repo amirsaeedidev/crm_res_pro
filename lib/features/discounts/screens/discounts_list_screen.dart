@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -88,7 +89,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
               ),
               AppButton(
                 label: 'افزودن تخفیف جدید',
-                icon: Icons.add_rounded,
+                iconWidget: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 18),
                 width: 200,
                 onPressed: () {
                   context.push('/discounts/add');
@@ -126,7 +127,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                   return const EmptyWidget(
                     title: 'تخفیفی یافت نشد',
                     message: 'هیچ تخفیفی مطابق با جستجوی شما یافت نشد.',
-                    icon: Icons.discount_outlined,
+                    icon: HugeIcons.strokeRoundedFilter,
                   );
                 }
 
@@ -265,13 +266,13 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                   onPressed: () {
                     context.push('/discounts/edit/${discount.id}');
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.error),
                   onPressed: () {
                     DeleteDialog.show(
                       context: context,
@@ -315,13 +316,13 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                 ],
               ),
               const Divider(height: AppSizes.md),
-              _buildMobileRow(context, Icons.code, 'کد: ${discount.code}'),
+              _buildMobileRow(context, const HugeIcon(icon: HugeIcons.strokeRoundedMessage01, size: 16), 'کد: ${discount.code}'),
               _buildMobileRow(
                 context,
-                Icons.percent,
+                const HugeIcon(icon: HugeIcons.strokeRoundedFilter, size: 16),
                 'مقدار: ${discount.type == 'percentage' ? '${_persianDigits(discount.value)}٪' : '${_persianDigits(discount.value)} تومان'}',
               ),
-              _buildMobileRow(context, Icons.calendar_today, 'پایان: ${_formatDate(discount.endDate)}'),
+              _buildMobileRow(context, const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, size: 16), 'پایان: ${_formatDate(discount.endDate)}'),
               const SizedBox(height: AppSizes.md),
               Align(
                 alignment: Alignment.centerLeft,
@@ -329,13 +330,13 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                       onPressed: () {
                         context.push('/discounts/edit/${discount.id}');
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.error),
                       onPressed: () {
                         DeleteDialog.show(
                           context: context,
@@ -357,12 +358,12 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     );
   }
 
-  Widget _buildMobileRow(BuildContext context, IconData icon, String text) {
+  Widget _buildMobileRow(BuildContext context, Widget icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.secondary),
+          IconTheme(data: IconThemeData(size: 16, color: Theme.of(context).colorScheme.secondary), child: icon),
           const SizedBox(width: AppSizes.sm),
           Text(text, style: Theme.of(context).textTheme.bodyMedium),
         ],
