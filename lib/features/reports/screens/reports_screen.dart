@@ -167,7 +167,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             return const EmptyWidget(
               title: 'داده‌ای موجود نیست',
               message: 'گزارش واقعی برای این بازه در دسترس نیست.',
-              icon: Icons.bar_chart_outlined,
+              icon: HugeIcons.strokeRoundedChart01,
             );
           }
 
@@ -175,10 +175,10 @@ class _ReportsScreenState extends State<ReportsScreen>
           final sales = _num(summary, 'total_sales');
           final orders = _num(summary, 'total_orders');
           final growth = _num(summary, 'growth_percentage');
-          final types = <({String label, num count, Color color, IconData icon})>[
-            (label: 'ارسال', count: _num(summary, 'delivery_count'), color: _blue, icon: Icons.delivery_dining_outlined),
-            (label: 'دریافت حضوری', count: _num(summary, 'pickup_count'), color: const Color(0xFF65C99A), icon: Icons.shopping_bag_outlined),
-            (label: 'سالن', count: _num(summary, 'dine_in_count'), color: const Color(0xFF8B72E8), icon: Icons.restaurant_outlined),
+          final types = <({String label, num count, Color color, dynamic icon})>[
+            (label: 'ارسال', count: _num(summary, 'delivery_count'), color: _blue, icon: HugeIcons.strokeRoundedDeliveryTruck01),
+            (label: 'دریافت حضوری', count: _num(summary, 'pickup_count'), color: const Color(0xFF65C99A), icon: HugeIcons.strokeRoundedShoppingBag01),
+            (label: 'سالن', count: _num(summary, 'dine_in_count'), color: const Color(0xFF8B72E8), icon: HugeIcons.strokeRoundedRestaurant01),
           ];
           final totalTypes = types.fold<num>(0, (sum, item) => sum + item.count);
           final products = provider.topProductsReport?.chartData ?? const <Map<String, dynamic>>[];
@@ -217,13 +217,13 @@ class _ReportsScreenState extends State<ReportsScreen>
                       unselectedLabelColor: const Color(0xFF6C7892),
                       labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                       tabs: const [
-                        Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: 'نمای کلی'),
-                        Tab(icon: Icon(Icons.trending_up, size: 18), text: 'فروش'),
-                        Tab(icon: Icon(Icons.fastfood_outlined, size: 18), text: 'محصولات'),
-                        Tab(icon: Icon(Icons.people_alt_outlined, size: 18), text: 'مشتریان'),
-                        Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 18), text: 'مالی و سود'),
-                        Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'انبار'),
-                        Tab(icon: Icon(Icons.warning_amber_rounded, size: 18), text: 'وضعیت سفارش‌ها'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedDashboardSquare01, size: 18), text: 'نمای کلی'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedChartIncrease, size: 18), text: 'فروش'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedFood, size: 18), text: 'محصولات'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedUserGroup, size: 18), text: 'مشتریان'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedWallet01, size: 18), text: 'مالی و سود'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedPackage, size: 18), text: 'انبار'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedAlert02, size: 18), text: 'وضعیت سفارش‌ها'),
                       ],
                     ),
                   ),
@@ -264,7 +264,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     final cancelledRows = rows.where((r) => r['category'] == 'cancelled').toList();
     final delayedRows = rows.where((r) => r['category'] == 'delayed').toList();
     final repeatRows = rows.where((r) => r['category'] == 'repeat_customer').toList();
-    Widget reportCard(String title, String subtitle, IconData icon, List<Map<String, dynamic>> items, String category) =>
+    Widget reportCard(String title, String subtitle, dynamic icon, List<Map<String, dynamic>> items, String category) =>
       _sectionCard(title: title, subtitle: subtitle, icon: icon, child: items.isEmpty
         ? const _NoData(message: 'در بازه انتخاب‌شده موردی ثبت نشده است.')
         : Column(children: items.take(50).map((item) {
@@ -284,7 +284,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
               backgroundColor: category == 'cancelled' ? const Color(0xFFFFE9ED) : category == 'delayed' ? const Color(0xFFFFF2DB) : _paleBlue,
-              child: Icon(category == 'cancelled' ? Icons.cancel_outlined : category == 'delayed' ? Icons.timer_outlined : Icons.repeat_rounded,
+              child: HugeIcon(icon:category == 'cancelled' ? HugeIcons.strokeRoundedCancel01 : category == 'delayed' ? HugeIcons.strokeRoundedTimer : HugeIcons.strokeRoundedRepeat,
                 color: category == 'cancelled' ? const Color(0xFFE45B70) : category == 'delayed' ? const Color(0xFFB7791F) : _blue, size: 20),
             ),
             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -295,13 +295,13 @@ class _ReportsScreenState extends State<ReportsScreen>
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (loading) const LinearProgressIndicator(minHeight: 2),
       _metricGrid(context, mobile, [
-        _metric('سفارش لغوشده', _number(cancelled), Icons.cancel_outlined, const Color(0xFFE45B70), 'در بازه انتخابی'),
-        _metric('سفارش تأخیردار', _number(delayed), Icons.timer_outlined, const Color(0xFFB7791F), 'نیازمند پیگیری'),
-        _metric('مشتری پرتکرار', _number(repeatCustomers), Icons.repeat_rounded, _blue, 'حداقل ۳ سفارش'),
-        _metric('مبلغ لغوشده', '${_number(cancelledAmount)} تومان', Icons.payments_outlined, const Color(0xFF8B72E8), 'مجموع مبلغ لغوها'),
+        _metric('سفارش لغوشده', _number(cancelled), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'در بازه انتخابی'),
+        _metric('سفارش تأخیردار', _number(delayed), HugeIcons.strokeRoundedTimer, const Color(0xFFB7791F), 'نیازمند پیگیری'),
+        _metric('مشتری پرتکرار', _number(repeatCustomers), HugeIcons.strokeRoundedRepeat, _blue, 'حداقل ۳ سفارش'),
+        _metric('مبلغ لغوشده', '${_number(cancelledAmount)} تومان', HugeIcons.strokeRoundedMoney03, const Color(0xFF8B72E8), 'مجموع مبلغ لغوها'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'نمودار شاخص‌های سفارش', subtitle: 'تعداد لغوها، تأخیرها و مشتریان پرتکرار', icon: Icons.bar_chart_rounded,
+      _sectionCard(title: 'نمودار شاخص‌های سفارش', subtitle: 'تعداد لغوها، تأخیرها و مشتریان پرتکرار', icon: HugeIcons.strokeRoundedChartBarLine,
         child: SizedBox(
           height: mobile ? 220 : 250,
           child: BarChart(BarChartData(
@@ -326,11 +326,11 @@ class _ReportsScreenState extends State<ReportsScreen>
           )),
         )),
       const SizedBox(height: 18),
-      reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', Icons.cancel_outlined, cancelledRows, 'cancelled'),
+      reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', HugeIcons.strokeRoundedCancel01, cancelledRows, 'cancelled'),
       const SizedBox(height: 16),
-      reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', Icons.timer_outlined, delayedRows, 'delayed'),
+      reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', HugeIcons.strokeRoundedTimer, delayedRows, 'delayed'),
       const SizedBox(height: 16),
-      reportCard('مشتریان پرتکرار', 'مشتریانی با حداقل ۳ سفارش در بازه انتخابی', Icons.repeat_rounded, repeatRows, 'repeat_customer'),
+      reportCard('مشتریان پرتکرار', 'مشتریانی با حداقل ۳ سفارش در بازه انتخابی', HugeIcons.strokeRoundedRepeat, repeatRows, 'repeat_customer'),
     ]);
   }
 
@@ -364,7 +364,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             tooltip: 'بروزرسانی گزارش‌ها',
             onPressed: _fetchReport,
             style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _ink),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const HugeIcon(icon:HugeIcons.strokeRoundedRefresh),
           ),
       ],
     );
@@ -378,7 +378,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           _filterChip('این هفته', DateRangeFilter.thisWeek),
           _filterChip('این ماه', DateRangeFilter.thisMonth),
           ActionChip(
-            avatar: const Icon(Icons.date_range_rounded, size: 17),
+            avatar: const HugeIcon(icon:HugeIcons.strokeRoundedCalendar03, size: 17),
             label: Text(_customDateRange == null
                 ? 'بازه دلخواه'
                 : '${_jalaliDateLabel(_customDateRange!.start)} تا ${_jalaliDateLabel(_customDateRange!.end)}'),
@@ -410,20 +410,20 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _overviewTab(
     BuildContext context, bool mobile, Map<String, dynamic> summary,
     num sales, num orders, num growth,
-    List<({String label, num count, Color color, IconData icon})> types,
+    List<({String label, num count, Color color, dynamic icon})> types,
     num totalTypes, List<Map<String, dynamic>> products,
   ) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('فروش تکمیل‌شده', '${_number(sales)} تومان', Icons.payments_outlined, _blue, 'مجموع فروش در بازه انتخابی'),
-        _metric('سفارش‌های تکمیل‌شده', _number(orders), Icons.receipt_long_outlined, const Color(0xFF8B72E8), 'تعداد سفارش‌های نهایی‌شده'),
-        _metric('رشد فروش', _percentage(growth), Icons.show_chart_rounded, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'در مقایسه با بازه قبل'),
+        _metric('فروش تکمیل‌شده', '${_number(sales)} تومان', HugeIcons.strokeRoundedMoney03, _blue, 'مجموع فروش در بازه انتخابی'),
+        _metric('سفارش‌های تکمیل‌شده', _number(orders), HugeIcons.strokeRoundedReceipt, const Color(0xFF8B72E8), 'تعداد سفارش‌های نهایی‌شده'),
+        _metric('رشد فروش', _percentage(growth), HugeIcons.strokeRoundedChartLineData01, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'در مقایسه با بازه قبل'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
         title: 'ترکیب روش سفارش',
         subtitle: 'سهم هر روش از سفارش‌های تکمیل‌شده',
-        icon: Icons.donut_large_rounded,
+        icon: HugeIcons.strokeRoundedChartDonut,
         child: totalTypes == 0
             ? const _NoData(message: 'در این بازه سفارش تکمیل‌شده‌ای ثبت نشده است.')
             : Column(children: [
@@ -448,7 +448,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       _sectionCard(
         title: 'محصولات پرفروش',
         subtitle: 'محصولات برتر بر اساس داده‌های ثبت‌شده',
-        icon: Icons.local_fire_department_outlined,
+        icon: HugeIcons.strokeRoundedFire,
         trailing: TextButton(onPressed: () => _tabs.animateTo(2), child: const Text('همه محصولات')),
         child: products.isEmpty
             ? const _NoData(message: 'اطلاعات محصولات پرفروش در دسترس نیست.')
@@ -460,21 +460,21 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _salesTab(
     BuildContext context, bool mobile, Map<String, dynamic> summary,
     num sales, num orders, num growth,
-    List<({String label, num count, Color color, IconData icon})> types,
+    List<({String label, num count, Color color, dynamic icon})> types,
     num totalTypes,
   ) {
     final chart = context.read<ReportsProvider>().salesReport?.chartData ?? const <Map<String, dynamic>>[];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مجموع فروش', '${_number(sales)} تومان', Icons.account_balance_wallet_outlined, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
-        _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', Icons.calculate_outlined, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
-        _metric('تغییر نسبت به قبل', _percentage(growth), Icons.compare_arrows_rounded, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
+        _metric('مجموع فروش', '${_number(sales)} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
+        _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
+        _metric('تغییر نسبت به قبل', _percentage(growth), HugeIcons.strokeRoundedArrowLeftRight, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
       ]),
       const SizedBox(height: 18),
       _sectionCard(
         title: 'روند فروش',
         subtitle: 'مقادیر نمودار بر اساس داده‌ای است که گزارش فروش برمی‌گرداند',
-        icon: Icons.bar_chart_rounded,
+        icon: HugeIcons.strokeRoundedChartBarLine,
         child: chart.isEmpty
             ? const _NoData(message: 'داده نموداری برای این بازه موجود نیست.')
             : SizedBox(
@@ -503,11 +503,11 @@ class _ReportsScreenState extends State<ReportsScreen>
               ),
       ),
       const SizedBox(height: 18),
-      _sectionCard(title: 'تفکیک روش سفارش', subtitle: 'تعداد سفارش‌ها بر اساس نوع سرویس', icon: Icons.pie_chart_outline_rounded,
+      _sectionCard(title: 'تفکیک روش سفارش', subtitle: 'تعداد سفارش‌ها بر اساس نوع سرویس', icon: HugeIcons.strokeRoundedChartPie,
         child: totalTypes == 0 ? const _NoData(message: 'داده‌ای برای تفکیک روش سفارش وجود ندارد.') : Column(children: types.map((item) {
           final ratio = (item.count / totalTypes).clamp(0.0, 1.0).toDouble();
           return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [
-            Row(children: [Icon(item.icon, size: 18, color: item.color), const SizedBox(width: 8), Expanded(child: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600, color: _ink))), Text('${_number(item.count)} · ${(ratio * 100).toStringAsFixed(0)}٪', style: const TextStyle(color: Color(0xFF77839A)))]),
+            Row(children: [HugeIcon(icon:item.icon, size: 18, color: item.color), const SizedBox(width: 8), Expanded(child: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600, color: _ink))), Text('${_number(item.count)} · ${(ratio * 100).toStringAsFixed(0)}٪', style: const TextStyle(color: Color(0xFF77839A)))]),
             const SizedBox(height: 9),
             ClipRRect(borderRadius: BorderRadius.circular(8), child: LinearProgressIndicator(value: ratio, minHeight: 8, backgroundColor: const Color(0xFFF0F3FA), color: item.color)),
           ]));
@@ -520,7 +520,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     return _sectionCard(
       title: 'عملکرد محصولات',
       subtitle: 'فهرست واقعی محصولات برگشتی از گزارش Supabase',
-      icon: Icons.fastfood_outlined,
+      icon: HugeIcons.strokeRoundedFood,
       child: loading && products.isEmpty
           ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
           : products.isEmpty
@@ -534,17 +534,17 @@ class _ReportsScreenState extends State<ReportsScreen>
       return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (summary.isEmpty && chart.isEmpty) {
-      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'توزیع مشتریان از داده‌های واقعی', icon: Icons.people_alt_outlined,
+      return _sectionCard(title: 'گزارش مشتریان', subtitle: 'توزیع مشتریان از داده‌های واقعی', icon: HugeIcons.strokeRoundedUserGroup,
         child: const _NoData(message: 'گزارش مشتریان هنوز داده‌ای برنگردانده است.'));
     }
     final entries = summary.entries.toList();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (entries.isNotEmpty)
         _metricGrid(context, MediaQuery.sizeOf(context).width < 640, entries.take(4).map((entry) => _metric(
-          _humanize(entry.key), _number(_asNum(entry.value)), Icons.people_outline_rounded, _blue, 'مقدار برگشتی از گزارش مشتریان',
+          _humanize(entry.key), _number(_asNum(entry.value)), HugeIcons.strokeRoundedUserMultiple, _blue, 'مقدار برگشتی از گزارش مشتریان',
         )).toList()),
       const SizedBox(height: 18),
-      _sectionCard(title: 'توزیع مشتریان', subtitle: 'دسته‌بندی برگشتی از Supabase', icon: Icons.groups_2_outlined,
+      _sectionCard(title: 'توزیع مشتریان', subtitle: 'دسته‌بندی برگشتی از Supabase', icon: HugeIcons.strokeRoundedUserGroup,
         child: chart.isEmpty ? const _NoData(message: 'جزئیات دسته‌بندی مشتریان موجود نیست.') : Column(
           children: chart.asMap().entries.map((entry) {
             final row = entry.value;
@@ -567,7 +567,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (summary.isEmpty) {
-      return _sectionCard(title: 'گزارش مالی و سود', subtitle: 'درآمد، هزینه و سود تخمینی', icon: Icons.account_balance_wallet_outlined,
+      return _sectionCard(title: 'گزارش مالی و سود', subtitle: 'درآمد، هزینه و سود تخمینی', icon: HugeIcons.strokeRoundedWallet01,
         child: const _NoData(message: 'گزارش مالی در دسترس نیست. اسکریپت گزارش مالی Supabase را اجرا کنید.'));
     }
     final revenue = _asNum(summary['revenue']);
@@ -577,14 +577,14 @@ class _ReportsScreenState extends State<ReportsScreen>
     final costs = _asNum(summary['total_costs']);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('درآمد فروش', '${_number(revenue)} تومان', Icons.payments_outlined, _blue, 'فقط سفارش‌های تکمیل‌شده'),
-        _metric('هزینه مواد اولیه', '${_number(stockCost)} تومان', Icons.kitchen_outlined, const Color(0xFF8B72E8), 'مصرف ثبت‌شده انبار'),
-        _metric('هزینه‌های جاری', '${_number(expenses)} تومان', Icons.receipt_long_outlined, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده'),
-        _metric('سود تخمینی', '${_number(profit)} تومان', Icons.trending_up_rounded, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درآمد منهای هزینه‌های ثبت‌شده'),
+        _metric('درآمد فروش', '${_number(revenue)} تومان', HugeIcons.strokeRoundedMoney03, _blue, 'فقط سفارش‌های تکمیل‌شده'),
+        _metric('هزینه مواد اولیه', '${_number(stockCost)} تومان', HugeIcons.strokeRoundedChefHat, const Color(0xFF8B72E8), 'مصرف ثبت‌شده انبار'),
+        _metric('هزینه‌های جاری', '${_number(expenses)} تومان', HugeIcons.strokeRoundedReceipt, const Color(0xFFE9A23B), 'هزینه‌های ثبت‌شده'),
+        _metric('سود تخمینی', '${_number(profit)} تومان', HugeIcons.strokeRoundedChartIncrease, profit >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درآمد منهای هزینه‌های ثبت‌شده'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: Icons.account_balance_outlined,
-        trailing: TextButton.icon(onPressed: () => _addExpense(context), icon: const Icon(Icons.add, size: 18), label: const Text('ثبت هزینه')),
+      _sectionCard(title: 'خلاصه مالی', subtitle: 'برآورد مالی در بازه انتخاب‌شده', icon: HugeIcons.strokeRoundedBank,
+        trailing: TextButton.icon(onPressed: () => _addExpense(context), icon: const HugeIcon(icon:HugeIcons.strokeRoundedAdd01, size: 18), label: const Text('ثبت هزینه')),
         child: Column(children: [
           _financialLine('درآمد فروش', revenue, const Color(0xFF3977EE)),
           _financialLine('هزینه مواد اولیه', stockCost, const Color(0xFF8B72E8)),
@@ -600,7 +600,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         _sectionCard(
           title: 'مقایسه مالی',
           subtitle: 'مقایسه تصویری درآمد، هزینه‌ها و سود تخمینی',
-          icon: Icons.bar_chart_rounded,
+          icon: HugeIcons.strokeRoundedChartBarLine,
           child: SizedBox(
             height: mobile ? 220 : 270,
             child: BarChart(BarChartData(
@@ -637,7 +637,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           ),
         ),
         const SizedBox(height: 14),
-        _sectionCard(title: 'جزئیات ترکیب مالی', subtitle: 'مقادیر دقیق هر شاخص', icon: Icons.receipt_long_outlined,
+        _sectionCard(title: 'جزئیات ترکیب مالی', subtitle: 'مقادیر دقیق هر شاخص', icon: HugeIcons.strokeRoundedReceipt,
           child: Column(children: chart.map((item) {
             final label = (item['label'] ?? 'شاخص').toString();
             final amount = _asNum(item['amount']);
@@ -735,18 +735,18 @@ class _ReportsScreenState extends State<ReportsScreen>
       return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
     }
     if (summary.isEmpty) {
-      return _sectionCard(title: 'گزارش انبار', subtitle: 'موجودی، ارزش انبار و مواد کم‌موجود', icon: Icons.inventory_2_outlined,
+      return _sectionCard(title: 'گزارش انبار', subtitle: 'موجودی، ارزش انبار و مواد کم‌موجود', icon: HugeIcons.strokeRoundedPackage,
         child: const _NoData(message: 'گزارش انبار در دسترس نیست. اسکریپت گزارش انبار Supabase را اجرا کنید.'));
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
-        _metric('مواد فعال', _number(_asNum(summary['active_materials'])), Icons.category_outlined, _blue, 'مواد اولیه فعال'),
-        _metric('موجودی کم', _number(_asNum(summary['low_stock_materials'])), Icons.warning_amber_rounded, const Color(0xFFE45B70), 'برابر یا کمتر از حد سفارش'),
-        _metric('ارزش فعلی انبار', '${_number(_asNum(summary['stock_value']))} تومان', Icons.inventory_2_outlined, const Color(0xFF39B982), 'موجودی × بهای واحد'),
-        _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', Icons.restaurant_outlined, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
+        _metric('مواد فعال', _number(_asNum(summary['active_materials'])), HugeIcons.strokeRoundedAiSwap, _blue, 'مواد اولیه فعال'),
+        _metric('موجودی کم', _number(_asNum(summary['low_stock_materials'])), HugeIcons.strokeRoundedAlert02, const Color(0xFFE45B70), 'برابر یا کمتر از حد سفارش'),
+        _metric('ارزش فعلی انبار', '${_number(_asNum(summary['stock_value']))} تومان', HugeIcons.strokeRoundedPackage, const Color(0xFF39B982), 'موجودی × بهای واحد'),
+        _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', HugeIcons.strokeRoundedRestaurant01, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: Icons.pie_chart_outline_rounded,
+      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: HugeIcons.strokeRoundedChartPie,
         child: Builder(builder: (context) {
           final active = _asNum(summary['active_materials']).toDouble();
           final low = _asNum(summary['low_stock_materials']).clamp(0, active).toDouble();
@@ -781,7 +781,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           });
         })),
       const SizedBox(height: 18),
-      _sectionCard(title: 'نمودار گردش انبار', subtitle: 'مقایسه مبلغ خرید، مصرف، ضایعات و برگشت', icon: Icons.bar_chart_rounded,
+      _sectionCard(title: 'نمودار گردش انبار', subtitle: 'مقایسه مبلغ خرید، مصرف، ضایعات و برگشت', icon: HugeIcons.strokeRoundedChartBarLine,
         child: SizedBox(
           height: mobile ? 220 : 260,
           child: BarChart(BarChartData(
@@ -807,7 +807,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           )),
         )),
       const SizedBox(height: 18),
-      _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: Icons.list_alt_rounded,
+      _sectionCard(title: 'وضعیت مواد اولیه', subtitle: 'ارزش و موجودی فعلی هر ماده', icon: HugeIcons.strokeRoundedListView,
         child: rows.isEmpty ? const _NoData(message: 'ماده اولیه‌ای برای نمایش وجود ندارد.') : Column(children: rows.asMap().entries.map((entry) {
           final item = entry.value;
           final low = item['is_low_stock'] == true;
@@ -820,7 +820,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF0F3FA)))),
             child: Row(children: [
               Container(width: 38, height: 38, decoration: BoxDecoration(color: low ? const Color(0xFFFFF0F1) : _paleBlue, borderRadius: BorderRadius.circular(12)),
-                child: Icon(low ? Icons.warning_amber_rounded : Icons.inventory_2_outlined, color: low ? const Color(0xFFE45B70) : _blue, size: 20)),
+                child: HugeIcon(icon:low ? HugeIcons.strokeRoundedAlert02 : HugeIcons.strokeRoundedPackage, color: low ? const Color(0xFFE45B70) : _blue, size: 20)),
               const SizedBox(width: 10),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(name, style: const TextStyle(color: _ink, fontWeight: FontWeight.w700)),
@@ -854,15 +854,15 @@ class _ReportsScreenState extends State<ReportsScreen>
     });
   }
 
-  Widget _metric(String title, String value, IconData icon, Color color, String subtitle) {
+  Widget _metric(String title, String value, dynamic icon, Color color, String subtitle) {
     return Container(
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE7ECF6)), boxShadow: const [BoxShadow(color: Color(0x070F2450), blurRadius: 18, offset: Offset(0, 6))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(children: [
-          Container(width: 38, height: 38, decoration: BoxDecoration(color: color.withValues(alpha: .11), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 21)),
+          Container(width: 38, height: 38, decoration: BoxDecoration(color: color.withValues(alpha: .11), borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon:icon, color: color, size: 21)),
           const Spacer(),
-          const Icon(Icons.north_east_rounded, size: 16, color: Color(0xFF9AA5BA)),
+          const HugeIcon(icon:HugeIcons.strokeRoundedArrowUpRight01, size: 16, color: Color(0xFF9AA5BA)),
         ]),
         const SizedBox(height: 12),
         Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF7B879D), fontSize: 12, fontWeight: FontWeight.w600)),
@@ -874,14 +874,14 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
   }
 
-  Widget _sectionCard({required String title, required String subtitle, required IconData icon, required Widget child, Widget? trailing}) {
+  Widget _sectionCard({required String title, required String subtitle, required dynamic icon, required Widget child, Widget? trailing}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFE7ECF6)), boxShadow: const [BoxShadow(color: Color(0x060F2450), blurRadius: 18, offset: Offset(0, 6))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(width: 38, height: 38, decoration: BoxDecoration(color: _paleBlue, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: _blue, size: 20)),
+          Container(width: 38, height: 38, decoration: BoxDecoration(color: _paleBlue, borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon:icon, color: _blue, size: 20)),
           const SizedBox(width: 11),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: const TextStyle(color: _ink, fontWeight: FontWeight.w800, fontSize: 16)),
@@ -957,7 +957,7 @@ class _NoData extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 24),
     child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFF0F4FC), borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.insert_chart_outlined_rounded, color: Color(0xFF8290AA))),
+      Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFF0F4FC), borderRadius: BorderRadius.circular(15)), child: const HugeIcon(icon:HugeIcons.strokeRoundedChart01, color: Color(0xFF8290AA))),
       const SizedBox(height: 10),
       Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF8792A8), fontSize: 13)),
     ])),
