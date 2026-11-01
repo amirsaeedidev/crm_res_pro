@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -58,7 +59,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
           ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(dialogContext, true),
-            icon: const Icon(Icons.delete_outline),
+            icon: const HugeIcon(icon:HugeIcons.strokeRoundedDelete02),
             label: const Text('حذف دسته‌بندی'),
           ),
         ],
@@ -106,8 +107,8 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            active ? Icons.check_circle_outline : Icons.visibility_off_outlined,
+          HugeIcon(icon:
+            active ? HugeIcons.strokeRoundedCheckmarkCircle02 : HugeIcons.strokeRoundedBlocked,
             size: 13,
             color: color,
           ),
@@ -140,8 +141,8 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                     color: AppColors.primary.withValues(alpha: 0.10),
                     borderRadius: AppRadius.mediumAll,
                   ),
-                  child: const Icon(
-                    Icons.category_outlined,
+                  child: const HugeIcon(icon:
+                    HugeIcons.strokeRoundedAiSwap,
                     color: AppColors.primary,
                   ),
                 ),
@@ -156,7 +157,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                 ),
                 FilledButton.icon(
                   onPressed: () => context.push('/categories/add'),
-                  icon: const Icon(Icons.add),
+                  icon: const HugeIcon(icon:HugeIcons.strokeRoundedAdd01),
                   label: const Text('دسته‌بندی جدید'),
                 ),
               ],
@@ -171,14 +172,14 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                 decoration: InputDecoration(
                   labelText: 'جست‌وجوی دسته‌بندی',
                   hintText: 'نام دسته‌بندی را وارد کنید',
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const HugeIcon(icon:HugeIcons.strokeRoundedSearch01),
                   suffixIcon: IconButton(
                     tooltip: 'پاک کردن جست‌وجو',
                     onPressed: () {
                       _searchController.clear();
                       context.read<CategoriesProvider>().setSearchQuery('');
                     },
-                    icon: const Icon(Icons.clear),
+                    icon: const HugeIcon(icon:HugeIcons.strokeRoundedCancel01),
                   ),
                 ),
               ),
@@ -220,8 +221,8 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                             height: 52,
                                             color: AppColors.primary
                                                 .withValues(alpha: 0.10),
-                                            child: const Icon(
-                                              Icons.category_outlined,
+                                            child: const HugeIcon(icon:
+                                              HugeIcons.strokeRoundedAiSwap,
                                               color: AppColors.primary,
                                             ),
                                           )
@@ -235,8 +236,8 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                               height: 52,
                                               color: AppColors.primary
                                                   .withValues(alpha: 0.10),
-                                              child: const Icon(
-                                                Icons.broken_image_outlined,
+                                              child: const HugeIcon(icon:
+                                                HugeIcons.strokeRoundedImageNotFound01,
                                                 color: AppColors.primary,
                                               ),
                                             ),
@@ -317,7 +318,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                             value: 'edit',
                                             child: ListTile(
                                               dense: true,
-                                              leading: Icon(Icons.edit_outlined),
+                                              leading: HugeIcon(icon:HugeIcons.strokeRoundedEdit02),
                                               title: Text('ویرایش'),
                                             ),
                                           ),
@@ -325,15 +326,15 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                             value: 'delete',
                                             child: ListTile(
                                               dense: true,
-                                              leading: Icon(
-                                                Icons.delete_outline,
+                                              leading: HugeIcon(icon:
+                                                HugeIcons.strokeRoundedDelete02,
                                                 color: Colors.red,
                                               ),
                                               title: Text('حذف'),
                                             ),
                                           ),
                                         ],
-                                        icon: const Icon(Icons.more_horiz),
+                                        icon: const HugeIcon(icon:HugeIcons.strokeRoundedSettings04),
                                       ),
                                     ],
                                   ),
@@ -354,7 +355,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                       provider.currentPage - 1,
                                     )
                                 : null,
-                            icon: const Icon(Icons.chevron_right),
+                            icon: const HugeIcon(icon:HugeIcons.strokeRoundedArrowRight01),
                           ),
                           Text('صفحه ${_persianDigits(provider.currentPage)}'),
                           IconButton(
@@ -364,7 +365,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
                                       provider.currentPage + 1,
                                     )
                                 : null,
-                            icon: const Icon(Icons.chevron_left),
+                            icon: const HugeIcon(icon:HugeIcons.strokeRoundedArrowLeft01),
                           ),
                         ],
                       ),
@@ -383,13 +384,13 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off_outlined, size: 44),
+              const HugeIcon(icon:HugeIcons.strokeRoundedCloudOff, size: 44),
               const SizedBox(height: AppSizes.sm),
               Text(message, textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.md),
               FilledButton.icon(
                 onPressed: retry,
-                icon: const Icon(Icons.refresh),
+                icon: const HugeIcon(icon:HugeIcons.strokeRoundedRefresh),
                 label: const Text('تلاش مجدد'),
               ),
             ],
