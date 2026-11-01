@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -9,7 +10,6 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../models/table_model.dart';
 import '../../../providers/tables_provider.dart';
-import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
 
 class TablesGridScreen extends StatefulWidget {
@@ -20,6 +20,7 @@ class TablesGridScreen extends StatefulWidget {
 }
 
 class _TablesGridScreenState extends State<TablesGridScreen> {
+  TableStatus? _selectedStatus;
   @override
   void initState() {
     super.initState();
@@ -39,14 +40,14 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
     }
   }
 
-  IconData _getStatusIcon(TableStatus status) {
+  Widget _getStatusIcon(TableStatus status) {
     switch (status) {
       case TableStatus.free:
-        return Icons.check_circle_outline;
+        return const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02);
       case TableStatus.occupied:
-        return Icons.event_busy_outlined;
+        return const HugeIcon(icon: HugeIcons.strokeRoundedAlert02);
       case TableStatus.reserved:
-        return Icons.event_available_outlined;
+        return const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01);
     }
   }
 
@@ -108,7 +109,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                     table.currentOrderId != null)
                   ListTile(
                     leading: const Icon(
-                      Icons.receipt_long_outlined,
+                      HugeIcons.strokeRoundedReceipt,
                       color: AppColors.info,
                     ),
                     title: const Text('مشاهده سفارش فعال'),
@@ -119,7 +120,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                   ),
                 ListTile(
                   leading: const Icon(
-                    Icons.edit_outlined,
+                    HugeIcons.strokeRoundedEdit02,
                     color: AppColors.info,
                   ),
                   title: const Text('ویرایش شماره و ظرفیت'),
@@ -131,7 +132,7 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 if (table.status == TableStatus.occupied)
                   ListTile(
                     leading: const Icon(
-                      Icons.cleaning_services_outlined,
+                      HugeIcons.strokeRoundedRefresh,
                       color: AppColors.success,
                     ),
                     title: const Text('آزاد کردن میز'),
@@ -170,8 +171,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                 ListTile(
                   leading: Icon(
                     table.isActive
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                        ? HugeIcons.strokeRoundedViewOff
+                        : HugeIcons.strokeRoundedView,
                     color: table.isActive ? AppColors.error : AppColors.success,
                   ),
                   title: Text(
@@ -320,30 +321,42 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
     required String label,
     required int count,
     required Color color,
-    required IconData icon,
+    required Widget icon,
+    required TableStatus status,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: AppSizes.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
+    final selected = _selectedStatus == status;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.circular),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
+        onTap: () => setState(() {
+          _selectedStatus = selected ? null : status;
+        }),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.sm,
+            vertical: AppSizes.xs,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? color : color.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(AppRadius.circular),
+            border: Border.all(color: color.withValues(alpha: selected ? 1 : 0.22)),
+          ),
+          child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
+          icon,
           const SizedBox(width: AppSizes.xs),
           Text(
             _persianDigits(count),
-            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            style: TextStyle(color: selected ? Colors.white : color, fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: AppSizes.xs),
-          Text(label, style: TextStyle(color: color)),
+          Text(label, style: TextStyle(color: selected ? Colors.white : color)),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -374,6 +387,9 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
           final reservedCount = provider.tables
               .where((t) => t.status == TableStatus.reserved)
               .length;
+          final filteredTables = _selectedStatus == null
+              ? provider.tables
+              : provider.tables.where((t) => t.status == _selectedStatus).toList();
 
           return Padding(
             padding: const EdgeInsets.all(AppSizes.md),
@@ -391,13 +407,13 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                     ),
                     FilledButton.icon(
                       onPressed: () => _showTableForm(),
-                      icon: const Icon(Icons.add),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01),
                       label: const Text('افزودن میز'),
                     ),
                     IconButton(
                       tooltip: 'به‌روزرسانی',
                       onPressed: provider.fetchTables,
-                      icon: const Icon(Icons.refresh),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                     ),
                   ],
                 ),
@@ -410,32 +426,53 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                       label: 'میز آزاد',
                       count: freeCount,
                       color: AppColors.success,
-                      icon: Icons.check_circle_outline,
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02),
+                      status: TableStatus.free,
                     ),
                     _buildCountBadge(
                       label: 'میز اشغال',
                       count: occupiedCount,
                       color: AppColors.error,
-                      icon: Icons.event_busy_outlined,
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
+                      status: TableStatus.occupied,
                     ),
                     _buildCountBadge(
                       label: 'میز رزروشده',
                       count: reservedCount,
                       color: AppColors.warning,
-                      icon: Icons.event_available_outlined,
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01),
+                      status: TableStatus.reserved,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSizes.lg),
                 Expanded(
                   child: provider.tables.isEmpty
-                      ? const EmptyWidget(
-                          title: 'هنوز میزی ثبت نشده است',
-                          message:
-                              'برای شروع از دکمه «افزودن میز» استفاده کنید.',
-                          icon: Icons.table_restaurant_outlined,
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const HugeIcon(icon: HugeIcons.strokeRoundedCafe, size: 64),
+                              const SizedBox(height: AppSizes.md),
+                              const Text('هنوز میزی ثبت نشده است'),
+                              const SizedBox(height: AppSizes.xs),
+                              Text('برای شروع از دکمه «افزودن میز» استفاده کنید.', style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
                         )
-                      : GridView.builder(
+                      : filteredTables.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 52),
+                                  const SizedBox(height: AppSizes.md),
+                                  Text('میزی با وضعیت انتخاب‌شده وجود ندارد.'),
+                                  TextButton(onPressed: () => setState(() => _selectedStatus = null), child: const Text('نمایش همه میزها')),
+                                ],
+                              ),
+                            )
+                          : GridView.builder(
                           gridDelegate:
                               const SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: 200,
@@ -443,9 +480,9 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                 crossAxisSpacing: AppSizes.md,
                                 mainAxisSpacing: AppSizes.md,
                               ),
-                          itemCount: provider.tables.length,
+                          itemCount: filteredTables.length,
                           itemBuilder: (context, index) {
-                            final table = provider.tables[index];
+                            final table = filteredTables[index];
                             final statusColor = table.isActive
                                 ? _getStatusColor(table.status, context)
                                 : AppColors.getSecondaryText(context);
@@ -496,8 +533,8 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                               ),
                                             ],
                                           ),
-                                          Icon(
-                                            Icons.table_restaurant,
+                                          HugeIcon(
+                                            icon: HugeIcons.strokeRoundedCafe,
                                             color: statusColor.withValues(
                                               alpha: 0.5,
                                             ),
@@ -543,13 +580,16 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                             const SizedBox(height: 3),
                                             Row(
                                               children: [
-                                                Icon(
+                                                table.isActive
+                                                    ? _getStatusIcon(table.status)
+                                                    : const HugeIcon(icon: HugeIcons.strokeRoundedViewOff),
+                                                /*Icon(
                                                   table.isActive
                                                       ? _getStatusIcon(table.status)
-                                                      : Icons.visibility_off_outlined,
+                                                      : const HugeIcon(icon: HugeIcons.strokeRoundedViewOff),
                                                   size: 16,
                                                   color: statusColor,
-                                                ),
+                                                ),*/
                                                 const SizedBox(width: AppSizes.xs),
                                                 Expanded(
                                                   child: Text(
