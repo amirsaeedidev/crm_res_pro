@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/services/supabase_service.dart';
 import '../utils/inventory_unit_converter.dart';
 
@@ -64,10 +65,10 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
     try{await _client.from('inventory_materials').update({'reorder_level':v}).eq('id',m['id']);await _load();if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('حد هشدار این ماده به‌روزرسانی شد.')));}
     catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('به‌روزرسانی ناموفق بود: $e')));}
   }
-  Widget _section(String title,IconData icon,List<Map<String,dynamic>> rows,Color color)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    Row(children:[Icon(icon,color:color),const SizedBox(width:8),Expanded(child:Text('$title (${_digits(rows.length)})',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)))]),
+  Widget _section(String title,Widget icon,List<Map<String,dynamic>> rows,Color color)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    Row(children:[IconTheme(data:IconThemeData(color:color),child:icon),const SizedBox(width:8),Expanded(child:Text('$title (${_digits(rows.length)})',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)))]),
     if(rows.isEmpty)const Padding(padding:EdgeInsets.all(12),child:Text('موردی برای نمایش وجود ندارد.')),
-    ...rows.map((m){final q=_num(m['quantity_on_hand']),l=_threshold(m);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundColor:color.withValues(alpha:.12),child:Icon(icon,color:color)),title:Text(m['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text('موجودی: ${_digits(q)} ${_unit(m['unit'])} · حد هشدار: ${_digits(l)} ${_unit(m['unit'])}\nبهای واحد: ${_money(m['unit_cost'])} تومان'),isThreeLine:true,trailing:IconButton(tooltip:'تنظیم حد هشدار',onPressed:()=>_editThreshold(m),icon:const Icon(Icons.tune)));}),
+    ...rows.map((m){final q=_num(m['quantity_on_hand']),l=_threshold(m);return ListTile(contentPadding:EdgeInsets.zero,leading:CircleAvatar(backgroundColor:color.withValues(alpha:.12),child:IconTheme(data:IconThemeData(color:color),child:icon)),title:Text(m['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w600)),subtitle:Text('موجودی: ${_digits(q)} ${_unit(m['unit'])} · حد هشدار: ${_digits(l)} ${_unit(m['unit'])}\nبهای واحد: ${_money(m['unit_cost'])} تومان'),isThreeLine:true,trailing:IconButton(tooltip:'تنظیم حد هشدار',onPressed:()=>_editThreshold(m),icon:const HugeIcon(icon: HugeIcons.strokeRoundedSettings04)));}),
   ])));
   @override
   Widget build(BuildContext context){
@@ -83,11 +84,11 @@ class _InventoryAlertsManagerState extends State<InventoryAlertsManager> {
         Slider(value:_defaultLevel.clamp(0,10000).toDouble(),min:0,max:10000,divisions:1000,label:_digits(_defaultLevel),onChanged:(v)=>setState(()=>_defaultLevel=v)),
         Text('آستانه نزدیک به اتمام: ${_digits(_multiplier.toStringAsFixed(1))} برابر حد هشدار',style:const TextStyle(fontWeight:FontWeight.w600)),
         Slider(value:_multiplier,min:1.1,max:3,divisions:19,label:_digits(_multiplier.toStringAsFixed(1)),onChanged:(v)=>setState(()=>_multiplier=v)),
-        Align(alignment:Alignment.centerRight,child:FilledButton.icon(onPressed:_saving?null:_saveSettings,icon:_saving?const SizedBox(width:16,height:16,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.save_outlined),label:const Text('ذخیره تنظیمات'))),
+        Align(alignment:Alignment.centerRight,child:FilledButton.icon(onPressed:_saving?null:_saveSettings,icon:_saving?const SizedBox(width:16,height:16,child:CircularProgressIndicator(strokeWidth:2)):const HugeIcon(icon: HugeIcons.strokeRoundedFloppyDisk),label:const Text('ذخیره تنظیمات'))),
       ]))),
-      _section('مواد کم‌موجود',Icons.warning_amber_rounded,_low,Colors.red),
-      _section('مواد نزدیک به اتمام',Icons.hourglass_bottom_rounded,_near,Colors.orange),
-      const Card(child:ListTile(leading:Icon(Icons.info_outline),title:Text('شخصی‌سازی هر ماده'),subtitle:Text('با دکمه تنظیم کنار هر ماده، حد هشدار اختصاصی آن را تغییر دهید. تمام مبالغ بر حسب تومان است.'))),
+      _section('مواد کم‌موجود',const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),_low,Colors.red),
+      _section('مواد نزدیک به اتمام',const HugeIcon(icon: HugeIcons.strokeRoundedHourglass),_near,Colors.orange),
+      const Card(child:ListTile(leading:HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle),title:Text('شخصی‌سازی هر ماده'),subtitle:Text('با دکمه تنظیم کنار هر ماده، حد هشدار اختصاصی آن را تغییر دهید. تمام مبالغ بر حسب تومان است.'))),
     ]));
   }
 }
