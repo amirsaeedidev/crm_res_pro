@@ -7,21 +7,21 @@ class AppTypography {
 
   // Display
   static const TextStyle displayLarge = TextStyle(
-    fontSize: 57,
+    fontSize: 50,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.12,
   );
 
   static const TextStyle displayMedium = TextStyle(
-    fontSize: 45,
+    fontSize: 40,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.16,
   );
 
   static const TextStyle displaySmall = TextStyle(
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.22,
@@ -29,21 +29,21 @@ class AppTypography {
 
   // Headline
   static const TextStyle headlineLarge = TextStyle(
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.25,
   );
 
   static const TextStyle headlineMedium = TextStyle(
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.29,
   );
 
   static const TextStyle headlineSmall = TextStyle(
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.33,
@@ -51,21 +51,21 @@ class AppTypography {
 
   // Title
   static const TextStyle titleLarge = TextStyle(
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.27,
   );
 
   static const TextStyle titleMedium = TextStyle(
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.33,
   );
 
   static const TextStyle titleSmall = TextStyle(
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.43,
@@ -73,21 +73,21 @@ class AppTypography {
 
   // Body
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.50,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.43,
   );
 
   static const TextStyle bodySmall = TextStyle(
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: FontWeight.w400,
     fontFamily: _fontFamily,
     height: 1.33,
@@ -95,21 +95,21 @@ class AppTypography {
 
   // Label
   static const TextStyle labelLarge = TextStyle(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.43,
   );
 
   static const TextStyle labelMedium = TextStyle(
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.33,
   );
 
   static const TextStyle labelSmall = TextStyle(
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: FontWeight.w500,
     fontFamily: _fontFamily,
     height: 1.45,
