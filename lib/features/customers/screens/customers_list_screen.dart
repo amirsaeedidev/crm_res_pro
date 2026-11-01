@@ -164,8 +164,8 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     color: AppColors.primary.withValues(alpha: 0.10),
                     borderRadius: AppRadius.mediumAll,
                   ),
-                  child: const Icon(
-                    HugeIcons.strokeRoundedUserGroup,
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedUserGroup,
                     color: AppColors.primary,
                     size: 26,
                   ),
