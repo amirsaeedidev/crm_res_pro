@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -184,7 +185,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         content: SizedBox(width: 420, child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text('موجودی فعلی: ${_persianDigits(current.toString())} امتیاز'),
           const SizedBox(height: 12),
-          SegmentedButton<bool>(segments: const [ButtonSegment(value: true, label: Text('افزایش'), icon: Icon(Icons.add)), ButtonSegment(value: false, label: Text('کاهش'), icon: Icon(Icons.remove))], selected: {isAdding}, onSelectionChanged: (s) => setDialogState(() => isAdding = s.first)),
+          SegmentedButton<bool>(segments: const [ButtonSegment(value: true, label: Text('افزایش'), icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01)), ButtonSegment(value: false, label: Text('کاهش'), icon: HugeIcon(icon: HugeIcons.strokeRoundedMinusSign))], selected: {isAdding}, onSelectionChanged: (s) => setDialogState(() => isAdding = s.first)),
           const SizedBox(height: 12),
           TextField(controller: points, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'تعداد امتیاز', border: OutlineInputBorder())),
           const SizedBox(height: 12),
@@ -215,7 +216,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.getBackground(context),
-    appBar: AppBar(title: const Text('مدیریت کامل مشتری'), backgroundColor: AppColors.getSurface(context), foregroundColor: AppColors.getPrimaryText(context), actions: [IconButton(onPressed: _refresh, tooltip: 'به‌روزرسانی', icon: const Icon(Icons.refresh))]),
+    appBar: AppBar(title: const Text('مدیریت کامل مشتری'), backgroundColor: AppColors.getSurface(context), foregroundColor: AppColors.getPrimaryText(context), actions: [IconButton(onPressed: _refresh, tooltip: 'به‌روزرسانی', icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh))]),
     body: FutureBuilder<UserModel>(
       future: _customerFuture,
       builder: (context, snapshot) {
@@ -235,7 +236,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               const SizedBox(height: 6),
               Wrap(spacing: 6, children: [Chip(label: Text(customer.marketingSmsOptIn ? 'رضایت پیامک تبلیغاتی' : 'بدون رضایت تبلیغاتی')), Chip(label: Text('شناسه ${customer.id.substring(0, customer.id.length > 8 ? 8 : customer.id.length)}'))]),
             ])),
-            IconButton(tooltip: 'ویرایش اطلاعات', onPressed: () => _editCustomer(customer), icon: const Icon(Icons.edit_outlined)),
+            IconButton(tooltip: 'ویرایش اطلاعات', onPressed: () => _editCustomer(customer), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02)),
           ])),
           const SizedBox(height: AppSizes.lg),
           Text('کیف پول و امتیاز وفاداری', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
@@ -247,7 +248,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             if (wallet == null) return const AppCard(child: Text('برای این مشتری کیف امتیاز ثبت نشده است.'));
             final balance = (wallet['total_points'] as num? ?? 0).toInt();
             return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(Icons.account_balance_wallet_outlined, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_persianDigits(balance.toString())} امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${_displayDate(wallet['updated_at'])}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const Icon(Icons.tune), label: const Text('اصلاح موجودی'))]),
+              Row(children: [const HugeIcon(icon: HugeIcons.strokeRoundedWallet01, size: 30), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${_persianDigits(balance.toString())} امتیاز', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), Text('آخرین به‌روزرسانی: ${_displayDate(wallet['updated_at'])}', style: Theme.of(context).textTheme.bodySmall)])), FilledButton.icon(onPressed: () => _adjustPoints(wallet), icon: const HugeIcon(icon: HugeIcons.strokeRoundedSettings04), label: const Text('اصلاح موجودی'))]),
               const Divider(height: 24),
               Text('گردش آخرین تراکنش‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -278,13 +279,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               final balance = (wallet['balance'] as num? ?? 0).toDouble();
               return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  const Icon(Icons.account_balance_wallet_outlined, size: 30),
+                  const HugeIcon(icon: HugeIcons.strokeRoundedWallet01, size: 30),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('${_money(balance)} تومان', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                     Text('موجودی واقعی کیف پول', style: Theme.of(context).textTheme.bodySmall),
                   ])),
-                  TextButton.icon(onPressed: () => context.push('/wallets'), icon: const Icon(Icons.open_in_new), label: const Text('مدیریت کیف پول')),
+                  TextButton.icon(onPressed: () => context.push('/wallets'), icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01), label: const Text('مدیریت کیف پول')),
                 ]),
                 const Divider(height: 24),
                 Text('گردش مالی کیف پول', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -301,7 +302,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       final orderId = tx['order_id']?.toString();
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(positive ? Icons.add_circle_outline : Icons.remove_circle_outline, color: positive ? Colors.green : Colors.red),
+                        leading: Icon(positive ? HugeIcons.strokeRoundedAdd01_circle_outline : HugeIcons.strokeRoundedMinusSign_circle_outline, color: positive ? Colors.green : Colors.red),
                         title: Text('${_cashTypeLabel((tx['transaction_type'] ?? '').toString())} · ${positive ? '+' : ''}${_money(delta)} تومان'),
                         subtitle: Text('${(tx['reason'] ?? '').toString()}\n${_displayDate(tx['created_at'])}${orderId == null ? '' : '\nسفارش: ${orderId.substring(0, orderId.length > 8 ? 8 : orderId.length)}'}'),
                         isThreeLine: true,
