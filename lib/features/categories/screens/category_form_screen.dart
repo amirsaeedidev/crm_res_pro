@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -168,8 +169,8 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                             color: AppColors.primary.withValues(alpha: 0.10),
                             borderRadius: AppRadius.mediumAll,
                           ),
-                          child: const Icon(
-                            Icons.category_outlined,
+                          child: const HugeIcon(icon:
+                            HugeIcons.strokeRoundedAiSwap,
                             color: AppColors.primary,
                             size: 28,
                           ),
@@ -213,7 +214,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           controller: _name,
                           decoration: const InputDecoration(
                             labelText: 'نام دسته‌بندی *',
-                            prefixIcon: Icon(Icons.label_outline),
+                            prefixIcon: HugeIcon(icon:HugeIcons.strokeRoundedTag),
                           ),
                           textInputAction: TextInputAction.next,
                           validator: (value) => value == null || value.trim().isEmpty
@@ -226,7 +227,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
                             labelText: 'ترتیب نمایش',
-                            prefixIcon: Icon(Icons.sort),
+                            prefixIcon: HugeIcon(icon:HugeIcons.strokeRoundedFilter),
                             helperText: 'عدد کمتر، جایگاه بالاتری دارد.',
                           ),
                           validator: _nonNegativeInt,
@@ -237,7 +238,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
                             labelText: 'امتیاز وفاداری برای هر آیتم',
-                            prefixIcon: Icon(Icons.stars_outlined),
+                            prefixIcon: HugeIcon(icon:HugeIcons.strokeRoundedStar),
                           ),
                           validator: _nonNegativeInt,
                         ),
@@ -298,7 +299,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.add_photo_alternate_outlined, size: 34),
+                                            HugeIcon(icon:HugeIcons.strokeRoundedImage01, size: 34),
                                             SizedBox(height: AppSizes.xs),
                                             Text('برای دسته‌بندی تصویر انتخاب کنید (اختیاری)'),
                                           ],
@@ -311,7 +312,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: _saving ? null : _pickImage,
-                            icon: const Icon(Icons.image_outlined),
+                            icon: const HugeIcon(icon:HugeIcons.strokeRoundedImage01),
                             label: Text(
                               _image != null
                                   ? _image!.name
@@ -327,10 +328,10 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                         const SizedBox(height: AppSizes.sm),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          secondary: Icon(
+                          secondary: HugeIcon(icon:
                             _active
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                                ? HugeIcons.strokeRoundedView
+                                : HugeIcons.strokeRoundedBlocked,
                             color: _active
                                 ? AppColors.success
                                 : AppColors.getSecondaryText(context),
@@ -360,7 +361,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.save_outlined),
+                          : const HugeIcon(icon:HugeIcons.strokeRoundedCheckmarkCircle02),
                       label: Text(_saving ? 'در حال ذخیره…' : 'ذخیره دسته‌بندی'),
                     ),
                   ),
