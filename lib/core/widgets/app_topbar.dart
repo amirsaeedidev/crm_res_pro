@@ -37,12 +37,14 @@ class AppTopbar extends StatefulWidget {
 }
 
 class _AppTopbarState extends State<AppTopbar> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchExpanded = false;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -75,27 +77,31 @@ class _AppTopbarState extends State<AppTopbar> {
               SizedBox(width: AppSizes.sm),
 
               // Title shrinks instead of overflowing on narrow screens.
-              if (isCompact)
-                Expanded(
-                  child: _buildTitle(context),
-                )
-              else
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: _buildTitle(context),
-                ),
+              if (isCompact && !_isSearchExpanded)
+                Expanded(child: _buildTitle(context))
+              else if (!isCompact)
+                Flexible(fit: FlexFit.loose, child: _buildTitle(context)),
 
               if (!isCompact) ...[
                 SizedBox(width: AppSizes.lg),
-                Expanded(
-                  flex: 2,
-                  child: _buildSearchField(context),
+                Expanded(flex: 2, child: _buildSearchField(context)),
+              ] else if (_isSearchExpanded) ...[
+                Expanded(child: _buildSearchField(context, autofocus: true)),
+                _buildActionButton(
+                  icon: HugeIcons.strokeRoundedCancel01,
+                  tooltip: 'بستن جستجو',
+                  onPressed: () {
+                    setState(() => _isSearchExpanded = false);
+                    _searchController.clear();
+                    widget.onSearchChanged?.call('');
+                  },
+                  color: AppColors.getPrimaryText(context),
                 ),
               ] else ...[
                 _buildActionButton(
                   icon: HugeIcons.strokeRoundedSearch01,
                   tooltip: 'جستجو',
-                  onPressed: () => _showSearchDialog(context),
+                  onPressed: () => setState(() => _isSearchExpanded = true),
                   color: AppColors.getPrimaryText(context),
                 ),
               ],
@@ -109,7 +115,7 @@ class _AppTopbarState extends State<AppTopbar> {
                   return _buildActionButton(
                     icon: themeProvider.isDarkMode
                         ? HugeIcons.strokeRoundedSun01
-                        : HugeIcons.strokeRoundedMoon01,
+                        : HugeIcons.solidSharpMoon02,
                     tooltip: themeProvider.isDarkMode
                         ? 'حالت روشن'
                         : 'حالت تاریک',
@@ -181,9 +187,11 @@ class _AppTopbarState extends State<AppTopbar> {
     );
   }
 
-  Widget _buildSearchField(BuildContext context) {
+  Widget _buildSearchField(BuildContext context, {bool autofocus = false}) {
     return TextField(
       controller: _searchController,
+      focusNode: _searchFocusNode,
+      autofocus: autofocus,
       onChanged: widget.onSearchChanged,
       onSubmitted: widget.onSearchChanged,
       textInputAction: TextInputAction.search,
@@ -232,59 +240,6 @@ class _AppTopbarState extends State<AppTopbar> {
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _showSearchDialog(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppColors.getSurface(dialogContext),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-          ),
-          title: Text(
-            'جستجو',
-            style: AppTypography.titleLarge.copyWith(
-              color: AppColors.getPrimaryText(dialogContext),
-            ),
-          ),
-          content: TextField(
-            controller: _searchController,
-            autofocus: true,
-            onChanged: widget.onSearchChanged,
-            onSubmitted: (value) {
-              widget.onSearchChanged?.call(value);
-              Navigator.of(dialogContext).pop();
-            },
-            textInputAction: TextInputAction.search,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.getPrimaryText(dialogContext),
-            ),
-            decoration: InputDecoration(
-              hintText: 'عبارت موردنظر را وارد کنید...',
-              hintStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.getSecondaryText(dialogContext),
-              ),
-              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
-              filled: true,
-              fillColor: AppColors.getBackground(dialogContext),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  AppRadius.circular,
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('بستن'),
-            ),
-          ],
-        );
-      },
     );
   }
 
