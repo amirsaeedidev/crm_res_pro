@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -697,7 +698,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.sms_failed_outlined, size: 44),
+              const HugeIcon(icon: HugeIcons.strokeRoundedMessageCancel01, size: 44),
               const SizedBox(height: 12),
               Text(
                 'بارگذاری مرکز پیامک ناموفق بود:\n$_loadError',
@@ -706,7 +707,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: _loadAll,
-                icon: const Icon(Icons.refresh),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                 label: const Text('تلاش دوباره'),
               ),
             ],
@@ -721,7 +722,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: Row(
             children: [
-              const Icon(Icons.sms_outlined, size: 28),
+              const HugeIcon(icon: HugeIcons.strokeRoundedMessage01, size: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -748,7 +749,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               IconButton(
                 tooltip: 'به‌روزرسانی همه اطلاعات',
                 onPressed: _loadAll,
-                icon: const Icon(Icons.refresh),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
               ),
             ],
           ),
@@ -761,12 +762,12 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             tabAlignment: TabAlignment.start,
             tabs: const [
               Tab(
-                icon: Icon(Icons.settings_outlined),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings04),
                 text: 'تنظیمات و الگوها',
               ),
-              Tab(icon: Icon(Icons.campaign_outlined), text: 'کمپین تبلیغاتی'),
-              Tab(icon: Icon(Icons.groups_outlined), text: 'پرسنل'),
-              Tab(icon: Icon(Icons.analytics_outlined), text: 'گزارش و رویدادها'),
+              Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedMegaphone01), text: 'کمپین تبلیغاتی'),
+              Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedUserGroup), text: 'پرسنل'),
+              Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedChartLineData01), text: 'گزارش و رویدادها'),
             ],
           ),
         ),
@@ -946,7 +947,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.save_outlined),
+                    : const HugeIcon(icon: HugeIcons.strokeRoundedFloppyDisk),
                 label: const Text('ذخیره تنظیمات امن'),
               ),
             ),
@@ -988,12 +989,12 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               children: [
                 FilledButton.icon(
                   onPressed: _saving ? null : _queueTestSms,
-                  icon: const Icon(Icons.send_outlined),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedSent),
                   label: const Text('ثبت پیام آزمایشی در صف'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _saving ? null : _dispatchNow,
-                  icon: const Icon(Icons.play_arrow),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedPlay),
                   label: const Text('پردازش صف اکنون'),
                 ),
               ],
@@ -1017,7 +1018,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 ),
                 TextButton.icon(
                   onPressed: _saving ? null : _saveTemplates,
-                  icon: const Icon(Icons.save_outlined),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedFloppyDisk),
                   label: const Text('ذخیره الگوها'),
                 ),
               ],
@@ -1149,7 +1150,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saving ? null : _pickCampaignSchedule,
-              icon: const Icon(Icons.schedule),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedClock01),
               label: Text(
                 _campaignSchedule == null
                     ? 'ارسال فوری (برای زمان‌بندی انتخاب کن)'
@@ -1159,7 +1160,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             if (_campaignSchedule != null)
               TextButton.icon(
                 onPressed: () => setState(() => _campaignSchedule = null),
-                icon: const Icon(Icons.close),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                 label: const Text('حذف زمان‌بندی و ارسال فوری'),
               ),
             const SizedBox(height: 12),
@@ -1172,7 +1173,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       : () => _loadMarketingCustomers(
                           query: _customerSearch.text,
                         ),
-                  icon: const Icon(Icons.search),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
                   label: const Text('جست‌وجو'),
                 ),
                 TextButton(
@@ -1202,7 +1203,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       : () => _loadMarketingCustomers(
                           query: _customerSearch.text,
                         ),
-                  icon: const Icon(Icons.refresh),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                 ),
               ],
             ),
@@ -1243,7 +1244,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 onPressed: _saving || !_marketingEnabled
                     ? null
                     : _queueCampaign,
-                icon: const Icon(Icons.campaign_outlined),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedMegaphone01),
                 label: Text(
                   _saving
                       ? 'در حال ثبت…'
@@ -1276,7 +1277,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 ),
                 FilledButton.icon(
                   onPressed: _saving ? null : () => _showStaffDialog(),
-                  icon: const Icon(Icons.person_add_alt_1),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01),
                   label: const Text('افزودن پرسنل'),
                 ),
               ],
@@ -1307,8 +1308,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 leading: CircleAvatar(
                   child: Icon(
                     (member['is_active'] == true)
-                        ? Icons.person_outline
-                        : Icons.person_off_outlined,
+                        ? HugeIcons.strokeRoundedUser
+                        : HugeIcons.strokeRoundedUserRemove01,
                   ),
                 ),
                 title: Text((member['name'] ?? '').toString()),
@@ -1367,24 +1368,24 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             _metric(
               'کل پیام‌ها',
               _outbox.length.toString(),
-              Icons.sms_outlined,
+              const HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
             ),
             _metric(
               'موفق',
               _outbox.where((e) => e['status'] == 'sent').length.toString(),
-              Icons.check_circle_outline,
+              const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02),
               AppColors.success,
             ),
             _metric(
               'تحویل‌شده',
               _outbox.where((e) => e['delivery_status'] == 'delivered').length.toString(),
-              Icons.mark_email_read_outlined,
+              const HugeIcon(icon: HugeIcons.strokeRoundedMailOpen),
               AppColors.success,
             ),
             _metric(
               'ناموفق',
               _outbox.where((e) => e['status'] == 'failed').length.toString(),
-              Icons.error_outline,
+              const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
               AppColors.error,
             ),
             _metric(
@@ -1398,7 +1399,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                   )
                   .length
                   .toString(),
-              Icons.schedule,
+              const HugeIcon(icon: HugeIcons.strokeRoundedClock01),
               AppColors.primary,
             ),
             ];
@@ -1439,9 +1440,9 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       spacing: 10,
                       runSpacing: 8,
                       children: [
-                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', Icons.ads_click),
-                        _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', Icons.shopping_bag_outlined),
-                        _metric('سفارش با کد تخفیف', couponOrders.toString(), Icons.discount_outlined),
+                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', HugeIcons.strokeRoundedCursorPointer),
+                        _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', HugeIcons.strokeRoundedShoppingBag01),
+                        _metric('سفارش با کد تخفیف', couponOrders.toString(), HugeIcons.strokeRoundedDiscount),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -1506,7 +1507,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                   ),
                   IconButton(
                     onPressed: _reloadLogs,
-                    icon: const Icon(Icons.refresh),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                   ),
                 ],
               ),
@@ -1597,10 +1598,10 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                   tilePadding: EdgeInsets.zero,
                   leading: Icon(
                     status == 'sent'
-                        ? Icons.check_circle
+                        ? HugeIcons.strokeRoundedCheckmarkCircle02
                         : status == 'failed'
-                        ? Icons.error_outline
-                        : Icons.schedule,
+                        ? HugeIcons.strokeRoundedAlert02
+                        : HugeIcons.strokeRoundedClock01,
                     color: statusColor,
                   ),
                   title: Text(
@@ -1683,8 +1684,8 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(
                           a['success'] == true
-                              ? Icons.check_circle
-                              : Icons.cancel_outlined,
+                              ? HugeIcons.strokeRoundedCheckmarkCircle02
+                              : HugeIcons.strokeRoundedCancelCircle,
                           color: a['success'] == true
                               ? AppColors.success
                               : AppColors.error,
@@ -1714,13 +1715,13 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       })
       .toList(growable: false);
 
-  Widget _metric(String title, String value, IconData icon, [Color? color]) =>
+  Widget _metric(String title, String value, Widget icon, [Color? color]) =>
       Card(
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                Icon(icon, color: color ?? AppColors.primary, size: 28),
+                IconTheme(data: IconThemeData(color: color ?? AppColors.primary, size: 28), child: icon),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
