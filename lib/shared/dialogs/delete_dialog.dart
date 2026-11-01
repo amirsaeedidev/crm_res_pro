@@ -23,47 +23,47 @@ class DeleteDialog extends StatelessWidget {
     required String message,
     required VoidCallback onDelete,
   }) {
-    return AppDialog.show(
+    return showDialog<void>(
       context: context,
-      title: title,
-      content: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 32),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.getSecondaryText(context),
-                  ),
+      builder: (dialogContext) => AppDialog(
+        title: title,
+        content: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 32),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.getSecondaryText(dialogContext),
+                ),
+              ),
             ),
+          ],
+        ),
+        actions: [
+          AppButton(
+            label: AppStrings.cancel,
+            type: AppButtonType.outline,
+            width: 120,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          AppButton(
+            label: AppStrings.delete,
+            type: AppButtonType.primary,
+            width: 120,
+            onPressed: () {
+              // Close the confirmation dialog's navigator, not the page route.
+              Navigator.of(dialogContext).pop();
+              onDelete();
+            },
           ),
         ],
       ),
-      actions: [
-        AppButton(
-          label: AppStrings.cancel,
-          type: AppButtonType.outline,
-          width: 120,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        const SizedBox(width: AppSizes.sm),
-        AppButton(
-          label: AppStrings.delete,
-          type: AppButtonType.primary,
-          width: 120,
-         // backgroundColor: AppColors.error,
-          onPressed: () {
-            Navigator.of(context).pop();
-            onDelete();
-          },
-        ),
-      ],
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
