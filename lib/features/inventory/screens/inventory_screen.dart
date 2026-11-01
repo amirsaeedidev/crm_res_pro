@@ -1145,10 +1145,10 @@ class _InventoryScreenState extends State<InventoryScreen>
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  lowStock
-                                      ? Icons.warning_amber_rounded
-                                      : Icons.inventory_2_outlined,
+                                HugeIcon(
+                                  icon: lowStock
+                                      ? HugeIcons.strokeRoundedAlert02
+                                      : HugeIcons.strokeRoundedPackage,
                                   color: lowStock
                                       ? Colors.orange
                                       : Theme.of(context).colorScheme.primary,
@@ -1353,7 +1353,7 @@ class _InventoryScreenState extends State<InventoryScreen>
               ),
               FilledButton.icon(
                 onPressed: () => _editRecipe(),
-                icon: const Icon(Icons.add),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01),
                 label: const Text('دستور جدید'),
               ),
             ],
@@ -1445,8 +1445,8 @@ class _InventoryScreenState extends State<InventoryScreen>
         final reason = transaction['reason'] ?? '';
 
         return ListTile(
-          leading: Icon(
-            delta < 0 ? HugeIcons.strokeRoundedArrowDownLeft01 : HugeIcons.strokeRoundedArrowUpRight01,
+          leading: HugeIcon(
+            icon: delta < 0 ? HugeIcons.strokeRoundedArrowDownLeft01 : HugeIcons.strokeRoundedArrowUpRight01,
             color: delta < 0 ? Colors.red : Colors.green,
           ),
           title: Text('${material?['name'] ?? 'ماده'} · $type'),
