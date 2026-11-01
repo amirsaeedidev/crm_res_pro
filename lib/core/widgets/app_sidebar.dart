@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
@@ -44,7 +45,7 @@ class AppSidebar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.dashboard, color: drawerMode ? Colors.white : AppColors.primary, size: AppSizes.iconLg),
+                Icon(HugeIcons.strokeRoundedDashboardSquare01, color: drawerMode ? Colors.white : AppColors.primary, size: AppSizes.iconLg),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   AppStrings.appName,
@@ -68,7 +69,7 @@ class AppSidebar extends StatelessWidget {
               children: [
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.home_outlined,
+                  icon: HugeIcons.strokeRoundedHome01,
                   label: AppStrings.dashboard,
                   isActive: navProvider.selectedIndex == 0,
                   onTap: () {
@@ -79,7 +80,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.shopping_bag_outlined,
+                  icon: HugeIcons.strokeRoundedShoppingBag01,
                   label: AppStrings.orders,
                   isActive: navProvider.selectedIndex == 1,
                   onTap: () {
@@ -90,7 +91,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.inventory_2_outlined,
+                  icon: HugeIcons.strokeRoundedPackage,
                   label: AppStrings.products,
                   isActive: navProvider.selectedIndex == 2,
                   onTap: () {
@@ -101,7 +102,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.people_outline,
+                  icon: HugeIcons.strokeRoundedUserGroup,
                   label: AppStrings.customers,
                   isActive: navProvider.selectedIndex == 3,
                   onTap: () {
@@ -112,7 +113,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.category_outlined,
+                  icon: HugeIcons.strokeRoundedGrid,
                   label: AppStrings.categories,
                   isActive: navProvider.selectedIndex == 4,
                   onTap: () {
@@ -123,7 +124,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.pie_chart_rounded,
+                  icon: HugeIcons.strokeRoundedPieChart,
                   label: AppStrings.reports,
                   isActive: navProvider.selectedIndex == 5,
                   onTap: () {
@@ -134,7 +135,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.table_restaurant_outlined,
+                  icon: HugeIcons.strokeRoundedTableRound,
                   label: 'میزها',
                   isActive: navProvider.selectedIndex == 7,
                   onTap: () {
@@ -145,7 +146,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.event_available_outlined,
+                  icon: HugeIcons.strokeRoundedCalendarCheckIn01,
                   label: 'رزروها',
                   isActive: navProvider.selectedIndex == 8,
                   onTap: () {
@@ -156,7 +157,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.campaign_outlined,
+                  icon: HugeIcons.strokeRoundedMegaphone01,
                   label: 'بنرها',
                   isActive: navProvider.selectedIndex == 9,
                   onTap: () { navProvider.updateIndex(9); if (drawerMode) Navigator.of(context).pop();
@@ -164,7 +165,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.discount_outlined,
+                  icon: HugeIcons.strokeRoundedTag01,
                   label: 'تخفیف‌ها',
                   isActive: navProvider.selectedIndex == 10,
                   onTap: () { navProvider.updateIndex(10); if (drawerMode) Navigator.of(context).pop();
@@ -172,7 +173,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.support_agent_outlined,
+                  icon: HugeIcons.strokeRoundedHeadset,
                   label: 'تیکت‌ها',
                   isActive: navProvider.selectedIndex == 11,
                   onTap: () { navProvider.updateIndex(11); if (drawerMode) Navigator.of(context).pop();
@@ -180,7 +181,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.folder_open_outlined,
+                  icon: HugeIcons.strokeRoundedFolderOpen,
                   label: 'مدیریت فایل‌ها',
                   isActive: navProvider.selectedIndex == 12,
                   onTap: () { navProvider.updateIndex(12); if (drawerMode) Navigator.of(context).pop();
@@ -188,7 +189,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.loyalty_outlined,
+                  icon: HugeIcons.strokeRoundedGift,
                   label: 'باشگاه مشتریان',
                   isActive: navProvider.selectedIndex == 13,
                   onTap: () { navProvider.updateIndex(13); if (drawerMode) Navigator.of(context).pop();
@@ -196,7 +197,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.sms_outlined,
+                  icon: HugeIcons.strokeRoundedMessage02,
                   label: 'مرکز پیامک',
                   isActive: navProvider.selectedIndex == 14,
                   onTap: () { navProvider.updateIndex(14); if (drawerMode) Navigator.of(context).pop();
@@ -204,7 +205,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.warehouse_outlined,
+                  icon: HugeIcons.strokeRoundedWarehouse,
                   label: 'انبارداری و مواد اولیه',
                   isActive: navProvider.selectedIndex == 15,
                   onTap: () { navProvider.updateIndex(15); if (drawerMode) Navigator.of(context).pop();
@@ -212,7 +213,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.account_balance_wallet_outlined,
+                  icon: HugeIcons.strokeRoundedWallet01,
                   label: 'کیف پول مالی مشتریان',
                   isActive: navProvider.selectedIndex == 16,
                   onTap: () { navProvider.updateIndex(16); if (drawerMode) Navigator.of(context).pop();
@@ -220,7 +221,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.notifications_active_outlined,
+                  icon: HugeIcons.strokeRoundedNotification01,
                   label: 'مدیریت اعلان‌ها',
                   isActive: navProvider.selectedIndex == 17,
                   onTap: () { navProvider.updateIndex(17); if (drawerMode) Navigator.of(context).pop();
@@ -228,7 +229,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: Icons.settings_outlined,
+                  icon: HugeIcons.strokeRoundedSettings01,
                   label: AppStrings.settings,
                   isActive: navProvider.selectedIndex == 6,
                   onTap: () {
@@ -251,7 +252,7 @@ class AppSidebar extends StatelessWidget {
               children: [
                 const CircleAvatar(
                   backgroundColor: AppColors.primary,
-                  child: Icon(Icons.person, color: Colors.white),
+                  child: Icon(HugeIcons.strokeRoundedUser, color: Colors.white),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
@@ -274,7 +275,7 @@ class AppSidebar extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.logout, color: drawerMode ? Colors.white : AppColors.textSecondaryDark, size: AppSizes.iconSm),
+                  icon: Icon(HugeIcons.strokeRoundedLogout01, color: drawerMode ? Colors.white : AppColors.textSecondaryDark, size: AppSizes.iconSm),
                   tooltip: 'خروج',
                   onPressed: () {
                     context.read<AuthProvider>().logout();
