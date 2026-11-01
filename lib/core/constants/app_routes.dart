@@ -19,5 +19,6 @@ class AppRoutes {
   static const String inventory = '/inventory';
   static const String wallets = '/wallets';
   static const String notifications = '/notifications';
+  static const String activityLogs = '/activity-logs';
   static const String notFound = '/404';
 }
