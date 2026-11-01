@@ -104,6 +104,10 @@ class _MainLayoutState extends State<MainLayout> {
         return 'انبارداری و مواد اولیه';
       case '/wallets':
         return 'کیف پول مالی مشتریان';
+      case '/notifications':
+        return 'اعلان‌ها';
+      case '/activity-logs':
+        return 'ثبت فعالیت‌ها';
       default:
         return 'داشبورد';
     }
