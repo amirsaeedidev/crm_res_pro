@@ -660,11 +660,6 @@ class _ReportsScreenState extends State<ReportsScreen>
           width: mobile ? 22 : 34,
           borderRadius: BorderRadius.circular(8),
           color: color,
-          backDrawRodData: const BackgroundBarChartRodData(
-            show: true,
-            toY: 1,
-            color: Color(0xFFF0F4FC),
-          ),
         ),
       ],
     );
