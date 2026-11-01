@@ -143,8 +143,10 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         width: cardWidth,
                         title: 'کل تیکت‌ها',
                         value: provider.counts['total'] ?? 0,
-                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedPackage),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedTicket01),
                         color: AppColors.primary,
+                        selected: provider.status == 'all',
+                        onTap: () => provider.setStatus('all'),
                       ),
                       _countCard(
                         width: cardWidth,
@@ -152,13 +154,17 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         value: provider.counts['received'] ?? 0,
                         icon: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
                         color: AppColors.warning,
+                        selected: provider.status == 'received',
+                        onTap: () => provider.setStatus('received'),
                       ),
                       _countCard(
                         width: cardWidth,
                         title: 'خوانده‌نشده',
                         value: provider.counts['unread'] ?? 0,
-                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedMailUnread),
                         color: AppColors.error,
+                        selected: provider.status == 'unread',
+                        onTap: () => provider.setStatus('unread'),
                       ),
                       _countCard(
                         width: cardWidth,
@@ -166,6 +172,8 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         value: provider.counts['answered'] ?? 0,
                         icon: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02),
                         color: AppColors.success,
+                        selected: provider.status == 'answered',
+                        onTap: () => provider.setStatus('answered'),
                       ),
                     ],
                   );
@@ -291,7 +299,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                                       backgroundColor:
                                           statusColor.withValues(alpha: 0.12),
                                       child: HugeIcon(
-                                        icon: HugeIcons.strokeRoundedUserGroup,
+                                        icon: HugeIcons.strokeRoundedHeadset,
                                         color: statusColor,
                                       ),
                                     ),
@@ -434,19 +442,29 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
     required int value,
     required Widget icon,
     required Color color,
+    required bool selected,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      width: width,
-      constraints: const BoxConstraints(minHeight: 66),
-      padding: const EdgeInsets.all(AppSizes.sm),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        child: Container(
+      width: width,
+      constraints: const BoxConstraints(minHeight: 76),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: selected ? 0.19 : 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: selected ? 0.75 : 0.25), width: selected ? 1.6 : 1),
       ),
       child: Row(
         children: [
-          icon,
+          IconTheme(
+            data: IconThemeData(color: color, size: 25),
+            child: icon,
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
@@ -466,6 +484,8 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
