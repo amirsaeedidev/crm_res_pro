@@ -138,7 +138,7 @@ class AppSidebar extends StatelessWidget {
                 ),
                 NavigationItem(
                   forceWhite: drawerMode,
-                  icon: HugeIcons.strokeRoundedTableRound,
+                  icon: HugeIcons.strokeRoundedCafe,
                   label: 'میزها',
                   isActive: navProvider.selectedIndex == 7,
                   onTap: () {
