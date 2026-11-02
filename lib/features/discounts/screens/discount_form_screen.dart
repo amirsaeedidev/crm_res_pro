@@ -525,6 +525,15 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                               ),
                         ),
                       ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSizes.sm),
+                      child: Text(
+                        'نکته: ارسال پیامک به فعال بودن بازاریابی پیامکی و رضایت مشتری نیاز دارد. برای کانال بنر نیز باید حداقل یک بنر فعال دارای تصویر وجود داشته باشد.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.getSecondaryText(context),
+                            ),
+                      ),
+                    ),
                   ],
                 ),
               ),
