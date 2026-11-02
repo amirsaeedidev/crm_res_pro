@@ -523,7 +523,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: _customerSuggestions.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final customer = _customerSuggestions[index];
                             final selected = _selectedCustomers.containsKey(customer.id);
