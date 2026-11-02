@@ -1440,7 +1440,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       spacing: 10,
                       runSpacing: 8,
                       children: [
-                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedCursorPointer)),
+                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01)),
                         _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedShoppingBag01)),
                         _metric('سفارش با کد تخفیف', couponOrders.toString(), const HugeIcon(icon: HugeIcons.strokeRoundedDiscount)),
                       ],
