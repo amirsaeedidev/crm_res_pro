@@ -20,6 +20,49 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
   String _audience = 'all_customers';
   String _priority = 'normal';
   bool _sending = false;
+  late Future<List<Map<String, dynamic>>> _sentHistory;
+
+  @override
+  void initState() {
+    super.initState();
+    _sentHistory = _loadSentHistory();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSentHistory() async {
+    final rows = await SupabaseService.client
+        .from('admin_notification_dispatches')
+        .select('id,title,body,audience,priority,source_type,channels,recipient_count,created_at')
+        .order('created_at', ascending: false)
+        .limit(100);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  }
+
+  Future<void> _resend(Map<String, dynamic> dispatch) async {
+    try {
+      final response = await SupabaseService.client.rpc(
+        'admin_resend_notification',
+        params: {'p_dispatch_id': dispatch['id']},
+      );
+      if (!mounted) return;
+      final data = Map<String, dynamic>.from(response as Map);
+      setState(() => _sentHistory = _loadSentHistory());
+      final count = (data['recipient_count'] as num?)?.toInt() ??
+          (data['notification_count'] as num?)?.toInt() ??
+          (data['sms_recipient_count'] as num?)?.toInt() ??
+          0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ارسال مجدد ثبت شد. تعداد گیرندگان: $count')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ارسال مجدد ناموفق بود: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +87,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
       final data = Map<String, dynamic>.from(response as Map);
       if (!mounted) return;
       final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
+      setState(() => _sentHistory = _loadSentHistory());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -281,6 +325,94 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                           : const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
                       label: Text(_sending ? 'در حال ثبت...' : 'ثبت و ارسال اعلان'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'تاریخچه اعلان‌های ارسال‌شده',
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'بروزرسانی تاریخچه',
+                                onPressed: () => setState(() => _sentHistory = _loadSentHistory()),
+                                icon: const Icon(Icons.refresh),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _sentHistory,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
+                              if (snapshot.hasError) {
+                                return Text(
+                                  'تاریخچه در دسترس نیست. Migration شماره 040 را در Supabase اجرا کنید.\n${snapshot.error}',
+                                  style: TextStyle(color: theme.colorScheme.error),
+                                );
+                              }
+                              final rows = snapshot.data ?? const <Map<String, dynamic>>[];
+                              if (rows.isEmpty) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(child: Text('هنوز اعلانی ارسال نشده است.')),
+                                );
+                              }
+                              return Column(
+                                children: rows.map((row) {
+                                  final channels = (row['channels'] as List? ?? const [])
+                                      .map((value) => value.toString())
+                                      .map((value) => switch (value) {
+                                            'banner' => 'بنر',
+                                            'notification' => 'اعلان',
+                                            'sms' => 'پیامک',
+                                            _ => value,
+                                          })
+                                      .join('، ');
+                                  final createdAt = DateTime.tryParse((row['created_at'] ?? '').toString())?.toLocal();
+                                  final dateLabel = createdAt == null
+                                      ? '—'
+                                      : createdAt.toString().substring(0, 16);
+                                  final audience = switch ((row['audience'] ?? '').toString()) {
+                                    'admins' => 'مدیران',
+                                    'all_customers' => 'همه مشتریان',
+                                    'inactive_30d' => 'مشتریان غیرفعال',
+                                    'targeted_discount' => 'مشتریان هدف تخفیف',
+                                    _ => '—',
+                                  };
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text((row['title'] ?? 'اعلان').toString()),
+                                    subtitle: Text(
+                                      '${row['recipient_count'] ?? 0} گیرنده • $audience • $channels\n$dateLabel',
+                                    ),
+                                    isThreeLine: true,
+                                    trailing: IconButton(
+                                      tooltip: 'ارسال مجدد',
+                                      onPressed: () => _resend(row),
+                                      icon: const Icon(Icons.replay),
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
