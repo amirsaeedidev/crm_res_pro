@@ -245,8 +245,14 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   }
 
 
-  Future<void> _submitForm() async {
+  Future<void> _submitForm({bool sendNow = false}) async {
     if (_formKey.currentState!.validate()) {
+      if (_deliveryChannels.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حداقل یک کانال ارسال را انتخاب کنید.'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
       if (_selectedType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('نوع تخفیف را انتخاب کنید'), backgroundColor: AppColors.error),
@@ -295,11 +301,35 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
             : await provider.createDiscount(discountData);
         if (!ok) throw Exception(provider.error ?? 'ذخیره تخفیف ناموفق بود.');
 
+        String? deliveryMessage;
+        Color deliveryColor = AppColors.success;
+        if (sendNow) {
+          final repository = context.read<DiscountsRepository>();
+          final savedId = isEditing
+              ? widget.discountId!
+              : await repository.getDiscountIdByCode(_codeController.text.trim().toUpperCase());
+          final result = await repository.dispatchDiscountDelivery(
+            discountId: savedId,
+            channels: _deliveryChannels.toList(growable: false),
+          );
+          final status = (result['status'] ?? 'failed').toString();
+          final sent = (result['sent_count'] as num?)?.toInt() ?? 0;
+          final failed = (result['failed_count'] as num?)?.toInt() ?? 0;
+          deliveryMessage = switch (status) {
+            'completed' => 'کد تخفیف از کانال‌های انتخابی ثبت شد. تعداد ارسال/صف: $sent',
+            'partial' => 'ارسال کد تخفیف ناقص بود؛ $sent مورد موفق و $failed مورد ناموفق. جزئیات در تاریخچه موجود است.',
+            _ => 'تخفیف ذخیره شد، اما ارسال کانال‌ها ناموفق بود. از تاریخچه وضعیت را بررسی کنید.',
+          };
+          if (status != 'completed') deliveryColor = Colors.orange;
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isEditing ? 'تخفیف با موفقیت ویرایش شد.' : 'تخفیف با موفقیت ایجاد شد.'),
-              backgroundColor: AppColors.success,
+              content: Text(deliveryMessage ??
+                  (isEditing ? 'تخفیف با موفقیت ویرایش شد.' : 'تخفیف با موفقیت ایجاد شد.')),
+              backgroundColor: deliveryColor,
+              duration: const Duration(seconds: 5),
             ),
           );
           Navigator.of(context).pop();
@@ -682,21 +712,28 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
               const SizedBox(height: AppSizes.lg),
               
               // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: AppSizes.md,
+                runSpacing: AppSizes.md,
                 children: [
                   AppButton(
                     label: AppStrings.cancel,
                     type: AppButtonType.outline,
                     width: 120,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
                   ),
-                  const SizedBox(width: AppSizes.md),
                   AppButton(
                     label: AppStrings.save,
                     isLoading: _isLoading,
                     width: 120,
-                    onPressed: _submitForm,
+                    onPressed: _isLoading ? null : () => _submitForm(),
+                  ),
+                  AppButton(
+                    label: 'ذخیره و ارسال',
+                    isLoading: _isLoading,
+                    width: 160,
+                    onPressed: _isLoading ? null : () => _submitForm(sendNow: true),
                   ),
                 ],
               ),
