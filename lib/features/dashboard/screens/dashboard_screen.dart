@@ -44,7 +44,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
 
-          final compactStats = contentWidth < 480;
           final stackCharts = contentWidth < 900;
 
           return Consumer<DashboardProvider>(
@@ -105,29 +104,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // دو کارت کوچک؛ در صفحه باریک زیر هم و در صفحه عریض کنار هم.
-                  if (compactStats) ...[
-                    _buildStatCard(
-                      title: 'سفارشات جدید',
-                      value: stats != null ? stats.totalOrders.toString() : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_orders.webp',
-                      iconColor: AppColors.primary,
-                      changePercentage: stats != null
-                          ? stats.ordersGrowthPercentage.toStringAsFixed(1)
-                          : '0',
-                    ),
-                    const SizedBox(height: AppSizes.md),
-                    _buildStatCard(
-                      title: 'کاربران فعال',
-                      value: stats != null ? stats.totalCustomers.toString() : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_customers.webp',
-                      iconColor: AppColors.accent,
-                      changePercentage: stats != null
-                          ? stats.customersGrowthPercentage.toStringAsFixed(1)
-                          : '0',
-                    ),
-                  ] else
-                    Row(
+                  // دو کارت کوچک همیشه کنار هم نمایش داده می‌شوند.
+                  Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
