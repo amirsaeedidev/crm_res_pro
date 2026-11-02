@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
@@ -41,7 +43,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
