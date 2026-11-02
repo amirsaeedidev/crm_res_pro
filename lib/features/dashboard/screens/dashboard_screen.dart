@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -94,7 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       value: stats != null
                           ? '${stats.totalSales.toStringAsFixed(0)} تومان'
                           : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_sales.webp',
+                      icon: HugeIcons.strokeRoundedWallet01,
                       iconColor: AppColors.success,
                       changePercentage: stats != null
                           ? stats.salesGrowthPercentage.toStringAsFixed(1)
@@ -114,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: stats != null
                                 ? stats.totalOrders.toString()
                                 : 'ناموجود',
-                            imageAssetPath: 'assets/images/dashboard_orders.webp',
+                            icon: HugeIcons.strokeRoundedShoppingBag01,
                             
                             iconColor: AppColors.primary,
                             changePercentage: stats != null
@@ -129,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: stats != null
                                 ? stats.totalCustomers.toString()
                                 : 'ناموجود',
-                            imageAssetPath: 'assets/images/dashboard_customers.webp',
+                            icon: HugeIcons.strokeRoundedUserGroup,
                             iconColor: AppColors.accent,
                             changePercentage: stats != null
                                 ? stats.customersGrowthPercentage.toStringAsFixed(1)
@@ -204,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard({
     required String title,
     required String value,
-    required String imageAssetPath,
+    required List<List<dynamic>> icon,
     required Color iconColor,
     required String changePercentage,
     bool isFeatured = false,
@@ -212,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return StatisticCard(
       title: title,
       value: value,
-      imageAssetPath: imageAssetPath,
+      icon: icon,
       iconColor: iconColor,
       changePercentage: changePercentage,
       isFeatured: isFeatured,
