@@ -62,14 +62,16 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 future: _logs,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                  if (snapshot.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (snapshot.hasError) {
+                    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 42),
                     const SizedBox(height: 8),
                     const Text('دریافت گزارش فعالیت ناموفق بود.'),
                     TextButton(onPressed: _refresh, child: const Text('تلاش مجدد')),
                     const SizedBox(height: 8),
                     Text('ابتدا اسکریپت SQL مربوط به ثبت فعالیت را در Supabase اجرا کنید.', style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
-                  ]));
+                    ]));
+                  }
                   final logs = snapshot.data ?? [];
                   if (logs.isEmpty) return const Center(child: Text('هنوز فعالیتی ثبت نشده است.'));
                   return ListView.separated(
