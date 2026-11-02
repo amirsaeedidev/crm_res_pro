@@ -47,7 +47,7 @@ void main() {
 
     expect(find.text('سفارشات لغو شده'), findsOneWidget);
     expect(find.text('15'), findsOneWidget);
-    expect(find.text('5%'), findsOneWidget);
+    expect(find.text('-5%'), findsOneWidget);
     expect(find.byType(Image), findsOneWidget);
     expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
   });
