@@ -109,9 +109,11 @@ class _ReportsScreenState extends State<ReportsScreen>
         child: child!,
       ),
     );
-    if (!mounted || picked?.start == null || picked?.end == null) return;
-    final start = picked.start.toDateTime();
-    final end = picked.end.toDateTime();
+    final startValue = picked?.start;
+    final endValue = picked?.end;
+    if (!mounted || startValue == null || endValue == null) return;
+    final start = startValue.toDateTime();
+    final end = endValue.toDateTime();
     setState(() {
       _customDateRange = DateTimeRange(start: start, end: end);
       _selectedFilter = DateRangeFilter.custom;
