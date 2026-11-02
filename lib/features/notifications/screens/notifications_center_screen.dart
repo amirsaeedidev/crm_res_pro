@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../providers/notifications_provider.dart';
 
 import '../../../core/services/supabase_service.dart';
+import '../../../repositories/notification_campaigns_repository.dart';
 
 class NotificationsCenterScreen extends StatefulWidget {
   const NotificationsCenterScreen({super.key});
@@ -20,6 +21,8 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
   String _audience = 'all_customers';
   String _priority = 'normal';
   bool _sending = false;
+  String? _resendingId;
+  final _campaignRepository = NotificationCampaignsRepository();
   late Future<List<Map<String, dynamic>>> _sentHistory;
 
   @override
@@ -28,28 +31,18 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
     _sentHistory = _loadSentHistory();
   }
 
-  Future<List<Map<String, dynamic>>> _loadSentHistory() async {
-    final rows = await SupabaseService.client
-        .from('admin_notification_dispatches')
-        .select('id,title,body,audience,priority,source_type,channels,recipient_count,created_at')
-        .order('created_at', ascending: false)
-        .limit(100);
-    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  Future<List<Map<String, dynamic>>> _loadSentHistory() {
+    return _campaignRepository.getHistory();
   }
 
-  Future<void> _resend(Map<String, dynamic> dispatch) async {
+  Future<void> _resend(Map<String, dynamic> campaign) async {
+    if (_resendingId != null) return;
+    setState(() => _resendingId = campaign['id']?.toString());
     try {
-      final response = await SupabaseService.client.rpc(
-        'admin_resend_notification',
-        params: {'p_dispatch_id': dispatch['id']},
-      );
+      final data = await _campaignRepository.resendManualNotification(campaign);
       if (!mounted) return;
-      final data = Map<String, dynamic>.from(response as Map);
       setState(() => _sentHistory = _loadSentHistory());
-      final count = (data['recipient_count'] as num?)?.toInt() ??
-          (data['notification_count'] as num?)?.toInt() ??
-          (data['sms_recipient_count'] as num?)?.toInt() ??
-          0;
+      final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ارسال مجدد ثبت شد. تعداد گیرندگان: $count')),
       );
@@ -61,6 +54,8 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _resendingId = null);
     }
   }
 
@@ -87,6 +82,19 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
       final data = Map<String, dynamic>.from(response as Map);
       if (!mounted) return;
       final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
+      try {
+        await _campaignRepository.recordManualNotification(
+          title: _titleController.text.trim(),
+          body: _bodyController.text.trim(),
+          audience: _audience,
+          priority: _priority,
+          recipientCount: count,
+        );
+      } catch (historyError) {
+        // The announcement has already been sent; do not report it as failed
+        // solely because the separate audit/history write did not complete.
+        debugPrint('Could not persist notification campaign history: $historyError');
+      }
       setState(() => _sentHistory = _loadSentHistory());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -374,7 +382,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                               }
                               return Column(
                                 children: rows.map((row) {
-                                  final channels = (row['channels'] as List? ?? const [])
+                                  final channels = (row['delivery_channels'] as List? ?? const [])
                                       .map((value) => value.toString())
                                       .map((value) => switch (value) {
                                             'banner' => 'بنر',
@@ -394,18 +402,32 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                     'targeted_discount' => 'مشتریان هدف تخفیف',
                                     _ => '—',
                                   };
+                                  final isManualNotification = row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification');
+                                  final status = switch ((row['status'] ?? '').toString()) {
+                                    'completed' => 'تکمیل‌شده',
+                                    'partial' => 'ارسال ناقص',
+                                    'failed' => 'ناموفق',
+                                    'queued' => 'در صف ارسال',
+                                    'sending' => 'در حال ارسال',
+                                    'cancelled' => 'لغوشده',
+                                    _ => '—',
+                                  };
                                   return ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     title: Text((row['title'] ?? 'اعلان').toString()),
                                     subtitle: Text(
-                                      '${row['recipient_count'] ?? 0} گیرنده • $audience • $channels\n$dateLabel',
+                                      '$status • ${row['sent_count'] ?? 0} ارسال از ${row['target_count'] ?? 0} هدف • $audience • $channels\n$dateLabel',
                                     ),
                                     isThreeLine: true,
-                                    trailing: IconButton(
-                                      tooltip: 'ارسال مجدد',
-                                      onPressed: () => _resend(row),
-                                      icon: const Icon(Icons.replay),
-                                    ),
+                                    trailing: isManualNotification
+                                        ? IconButton(
+                                            tooltip: 'ارسال مجدد',
+                                            onPressed: _resendingId == row['id'] ? null : () => _resend(row),
+                                            icon: _resendingId == row['id']
+                                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                                : const Icon(Icons.replay),
+                                          )
+                                        : const Icon(Icons.history),
                                   );
                                 }).toList(),
                               );
