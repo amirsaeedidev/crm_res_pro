@@ -84,9 +84,9 @@ class NotificationsProvider extends ChangeNotifier {
   int _sessionGeneration = 0;
 
   NotificationsProvider({
-    int maxNotifications = 100,
+    int maxNotifications = 500,
   }) : _maxNotifications = maxNotifications < 1
-            ? 100
+            ? 500
             : maxNotifications {
     _listenToAuthChanges();
 
