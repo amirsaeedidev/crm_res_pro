@@ -39,7 +39,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
     if (_resendingId != null) return;
     setState(() => _resendingId = campaign['id']?.toString());
     try {
-      final data = await _campaignRepository.resendManualNotification(campaign);
+      final data = await _campaignRepository.resendCampaign(campaign);
       if (!mounted) return;
       setState(() => _sentHistory = _loadSentHistory());
       final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
@@ -402,7 +402,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                     'targeted_discount' => 'مشتریان هدف تخفیف',
                                     _ => '—',
                                   };
-                                  final isManualNotification = row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification');
+                                  final isResendable = (row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification')) || (row['campaign_type'] == 'discount' && (row['discount_id']?.toString().isNotEmpty ?? false));
                                   final status = switch ((row['status'] ?? '').toString()) {
                                     'completed' => 'تکمیل‌شده',
                                     'partial' => 'ارسال ناقص',
@@ -419,7 +419,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                       '$status • ${row['sent_count'] ?? 0} ارسال از ${row['target_count'] ?? 0} هدف • $audience • $channels\n$dateLabel',
                                     ),
                                     isThreeLine: true,
-                                    trailing: isManualNotification
+                                    trailing: isResendable
                                         ? IconButton(
                                             tooltip: 'ارسال مجدد',
                                             onPressed: _resendingId == row['id'] ? null : () => _resend(row),
