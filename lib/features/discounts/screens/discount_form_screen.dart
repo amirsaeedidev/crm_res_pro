@@ -70,6 +70,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   DateTime? _endDate;
   bool _isActive = true;
   bool _restrictedToCustomers = false;
+  final Set<String> _deliveryChannels = {'notification'};
   bool _isLoading = false;
 
   bool get isEditing => widget.discountId != null;
@@ -102,6 +103,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           _startDate = discount.startDate;
           _endDate = discount.endDate;
           _isActive = discount.isActive;
+          _deliveryChannels
+            ..clear()
+            ..addAll(discount.deliveryChannels);
+          if (_deliveryChannels.isEmpty) _deliveryChannels.add('notification');
           setState(() {});
         }
       });
@@ -276,6 +281,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         'total_usage_limit': _totalUsageController.text.isEmpty ? null : int.parse(_totalUsageController.text),
         'per_user_usage_limit': _perUserUsageController.text.trim().isEmpty ? null : int.parse(_perUserUsageController.text.trim()),
         'restricted_to_customers': _restrictedToCustomers,
+        'delivery_channels': _deliveryChannels.toList(growable: false),
         'target_phones': _selectedCustomers.isNotEmpty ? _selectedCustomers.values.map((customer) => customer.phone!.trim()).toSet().toList() : _targetPhonesController.text.split(RegExp(r'[,،;；\n]')).map((v) => v.trim()).where((v) => v.isNotEmpty).toSet().toList(),
         'is_active': _isActive,
         'start_date': _startDate!.toIso8601String(),
@@ -409,6 +415,86 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                         ),
                           ],
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.lg),
+
+              // Discount delivery channels
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'کانال‌های ارسال کد تخفیف',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.getPrimaryText(context),
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'مشخص کنید این تخفیف از چه مسیرهایی برای مشتریان اطلاع‌رسانی شود.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.getSecondaryText(context),
+                          ),
+                    ),
+                    const SizedBox(height: AppSizes.sm),
+                    CheckboxListTile(
+                      value: _deliveryChannels.contains('banner'),
+                      onChanged: (value) => setState(() {
+                        if (value == true) {
+                          _deliveryChannels.add('banner');
+                        } else {
+                          _deliveryChannels.remove('banner');
+                        }
+                      }),
+                      title: const Text('بنر رستوران'),
+                      subtitle: const Text('نمایش کد تخفیف در بنرهای فعال'),
+                      secondary: const HugeIcon(icon: HugeIcons.strokeRoundedImage01),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    CheckboxListTile(
+                      value: _deliveryChannels.contains('notification'),
+                      onChanged: (value) => setState(() {
+                        if (value == true) {
+                          _deliveryChannels.add('notification');
+                        } else {
+                          _deliveryChannels.remove('notification');
+                        }
+                      }),
+                      title: const Text('اعلان داخل اپلیکیشن'),
+                      subtitle: const Text('ثبت اعلان برای مشتریان هدف'),
+                      secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    CheckboxListTile(
+                      value: _deliveryChannels.contains('sms'),
+                      onChanged: (value) => setState(() {
+                        if (value == true) {
+                          _deliveryChannels.add('sms');
+                        } else {
+                          _deliveryChannels.remove('sms');
+                        }
+                      }),
+                      title: const Text('پیامک'),
+                      subtitle: const Text('ارسال از طریق پنل پیامکی متصل به CRM'),
+                      secondary: const HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    if (_deliveryChannels.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSizes.sm),
+                        child: Text(
+                          'حداقل یک کانال ارسال را انتخاب کنید.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                        ),
+                      ),
                   ],
                 ),
               ),
