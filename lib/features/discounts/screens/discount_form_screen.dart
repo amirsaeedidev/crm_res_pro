@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
@@ -409,8 +408,6 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ),
                         ),
                           ],
-                        );
-                      },
                     ),
                   ],
                 ),
@@ -475,17 +472,19 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           spacing: AppSizes.md,
                           runSpacing: AppSizes.md,
                           children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: AppTextField(
-                            controller: _totalUsageController,
-                            labelText: 'سقف کل استفاده',
-                            hintText: 'مثلاً ۱۰۰',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => _validatePositiveNumber(value),
-                          ),
-                        ),
-                      ],
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _totalUsageController,
+                                labelText: 'سقف کل استفاده',
+                                hintText: 'مثلاً ۱۰۰',
+                                keyboardType: TextInputType.number,
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -510,7 +509,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       controller: _customerSearchController,
                       labelText: 'جست‌وجوی مشتری با شماره یا نام *',
                       hintText: 'شماره موبایل یا نام مشتری را وارد کنید',
-                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserSearch),
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup),
                       onChanged: _searchCustomers,
                     ),
                     if (_customerSearchLoading)
