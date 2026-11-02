@@ -12,7 +12,6 @@ class StatisticCard extends StatelessWidget {
   final List<List<dynamic>> icon;
   final Color iconColor;
   final String changePercentage;
-  final bool isPositiveChange;
   final bool isFeatured;
 
   const StatisticCard({
@@ -22,7 +21,6 @@ class StatisticCard extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.changePercentage,
-    this.isPositiveChange = true,
     this.isFeatured = false,
   });
 
