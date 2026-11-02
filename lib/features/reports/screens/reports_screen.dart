@@ -167,7 +167,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             return const EmptyWidget(
               title: 'داده‌ای موجود نیست',
               message: 'گزارش واقعی برای این بازه در دسترس نیست.',
-              icon: HugeIcons.strokeRoundedChart01,
+              icon: Icons.bar_chart_outlined,
             );
           }
 
@@ -219,7 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                       tabs: const [
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedDashboardSquare01, size: 18), text: 'نمای کلی'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedChartIncrease, size: 18), text: 'فروش'),
-                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedFood, size: 18), text: 'محصولات'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedRestaurant01, size: 18), text: 'محصولات'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedUserGroup, size: 18), text: 'مشتریان'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedWallet01, size: 18), text: 'مالی و سود'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedPackage, size: 18), text: 'انبار'),
@@ -284,7 +284,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
               backgroundColor: category == 'cancelled' ? const Color(0xFFFFE9ED) : category == 'delayed' ? const Color(0xFFFFF2DB) : _paleBlue,
-              child: HugeIcon(icon:category == 'cancelled' ? HugeIcons.strokeRoundedCancel01 : category == 'delayed' ? HugeIcons.strokeRoundedTimer : HugeIcons.strokeRoundedRepeat,
+              child: HugeIcon(icon:category == 'cancelled' ? HugeIcons.strokeRoundedCancel01 : category == 'delayed' ? HugeIcons.strokeRoundedCalendar01 : HugeIcons.strokeRoundedRepeat,
                 color: category == 'cancelled' ? const Color(0xFFE45B70) : category == 'delayed' ? const Color(0xFFB7791F) : _blue, size: 20),
             ),
             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -296,7 +296,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       if (loading) const LinearProgressIndicator(minHeight: 2),
       _metricGrid(context, mobile, [
         _metric('سفارش لغوشده', _number(cancelled), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'در بازه انتخابی'),
-        _metric('سفارش تأخیردار', _number(delayed), HugeIcons.strokeRoundedTimer, const Color(0xFFB7791F), 'نیازمند پیگیری'),
+        _metric('سفارش تأخیردار', _number(delayed), HugeIcons.strokeRoundedCalendar01, const Color(0xFFB7791F), 'نیازمند پیگیری'),
         _metric('مشتری پرتکرار', _number(repeatCustomers), HugeIcons.strokeRoundedRepeat, _blue, 'حداقل ۳ سفارش'),
         _metric('مبلغ لغوشده', '${_number(cancelledAmount)} تومان', HugeIcons.strokeRoundedMoney03, const Color(0xFF8B72E8), 'مجموع مبلغ لغوها'),
       ]),
@@ -328,7 +328,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       const SizedBox(height: 18),
       reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', HugeIcons.strokeRoundedCancel01, cancelledRows, 'cancelled'),
       const SizedBox(height: 16),
-      reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', HugeIcons.strokeRoundedTimer, delayedRows, 'delayed'),
+      reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', HugeIcons.strokeRoundedCalendar01, delayedRows, 'delayed'),
       const SizedBox(height: 16),
       reportCard('مشتریان پرتکرار', 'مشتریانی با حداقل ۳ سفارش در بازه انتخابی', HugeIcons.strokeRoundedRepeat, repeatRows, 'repeat_customer'),
     ]);
@@ -423,7 +423,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       _sectionCard(
         title: 'ترکیب روش سفارش',
         subtitle: 'سهم هر روش از سفارش‌های تکمیل‌شده',
-        icon: HugeIcons.strokeRoundedChartDonut,
+        icon: HugeIcons.strokeRoundedChartBarLine,
         child: totalTypes == 0
             ? const _NoData(message: 'در این بازه سفارش تکمیل‌شده‌ای ثبت نشده است.')
             : Column(children: [
@@ -503,7 +503,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               ),
       ),
       const SizedBox(height: 18),
-      _sectionCard(title: 'تفکیک روش سفارش', subtitle: 'تعداد سفارش‌ها بر اساس نوع سرویس', icon: HugeIcons.strokeRoundedChartPie,
+      _sectionCard(title: 'تفکیک روش سفارش', subtitle: 'تعداد سفارش‌ها بر اساس نوع سرویس', icon: HugeIcons.strokeRoundedChartBarLine,
         child: totalTypes == 0 ? const _NoData(message: 'داده‌ای برای تفکیک روش سفارش وجود ندارد.') : Column(children: types.map((item) {
           final ratio = (item.count / totalTypes).clamp(0.0, 1.0).toDouble();
           return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [
@@ -746,7 +746,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         _metric('مصرف ثبت‌شده', '${_number(_asNum(summary['consumption_cost']))} تومان', HugeIcons.strokeRoundedChefHat, const Color(0xFF8B72E8), 'هزینه مصرف مواد در بازه'),
       ]),
       const SizedBox(height: 18),
-      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: HugeIcons.strokeRoundedChartDonut,
+      _sectionCard(title: 'ترکیب وضعیت موجودی', subtitle: 'سهم مواد کم‌موجود از کل مواد فعال', icon: HugeIcons.strokeRoundedChartBarLine,
         child: Builder(builder: (context) {
           final active = _asNum(summary['active_materials']).toDouble();
           final low = _asNum(summary['low_stock_materials']).clamp(0, active).toDouble();
