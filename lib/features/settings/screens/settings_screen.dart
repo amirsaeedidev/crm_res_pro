@@ -223,21 +223,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _colorPickerItem(BuildContext context, String label, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.medium),
-      child: Container(
-        padding: const EdgeInsets.all(AppSizes.sm),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.getBorder(context)), borderRadius: BorderRadius.circular(AppRadius.medium)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 30, height: 30, decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2))),
-          const SizedBox(width: AppSizes.sm),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(width: AppSizes.sm),
-          const Icon(Icons.edit, size: 16, color: Colors.grey),
-        ]),
-      ),
-    );
-  }
 }
