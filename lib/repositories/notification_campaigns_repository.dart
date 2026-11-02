@@ -55,11 +55,34 @@ class NotificationCampaignsRepository {
     });
   }
 
-  Future<Map<String, dynamic>> resendManualNotification(
+  Future<Map<String, dynamic>> resendCampaign(
     Map<String, dynamic> campaign,
   ) async {
-    if (campaign['campaign_type'] != 'manual') {
-      throw ArgumentError('فقط اعلان‌های دستی از این بخش قابل ارسال مجدد هستند.');
+    final campaignType = campaign['campaign_type']?.toString();
+    if (campaignType == 'discount') {
+      final discountId = campaign['discount_id']?.toString();
+      if (discountId == null || discountId.isEmpty) {
+        throw ArgumentError('شناسه تخفیف برای ارسال مجدد موجود نیست.');
+      }
+      final channels = (campaign['delivery_channels'] as List? ?? const [])
+          .map((value) => value.toString())
+          .toList(growable: false);
+      final response = await _client.rpc(
+        'admin_dispatch_discount_delivery',
+        params: {
+          'p_discount_id': discountId,
+          'p_channels': channels,
+          'p_source_campaign_id': campaign['id'],
+        },
+      );
+      if (response is! Map) {
+        throw const FormatException('پاسخ ارسال مجدد تخفیف معتبر نیست.');
+      }
+      return Map<String, dynamic>.from(response);
+    }
+
+    if (campaignType != 'manual') {
+      throw ArgumentError('نوع کمپین برای ارسال مجدد پشتیبانی نمی‌شود.');
     }
     final channels = (campaign['delivery_channels'] as List? ?? const [])
         .map((value) => value.toString())
