@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/services/supabase_service.dart';
 
 class ActivityLogScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   Future<List<Map<String, dynamic>>> _loadLogs() async {
     final rows = await SupabaseService.client
         .from('admin_activity_logs')
-        .select('id, table_name, record_id, operation, actor_id, created_at')
+        .select('id, actor_user_id, actor_email, action, table_name, record_id, summary, metadata, created_at')
         .order('created_at', ascending: false)
         .limit(500);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
@@ -32,12 +33,15 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   void _refresh() => setState(() => _logs = _loadLogs());
 
-  String _operationLabel(String operation) => switch (operation) {
-    'INSERT' => 'ایجاد',
-    'UPDATE' => 'ویرایش',
-    'DELETE' => 'حذف',
-    _ => operation,
-  };
+  String _actionLabel(String action) {
+    final normalized = action.toUpperCase();
+    return switch (normalized) {
+      'INSERT' || 'CREATE' => 'ایجاد',
+      'UPDATE' || 'EDIT' => 'ویرایش',
+      'DELETE' || 'REMOVE' => 'حذف',
+      _ => action.replaceAll('_', ' '),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +68,11 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                   if (snapshot.hasError) {
                     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 42),
-                    const SizedBox(height: 8),
-                    const Text('دریافت گزارش فعالیت ناموفق بود.'),
-                    TextButton(onPressed: _refresh, child: const Text('تلاش مجدد')),
-                    const SizedBox(height: 8),
-                    Text('ابتدا اسکریپت SQL مربوط به ثبت فعالیت را در Supabase اجرا کنید.', style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+                      const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 42),
+                      const SizedBox(height: 8),
+                      const Text('دریافت گزارش فعالیت ناموفق بود.'),
+                      TextButton(onPressed: _refresh, child: const Text('تلاش مجدد')),
+                      Text('جزئیات خطا: ${snapshot.error}', style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
                     ]));
                   }
                   final logs = snapshot.data ?? [];
@@ -79,26 +82,28 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final log = logs[index];
-                      final operation = (log['operation'] ?? '').toString();
+                      final action = (log['action'] ?? '').toString();
                       final createdAt = DateTime.tryParse((log['created_at'] ?? '').toString())?.toLocal();
                       final dateLabel = createdAt == null ? '—' : DateFormat('yyyy/MM/dd  HH:mm').format(createdAt);
+                      final actor = (log['actor_email'] ?? '').toString().trim();
+                      final summary = (log['summary'] ?? '').toString().trim();
                       return ListTile(
                         leading: HugeIcon(
-                          icon: switch (operation) {
-                            'INSERT' => HugeIcons.strokeRoundedAddCircle,
-                            'UPDATE' => HugeIcons.strokeRoundedEdit02,
-                            'DELETE' => HugeIcons.strokeRoundedDelete02,
+                          icon: switch (action.toUpperCase()) {
+                            'INSERT' || 'CREATE' => HugeIcons.strokeRoundedAddCircle,
+                            'UPDATE' || 'EDIT' => HugeIcons.strokeRoundedEdit02,
+                            'DELETE' || 'REMOVE' => HugeIcons.strokeRoundedDelete02,
                             _ => HugeIcons.strokeRoundedActivity01,
                           },
-                          color: switch (operation) {
-                            'INSERT' => Colors.green,
-                            'UPDATE' => Colors.blue,
-                            'DELETE' => Colors.red,
+                          color: switch (action.toUpperCase()) {
+                            'INSERT' || 'CREATE' => Colors.green,
+                            'UPDATE' || 'EDIT' => Colors.blue,
+                            'DELETE' || 'REMOVE' => Colors.red,
                             _ => theme.colorScheme.primary,
                           },
                         ),
-                        title: Text('${_operationLabel(operation)} • ${log['table_name'] ?? '—'}'),
-                        subtitle: Text('شناسه رکورد: ${log['record_id'] ?? '—'}\nکاربر: ${log['actor_id'] ?? 'سیستم'}\n$dateLabel'),
+                        title: Text('${_actionLabel(action)} • ${log['table_name'] ?? '—'}'),
+                        subtitle: Text('${summary.isEmpty ? 'شناسه رکورد: ${log['record_id'] ?? '—'}' : summary}\nکاربر: ${actor.isEmpty ? (log['actor_user_id'] ?? 'سیستم') : actor}\n$dateLabel'),
                         isThreeLine: true,
                       );
                     },
