@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/theme/app_radius.dart';
@@ -8,7 +9,7 @@ import '../../../core/widgets/app_card.dart';
 class StatisticCard extends StatelessWidget {
   final String title;
   final String value;
-  final String imageAssetPath;
+  final List<List<dynamic>> icon;
   final Color iconColor;
   final String changePercentage;
   final bool isPositiveChange;
@@ -18,7 +19,7 @@ class StatisticCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.value,
-    required this.imageAssetPath,
+    required this.icon,
     required this.iconColor,
     required this.changePercentage,
     this.isPositiveChange = true,
@@ -38,16 +39,11 @@ class StatisticCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Image.asset(
-                imageAssetPath,
-                width: isFeatured ? 68 : 52,
-                height: isFeatured ? 68 : 52,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.image_not_supported_outlined,
-                  color: iconColor,
-                  size: isFeatured ? 68 : 52,
-                ),
+              HugeIcon(
+                icon: icon,
+                color: iconColor,
+                size: isFeatured ? 44 : 34,
+                strokeWidth: 1.8,
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
