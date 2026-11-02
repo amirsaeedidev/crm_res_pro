@@ -296,6 +296,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
 
       try {
         final provider = context.read<DiscountsProvider>();
+        final repository = context.read<DiscountsRepository>();
         final ok = isEditing
             ? await provider.updateDiscount(widget.discountId!, discountData)
             : await provider.createDiscount(discountData);
@@ -304,7 +305,6 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         String? deliveryMessage;
         Color deliveryColor = AppColors.success;
         if (sendNow) {
-          final repository = context.read<DiscountsRepository>();
           final savedId = isEditing
               ? widget.discountId!
               : await repository.getDiscountIdByCode(_codeController.text.trim().toUpperCase());
