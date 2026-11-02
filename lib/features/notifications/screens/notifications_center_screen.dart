@@ -95,6 +95,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
         // solely because the separate audit/history write did not complete.
         debugPrint('Could not persist notification campaign history: $historyError');
       }
+      if (!mounted) return;
       setState(() => _sentHistory = _loadSentHistory());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
