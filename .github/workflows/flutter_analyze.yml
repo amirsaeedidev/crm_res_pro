@@ -2,7 +2,7 @@ name: Flutter Analyze
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/notification-history-and-audit]
   pull_request:
     branches: [main]
   workflow_dispatch:
