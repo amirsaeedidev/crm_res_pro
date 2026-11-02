@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - fix/notification-history-and-audit
 
 permissions:
   contents: read
