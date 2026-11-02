@@ -65,6 +65,34 @@ class DiscountsRepository {
     }
   }
 
+  Future<String> getDiscountIdByCode(String code) async {
+    final row = await _client
+        .from('discounts')
+        .select('id')
+        .eq('code', code.trim().toUpperCase())
+        .single();
+    return row['id'].toString();
+  }
+
+  Future<Map<String, dynamic>> dispatchDiscountDelivery({
+    required String discountId,
+    required List<String> channels,
+    String? sourceCampaignId,
+  }) async {
+    final response = await _client.rpc(
+      'admin_dispatch_discount_delivery',
+      params: {
+        'p_discount_id': discountId,
+        'p_channels': channels,
+        'p_source_campaign_id': sourceCampaignId,
+      },
+    );
+    if (response is! Map) {
+      throw const FormatException('پاسخ ارسال کد تخفیف معتبر نیست.');
+    }
+    return Map<String, dynamic>.from(response);
+  }
+
   Future<void> deleteDiscount(String id) async {
     try { await _client.from('discounts').delete().eq('id', id); }
     on PostgrestException catch (e, st) {
