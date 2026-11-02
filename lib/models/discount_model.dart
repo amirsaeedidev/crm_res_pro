@@ -19,6 +19,7 @@ class DiscountModel {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? description;
+  final List<String> deliveryChannels;
 
   const DiscountModel({
     required this.id,
@@ -39,6 +40,7 @@ class DiscountModel {
     required this.createdAt,
     this.updatedAt,
     this.description,
+    this.deliveryChannels = const ['notification'],
   });
 
   factory DiscountModel.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,9 @@ class DiscountModel {
       createdAt: created,
       updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
       description: json['description'] as String?,
+      deliveryChannels: json['delivery_channels'] is List
+          ? (json['delivery_channels'] as List).map((value) => value.toString()).toList(growable: false)
+          : const ['notification'],
     );
   }
 
@@ -84,6 +89,7 @@ class DiscountModel {
         'expires_at': endDate.toUtc().toIso8601String(),
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
+        'delivery_channels': deliveryChannels,
       };
 
   DiscountModel copyWith({
@@ -91,6 +97,7 @@ class DiscountModel {
     double? minPurchaseAmount, double? maxDiscountAmount, int? totalUsageLimit,
     int? perUserUsageLimit, bool? restrictedToCustomers, List<String>? targetPhones, int? usedCount, bool? isActive, DateTime? startDate,
     DateTime? endDate, DateTime? createdAt, DateTime? updatedAt, String? description,
+    List<String>? deliveryChannels,
   }) => DiscountModel(
         id: id ?? this.id, title: title ?? this.title, code: code ?? this.code,
         type: type ?? this.type, value: value ?? this.value,
@@ -104,5 +111,6 @@ class DiscountModel {
         startDate: startDate ?? this.startDate, endDate: endDate ?? this.endDate,
         createdAt: createdAt ?? this.createdAt, updatedAt: updatedAt ?? this.updatedAt,
         description: description ?? this.description,
+        deliveryChannels: deliveryChannels ?? this.deliveryChannels,
       );
 }
