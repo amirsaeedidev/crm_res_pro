@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_strings.dart';
@@ -11,6 +12,7 @@ class AppSearch extends StatefulWidget {
   final VoidCallback? onClear;
   final String hintText;
   final bool autoFocus;
+  final bool useHugeIcons;
 
   const AppSearch({
     super.key,
@@ -19,6 +21,7 @@ class AppSearch extends StatefulWidget {
     this.onClear,
     this.hintText = AppStrings.search,
     this.autoFocus = false,
+    this.useHugeIcons = false,
   });
 
   @override
@@ -76,11 +79,15 @@ class _AppSearchState extends State<AppSearch> {
       decoration: InputDecoration(
         hintText: widget.hintText,
         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.getSecondaryText(context)),
-        prefixIcon: Icon(Icons.search, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
+        prefixIcon: widget.useHugeIcons
+            ? HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm)
+            : Icon(Icons.search, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
                 tooltip: 'پاک‌کردن جست‌وجو',
-                icon: Icon(Icons.close, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
+                icon: widget.useHugeIcons
+                    ? HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm)
+                    : Icon(Icons.close, color: AppColors.getSecondaryText(context), size: AppSizes.iconSm),
                 onPressed: _clear,
               )
             : null,
