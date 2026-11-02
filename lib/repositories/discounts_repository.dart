@@ -97,6 +97,13 @@ class DiscountsRepository {
     if (source.containsKey('end_date')) out['expires_at'] = source['end_date'];
     if (source.containsKey('expires_at')) out['expires_at'] = source['expires_at'];
     copyAlias('updated_at','updated_at');
+    if (source.containsKey('delivery_channels')) {
+      final channels = (source['delivery_channels'] as List?)?.map((value) => value.toString()).toSet().toList() ?? const <String>[];
+      if (channels.isEmpty || channels.any((value) => !{'banner', 'notification', 'sms'}.contains(value))) {
+        throw ArgumentError('کانال‌های ارسال تخفیف معتبر نیستند.');
+      }
+      out['delivery_channels'] = channels;
+    }
     if (source.containsKey('restricted_to_customers')) out['restricted_to_customers'] = source['restricted_to_customers'] == true;
     out.remove('target_phones');
     out.removeWhere((key, value) => value == null && !{'max_discount_amount','usage_limit','per_user_usage_limit','starts_at','expires_at','description'}.contains(key));
