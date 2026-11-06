@@ -64,16 +64,22 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     super.dispose();
   }
 
-  ChipType _getStatusChipType(bool isActive, DateTime endDate) {
-    if (!isActive) return ChipType.neutral;
-    if (DateTime.now().isAfter(endDate)) return ChipType.error;
-    return ChipType.success;
+  ChipType _getStatusChipType(DiscountModel discount) {
+    switch (discount.serverStatus) {
+      case 'inactive': return ChipType.neutral;
+      case 'scheduled': return ChipType.neutral;
+      case 'expired': return ChipType.error;
+      default: return ChipType.success;
+    }
   }
 
-  String _getStatusText(bool isActive, DateTime endDate) {
-    if (!isActive) return 'غیرفعال';
-    if (DateTime.now().isAfter(endDate)) return 'منقضی شده';
-    return 'فعال';
+  String _getStatusText(DiscountModel discount) {
+    switch (discount.serverStatus) {
+      case 'inactive': return 'غیرفعال';
+      case 'scheduled': return 'زمان‌بندی‌شده';
+      case 'expired': return 'منقضی شده';
+      default: return 'فعال';
+    }
   }
 
   @override
@@ -264,8 +270,8 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           Expanded(
             flex: 1,
             child: CustomChip(
-              label: _getStatusText(discount.isActive, discount.endDate),
-              type: _getStatusChipType(discount.isActive, discount.endDate),
+              label: _getStatusText(discount),
+              type: _getStatusChipType(discount),
             ),
           ),
           Expanded(
