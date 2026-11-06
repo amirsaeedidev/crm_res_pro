@@ -363,7 +363,7 @@ select d.id,o.id,o.user_id,d.code,coalesce(o.discount_amount,0),
        coalesce(o.created_at,pg_catalog.now()),
        case when o.status='cancelled' then coalesce(o.updated_at,o.created_at,pg_catalog.now()) else null end
 from public.orders o
-join public.discounts d on pg_catalog.upper(d.code)=pg_catalog.upper(o.discount_code)
+join public.discounts d on pg_catalog.upper(pg_catalog.btrim(d.code))=pg_catalog.upper(pg_catalog.btrim(o.discount_code))
 where nullif(pg_catalog.btrim(coalesce(o.discount_code,'')),'') is not null
   and o.user_id is not null
 on conflict (order_id) do nothing;
