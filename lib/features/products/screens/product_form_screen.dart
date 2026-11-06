@@ -105,8 +105,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
+  String _normalizePriceDigits(String value) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = value.trim();
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized.replaceAll(persian[i], '$i').replaceAll(arabic[i], '$i');
+    }
+    return normalized.replaceAll(',', '').replaceAll('٬', '').replaceAll(' ', '');
+  }
+
   String? _validatePrice(String? value) {
-    final n = int.tryParse((value ?? '').trim());
+    final n = int.tryParse(_normalizePriceDigits(value ?? ''));
     if (n == null || n <= 0) return 'قیمت باید عدد صحیح بزرگ‌تر از صفر باشد.';
     return null;
   }
@@ -133,7 +143,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       }
       final percentage = double.tryParse(_discountPercent.text.trim()) ?? 0.0;
       final labels = _labels.text.split(RegExp(r'[,،\\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
-      final priceText = _price.text.trim().replaceAll(',', '').replaceAll('٬', '');
+      final priceText = _normalizePriceDigits(_price.text);
       final data = <String, dynamic>{
         'name': _name.text.trim(),
         'description': _description.text.trim(),
