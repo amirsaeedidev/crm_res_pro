@@ -31,6 +31,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   XFile? _image;
   Uint8List? _imageBytes;
   String? _imageUrl;
+  String? _originalImageUrl;
   String? _categoryId;
   bool _popular = false;
   bool _active = true;
@@ -68,6 +69,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _sortOrder.text = product.sortOrder.toString();
       _discountPercent.text = product.discountPercent.toStringAsFixed(product.discountPercent % 1 == 0 ? 0 : 2);
       _imageUrl = product.imageUrl;
+      _originalImageUrl = product.imageUrl;
       _categoryId = product.categoryId;
       _popular = product.isPopular;
       _active = product.status == 'active';
@@ -122,9 +124,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _saving = true);
     String? uploadedImageUrl;
     var productSaved = false;
-    final previousImageUrl = _imageUrl ?? '';
+    final previousImageUrl = _originalImageUrl ?? _imageUrl ?? '';
     try {
-      var imageUrl = previousImageUrl;
+      var imageUrl = _imageUrl ?? '';
       if (_image != null) {
         uploadedImageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
         imageUrl = uploadedImageUrl;
