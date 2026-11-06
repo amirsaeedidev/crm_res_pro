@@ -17,6 +17,7 @@ class DiscountsProvider extends ChangeNotifier {
   String _searchQuery = '';
   final int _pageSize = 15;
   int _requestVersion = 0;
+  int _searchVersion = 0; // Invalidates pending search requests when the provider is disposed.
   bool _disposed = false;
 
   bool get isLoading => _isLoading;
