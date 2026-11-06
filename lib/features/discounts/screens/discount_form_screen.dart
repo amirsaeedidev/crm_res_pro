@@ -418,11 +418,46 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     Text(
                       'محدودیت‌ها و شرایط استفاده',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.getPrimaryText(context),
-                            fontWeight: FontWeight.bold,
-                          ),
+                        color: AppColors.getPrimaryText(context),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: AppSizes.lg),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fieldWidth = constraints.maxWidth < 600 ? constraints.maxWidth : 320.0;
+                        return Wrap(
+                          spacing: AppSizes.md,
+                          runSpacing: AppSizes.md,
+                          children: [
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _minPurchaseController,
+                                labelText: 'حداقل مبلغ خرید (تومان)',
+                                hintText: '۰',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [_moneyFormatter],
+                                prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedFilter),
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _maxDiscountController,
+                                labelText: 'حداکثر مبلغ تخفیف (تومان)',
+                                hintText: '۰',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [_moneyFormatter],
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSizes.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final fieldWidth = constraints.maxWidth < 600 ? constraints.maxWidth : 320.0;
@@ -443,28 +478,6 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                           ],
                         );
                       },
-                    ),
-                    const SizedBox(height: AppSizes.md),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final fieldWidth = constraints.maxWidth < 600
-                            ? constraints.maxWidth
-                            : 320.0;
-                        return Wrap(
-                          spacing: AppSizes.md,
-                          runSpacing: AppSizes.md,
-                          children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: AppTextField(
-                            controller: _totalUsageController,
-                            labelText: 'سقف کل استفاده',
-                            hintText: 'مثلاً ۱۰۰',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => _validatePositiveNumber(value),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
