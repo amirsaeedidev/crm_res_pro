@@ -43,13 +43,20 @@ class DiscountsRepository {
 
   Future<DiscountModel> createDiscount(Map<String, dynamic> data) async {
     try {
-      final row = await _client.from('discounts').insert(_normalize(data)).select().single();
+      final normalized = _normalize(data);
+      final syncScopes = data.containsKey('product_ids') || data.containsKey('category_ids');
+      final desiredActive = normalized['is_active'] as bool? ?? true;
+      if (syncScopes) normalized['is_active'] = false; // fail closed until scope rows are saved
+      var row = await _client.from('discounts').insert(normalized).select().single();
       final id = row['id'].toString();
       if (data.containsKey('target_phones') || data.containsKey('restricted_to_customers')) {
         await _syncTargetPhones(id, data['target_phones'], data['restricted_to_customers'] == true);
       }
-      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
+      if (syncScopes) {
         await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
+        if (desiredActive) {
+          row = await _client.from('discounts').update({'is_active': true}).eq('id', id).select().single();
+        }
       }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
@@ -65,12 +72,20 @@ class DiscountsRepository {
 
   Future<DiscountModel> updateDiscount(String id, Map<String, dynamic> data) async {
     try {
-      final row = await _client.from('discounts').update(_normalize(data)).eq('id', id).select().single();
+      final current = await _client.from('discounts').select('is_active').eq('id', id).single();
+      final normalized = _normalize(data);
+      final syncScopes = data.containsKey('product_ids') || data.containsKey('category_ids');
+      final desiredActive = normalized['is_active'] as bool? ?? current['is_active'] == true;
+      if (syncScopes) normalized['is_active'] = false; // fail closed until scope rows are saved
+      var row = await _client.from('discounts').update(normalized).eq('id', id).select().single();
       if (data.containsKey('target_phones') || data.containsKey('restricted_to_customers')) {
         await _syncTargetPhones(id, data['target_phones'], data['restricted_to_customers'] == true);
       }
-      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
+      if (syncScopes) {
         await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
+        if (desiredActive) {
+          row = await _client.from('discounts').update({'is_active': true}).eq('id', id).select().single();
+        }
       }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
