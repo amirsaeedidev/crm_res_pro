@@ -373,3 +373,11 @@ set used_count = (
   select count(*)::integer from public.discount_redemptions r
   where r.discount_id=d.id and r.status='redeemed'
 ), updated_at=pg_catalog.now();
+
+
+-- Preserve the redemption ledger if an order deletion is attempted.
+alter table public.discount_redemptions
+  drop constraint if exists discount_redemptions_order_id_fkey;
+alter table public.discount_redemptions
+  add constraint discount_redemptions_order_id_fkey
+  foreign key (order_id) references public.orders(id) on delete restrict;
