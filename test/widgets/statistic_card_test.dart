@@ -48,7 +48,7 @@ void main() {
     expect(find.text('سفارشات لغو شده'), findsOneWidget);
     expect(find.text('15'), findsOneWidget);
     expect(find.text('-5%'), findsOneWidget);
-    expect(find.byType(CustomPaint), findsOneWidget);
+    expect(find.byType(CustomPaint), findsWidgets);
     expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
   });
 }
