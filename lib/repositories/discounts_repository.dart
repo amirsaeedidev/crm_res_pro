@@ -114,6 +114,7 @@ class DiscountsRepository {
     String audience = 'all_customers',
     List<String> customerIds = const [],
     String? sourceCampaignId,
+    required String requestKey,
   }) async {
     final response = await _client.rpc(
       'admin_dispatch_discount_delivery_v2',
@@ -123,6 +124,7 @@ class DiscountsRepository {
         'p_audience': audience,
         'p_customer_ids': customerIds,
         'p_source_campaign_id': sourceCampaignId,
+        'p_request_key': requestKey,
       },
     );
     if (response is! Map) {
