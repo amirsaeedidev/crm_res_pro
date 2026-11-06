@@ -446,3 +446,30 @@ begin
   execute v_definition;
 end;
 $migration$;
+
+
+-- Keep JSON array checks in separate branches so jsonb_array_length is never
+-- evaluated for SQL NULL or a non-array payload.
+do $migration$
+declare v_definition text;
+begin
+  select pg_get_functiondef('public.quote_discount_code(text,jsonb)'::regprocedure) into v_definition;
+  v_definition := replace(v_definition,
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' or jsonb_array_length(p_items)=0 then
+    return jsonb_build_object(''success'',false,''message'',''سبد خرید خالی است.'');
+  end if;',
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' then
+    return jsonb_build_object(''success'',false,''message'',''سبد خرید معتبر نیست.'');
+  end if;
+  if jsonb_array_length(p_items)=0 then
+    return jsonb_build_object(''success'',false,''message'',''سبد خرید خالی است.'');
+  end if;');
+  execute v_definition;
+  select pg_get_functiondef('public.place_order_idempotent(uuid,text,jsonb,uuid,text,integer,uuid,text,text)'::regprocedure) into v_definition;
+  v_definition := replace(v_definition,
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' or jsonb_array_length(p_items)=0 then raise exception ''Order must contain at least one item'' using errcode=''22023''; end if;',
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' then raise exception ''Order items must be a JSON array'' using errcode=''22023''; end if;
+  if jsonb_array_length(p_items)=0 then raise exception ''Order must contain at least one item'' using errcode=''22023''; end if;');
+  execute v_definition;
+end;
+$migration$;
