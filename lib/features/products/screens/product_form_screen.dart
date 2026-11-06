@@ -142,7 +142,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         imageUrl = uploadedImageUrl;
       }
       final percentage = double.tryParse(_discountPercent.text.trim()) ?? 0.0;
-      final labels = _labels.text.split(RegExp(r'[,،\\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+      final labels = _labels.text.split(RegExp(r'[,،\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
       final priceText = _normalizePriceDigits(_price.text);
       final data = <String, dynamic>{
         'name': _name.text.trim(),
