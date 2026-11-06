@@ -25,7 +25,7 @@ class DiscountModel {
   final List<String> categoryIds;
   final DateTime serverNow;
 
-  const DiscountModel({
+  DiscountModel({
     required this.id,
     required this.title,
     required this.code,
