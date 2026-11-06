@@ -130,7 +130,21 @@ class DiscountsRepository {
     if (response is! Map) {
       throw const FormatException('پاسخ ارسال کد تخفیف معتبر نیست.');
     }
-    return Map<String, dynamic>.from(response);
+    final result = Map<String, dynamic>.from(response);
+    final campaignId = result['campaign_id']?.toString();
+    if (campaignId != null && campaignId.isNotEmpty) {
+      try {
+        final campaign = await _client
+            .from('admin_notification_campaigns')
+            .select('status,target_count,sent_count,failed_count,channel_results')
+            .eq('id', campaignId)
+            .single();
+        result.addAll(Map<String, dynamic>.from(campaign));
+      } catch (_) {
+        // The dispatch result remains useful if history is temporarily unavailable.
+      }
+    }
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> getDiscountRedemptions(String discountId) async {
