@@ -10,6 +10,11 @@ void main() {
         'description': 'پیتزا با پنیر و پپرونی',
         'price': 120000.0,
         'discounted_price': 99000.0,
+        'discount_percent': 17.5,
+        'is_discount_active': true,
+        'sort_order': 6,
+        'is_available': false,
+        'unavailable_reason': 'اتمام موجودی',
         'category_id': 'cat-1',
         'stock': 50,
         'image_url': 'https://example.com/pizza.jpg',
@@ -27,6 +32,11 @@ void main() {
       expect(product.description, 'پیتزا با پنیر و پپرونی');
       expect(product.price, 120000.0);
       expect(product.discountedPrice, 99000.0);
+      expect(product.discountPercent, 17.5);
+      expect(product.isDiscountActive, isTrue);
+      expect(product.sortOrder, 6);
+      expect(product.isAvailable, isFalse);
+      expect(product.unavailableReason, 'اتمام موجودی');
       expect(product.categoryId, 'cat-1');
       expect(product.stock, 50);
       expect(product.imageUrl, 'https://example.com/pizza.jpg');
