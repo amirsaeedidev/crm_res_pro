@@ -153,7 +153,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       productSaved = true;
 
       // The DB now points to the replacement. Delete the old owned object only after this point.
-      if (uploadedImageUrl != null && previousImageUrl.isNotEmpty && previousImageUrl != uploadedImageUrl) {
+      if (previousImageUrl.isNotEmpty && previousImageUrl != imageUrl) {
         final removed = await UploadService.deletePublicImageUrl(previousImageUrl, bucketName: 'products', folderName: 'products');
         if (!removed) _message('محصول ذخیره شد، اما حذف تصویر قبلی ناموفق بود؛ تصویر قبلی فعلاً باقی مانده است.');
       }
@@ -201,7 +201,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         const SizedBox(height: 12),
         if (_discountEnabled && double.tryParse(_discountPercent.text) != null && double.tryParse(_price.text) != null)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
-        OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'تصویر ذخیره‌شده موجود است؛ برای جایگزینی انتخاب کنید'))),
+        Row(children: [
+          Expanded(child: OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'جایگزینی تصویر')))),
+          if ((_imageUrl?.isNotEmpty ?? false) || _image != null) ...[
+            const SizedBox(width: 8),
+            IconButton(tooltip: 'حذف تصویر محصول', onPressed: _saving ? null : () => setState(() { _image = null; _imageBytes = null; _imageUrl = ''; }), icon: const Icon(Icons.delete_outline, color: Colors.red)),
+          ],
+        ]),
         if (_imageBytes != null) Padding(padding: const EdgeInsets.only(top: 12), child: Image.memory(_imageBytes!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.')))
         else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست؛ برای جایگزینی، تصویر جدید انتخاب کنید.'))),
         const SizedBox(height: 8),
