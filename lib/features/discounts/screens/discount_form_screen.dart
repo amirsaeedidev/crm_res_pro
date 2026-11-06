@@ -71,6 +71,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   DateTime? _endDate;
   bool _isActive = true;
   bool _restrictedToCustomers = false;
+  String _deliveryAudience = 'all_customers';
   final Set<String> _deliveryChannels = {'notification'};
   bool _allowWithProductDiscount = false;
   final Set<String> _selectedProductIds = {};
@@ -111,6 +112,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           _startDate = discount.startDate;
           _endDate = discount.endDate;
           _isActive = discount.isActive;
+          _deliveryAudience = discount.restrictedToCustomers ? 'selected_customers' : 'all_customers';
           _deliveryChannels
             ..clear()
             ..addAll(discount.deliveryChannels);
@@ -337,6 +339,19 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         );
         return;
       }
+      if (sendNow && _deliveryAudience == 'selected_customers' && _selectedCustomers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('برای ارسال به مشتریان انتخاب‌شده، حداقل یک مشتری انتخاب کنید.'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+      if (sendNow && _deliveryChannels.contains('banner') &&
+          (_deliveryAudience != 'all_customers' || _restrictedToCustomers)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('بنر عمومی فقط برای تخفیف قابل‌استفاده توسط همه مشتریان مجاز است.'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
       if (_selectedType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('نوع تخفیف را انتخاب کنید'), backgroundColor: AppColors.error),
@@ -398,6 +413,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           final result = await repository.dispatchDiscountDelivery(
             discountId: savedId,
             channels: _deliveryChannels.toList(growable: false),
+            audience: _deliveryAudience,
+            customerIds: _deliveryAudience == 'selected_customers'
+                ? _selectedCustomers.keys.toList(growable: false)
+                : const [],
           );
           final status = (result['status'] ?? 'failed').toString();
           final sent = (result['sent_count'] as num?)?.toInt() ?? 0;
@@ -556,6 +575,35 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             color: AppColors.getSecondaryText(context),
                           ),
                     ),
+                    const SizedBox(height: AppSizes.md),
+                    DropdownButtonFormField<String>(
+                      value: _deliveryAudience,
+                      decoration: const InputDecoration(
+                        labelText: 'مخاطبان کمپین تخفیف',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'all_customers', child: Text('همه مشتریان فعال')),
+                        DropdownMenuItem(value: 'selected_customers', child: Text('مشتریان انتخاب‌شده')),
+                        DropdownMenuItem(value: 'inactive_30d', child: Text('مشتریان غیرفعال در ۳۰ روز اخیر')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _deliveryAudience = value;
+                          _restrictedToCustomers = value == 'selected_customers';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _deliveryAudience == 'inactive_30d'
+                          ? 'مخاطبان بر اساس سفارش‌های ثبت‌شده در دیتابیس و زمان سرور انتخاب می‌شوند.'
+                          : _deliveryAudience == 'selected_customers'
+                              ? 'فقط مشتریان انتخاب‌شده در بخش محدودسازی، کد را دریافت و مصرف می‌کنند.'
+                              : 'کد برای تمام مشتریان فعال منتشر می‌شود.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context)),
+                    ),
                     const SizedBox(height: AppSizes.sm),
                     CheckboxListTile(
                       value: _deliveryChannels.contains('banner'),
@@ -713,7 +761,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     title: const Text('فقط شماره‌های مشخص‌شده بتوانند کد را مصرف کنند'),
                     subtitle: const Text('شماره‌ها باید از قبل در پروفایل مشتریان ثبت شده باشند.'),
                     value: _restrictedToCustomers,
-                    onChanged: (value) => setState(() => _restrictedToCustomers = value),
+                    onChanged: (value) => setState(() {
+                      _restrictedToCustomers = value;
+                      _deliveryAudience = value ? 'selected_customers' : 'all_customers';
+                    }),
                   ),
                   if (_restrictedToCustomers) ...[
                     const SizedBox(height: AppSizes.sm),
