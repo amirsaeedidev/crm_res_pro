@@ -48,7 +48,6 @@ class DiscountModel {
     this.categoryIds = const [],
     DateTime? serverNow,
   }) : serverNow = serverNow ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-  });
 
   bool get isExpired => isActive && !serverNow.isBefore(endDate);
   bool get isScheduled => isActive && serverNow.isBefore(startDate);
