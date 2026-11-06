@@ -48,3 +48,7 @@ alter table public.restaurant_expenses validate constraint restaurant_expenses_a
 alter table public.inventory_purchases add constraint inventory_purchases_amounts_whole_toman
   check (total_amount = trunc(total_amount) and discount_amount = trunc(discount_amount)) not valid;
 alter table public.inventory_purchases validate constraint inventory_purchases_amounts_whole_toman;
+
+-- Keep the validation trigger function internal-only and execute it with invoker rights.
+alter function public.validate_order_item_product() security invoker;
+revoke all on function public.validate_order_item_product() from public, anon, authenticated;
