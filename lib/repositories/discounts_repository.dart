@@ -111,13 +111,17 @@ class DiscountsRepository {
   Future<Map<String, dynamic>> dispatchDiscountDelivery({
     required String discountId,
     required List<String> channels,
+    String audience = 'all_customers',
+    List<String> customerIds = const [],
     String? sourceCampaignId,
   }) async {
     final response = await _client.rpc(
-      'admin_dispatch_discount_delivery',
+      'admin_dispatch_discount_delivery_v2',
       params: {
         'p_discount_id': discountId,
         'p_channels': channels,
+        'p_audience': audience,
+        'p_customer_ids': customerIds,
         'p_source_campaign_id': sourceCampaignId,
       },
     );
