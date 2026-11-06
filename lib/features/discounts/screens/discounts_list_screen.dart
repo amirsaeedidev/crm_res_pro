@@ -178,7 +178,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                 ? const Center(child: Text('هنوز مصرفی برای این کد ثبت نشده است.'))
                 : ListView.separated(
                     itemCount: rows.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final row = rows[index];
                       final released = row['status'] == 'released';
