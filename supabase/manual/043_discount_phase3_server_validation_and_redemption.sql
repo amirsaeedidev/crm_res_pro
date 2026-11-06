@@ -381,3 +381,21 @@ alter table public.discount_redemptions
 alter table public.discount_redemptions
   add constraint discount_redemptions_order_id_fkey
   foreign key (order_id) references public.orders(id) on delete restrict;
+
+
+-- Normalize all coupon codes so whitespace/case cannot create ambiguous matches.
+create or replace function public.normalize_discount_code()
+returns trigger language plpgsql set search_path = ''
+as $function$
+begin
+  new.code := pg_catalog.upper(pg_catalog.btrim(coalesce(new.code,'')));
+  if new.code = '' then raise exception 'Discount code cannot be empty' using errcode='23514'; end if;
+  return new;
+end;
+$function$;
+drop trigger if exists normalize_discount_code_before_write on public.discounts;
+create trigger normalize_discount_code_before_write
+before insert or update of code on public.discounts
+for each row execute function public.normalize_discount_code();
+update public.discounts set code=pg_catalog.upper(pg_catalog.btrim(code))
+where code is distinct from pg_catalog.upper(pg_catalog.btrim(code));
