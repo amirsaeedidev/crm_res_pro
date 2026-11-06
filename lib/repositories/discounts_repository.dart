@@ -243,7 +243,7 @@ class DiscountsRepository {
     List<Map<String, dynamic>> targets = [];
     if (restricted) {
       final requested = phones.map(_phoneKey).where((v) => v.isNotEmpty).toSet();
-      final profiles = await _client.from('profiles').select('id,phone').eq('role', 'customer').not('phone', 'is', null).limit(5000);
+      final profiles = await _client.from('profiles').select('id,phone').eq('role', 'customer').eq('status', 'active').not('phone', 'is', null).limit(5000);
       final profileMap = <String, Map<String, dynamic>>{};
       for (final row in profiles) {
         final phone = (row['phone'] ?? '').toString();
