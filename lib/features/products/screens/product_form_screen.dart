@@ -177,8 +177,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         const SizedBox(height: 12),
         TextFormField(controller: _sortOrder, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش (عدد کمتر، بالاتر)', border: OutlineInputBorder()), validator: (v) { final n = int.tryParse((v ?? '').trim()); return n == null || n < 0 ? 'ترتیب باید عدد صحیح صفر یا بیشتر باشد.' : null; }),
         const SizedBox(height: 12),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('موجود و قابل سفارش'), subtitle: const Text('با خاموش کردن، محصول در اپ مشتری ناموجود نمایش داده می‌شود.')),
-        if (!_available) Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجودی (اختیاری)', border: OutlineInputBorder()))),
         if (_discountEnabled && double.tryParse(_discountPercent.text) != null && double.tryParse(_price.text) != null)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
         OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'تصویر ذخیره‌شده موجود است؛ برای جایگزینی انتخاب کنید'))),
