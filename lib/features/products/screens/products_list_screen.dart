@@ -276,6 +276,10 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                               color: AppColors.getSecondaryText(context),
                             ),
                       ),
+                      if (!product.isAvailable) ...[
+                        const SizedBox(height: 4),
+                        const CustomChip(label: 'ناموجود', type: ChipType.warning),
+                      ],
                       if (product.labels.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Wrap(spacing: 4, runSpacing: 4, children: product.labels.take(4).map((label) => CustomChip(label: label, type: ChipType.neutral)).toList()),
@@ -487,7 +491,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   }
 
   Widget _buildPriceWidget(BuildContext context, ProductModel product) {
-    if (product.discountedPrice != null && product.discountedPrice! < product.price) {
+    if (product.isDiscountActive && product.discountedPrice != null && product.discountedPrice! < product.price) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
