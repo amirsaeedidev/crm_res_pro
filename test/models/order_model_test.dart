@@ -11,14 +11,14 @@ final json = {
 'customer_phone': '09123456789',
 'order_type': 'delivery',
 'status': 'pending',
-'total_amount': 150000.0,
+'total_amount': 150000,
 'estimated_ready_minutes': 30,
 'admin_note': 'بدون پیاز',
 'completed_at': '2023-10-01T12:30:00Z',
 'created_at': '2023-10-01T12:00:00Z',
 'updated_at': '2023-10-01T12:15:00Z',
 'order_items': [
-{'name': 'پیتزا', 'quantity': 2, 'price': 50000.0, 'note': 'تک‌خوب'}
+{'name': 'پیتزا', 'quantity': 2, 'price': 50000, 'note': 'تک‌خوب'}
 ]
 };
 
@@ -30,7 +30,8 @@ expect(order.customerName, 'علی رضایی');
 expect(order.customerPhone, '09123456789');
 expect(order.orderType, 'delivery');
 expect(order.status, 'pending');
-expect(order.totalAmount, 150000.0);
+expect(order.totalAmount, 150000);
+expect(order.totalAmount, isA<int>());
 expect(order.estimatedReadyMinutes, 30);
 expect(order.adminNote, 'بدون پیاز');
 expect(order.completedAt, DateTime.parse('2023-10-01T12:30:00Z'));
@@ -40,7 +41,8 @@ expect(order.updatedAt, DateTime.parse('2023-10-01T12:15:00Z'));
 expect(order.items.length, 1);
 expect(order.items.first.name, 'پیتزا');
 expect(order.items.first.quantity, 2);
-expect(order.items.first.price, 50000.0);
+expect(order.items.first.price, 50000);
+expect(order.items.first.price, isA<int>());
 expect(order.items.first.note, 'تک‌خوب');
 });
 
@@ -58,7 +60,8 @@ expect(order.customerName, '');
 expect(order.customerPhone, '');
 expect(order.orderType, 'delivery');
 expect(order.status, 'pending');
-expect(order.totalAmount, 0.0);
+expect(order.totalAmount, 0);
+expect(order.totalAmount, isA<int>());
 expect(order.estimatedReadyMinutes, isNull);
 expect(order.adminNote, isNull);
 expect(order.completedAt, isNull);
@@ -74,13 +77,13 @@ customerName: 'Test User',
 customerPhone: '1234567890',
 orderType: 'pickup',
 status: 'completed',
-totalAmount: 50000.0,
+totalAmount: 50000,
 estimatedReadyMinutes: 15,
 adminNote: 'Test note',
 completedAt: DateTime.parse('2023-10-01T12:30:00Z'),
 createdAt: DateTime.parse('2023-10-01T12:00:00Z'),
 updatedAt: DateTime.parse('2023-10-01T12:15:00Z'),
-items: [OrderItem(name: 'Burger', quantity: 1, price: 50000.0)],
+items: [OrderItem(name: 'Burger', quantity: 1, price: 50000)],
 );
 
 final json = order.toJson();
@@ -90,7 +93,8 @@ expect(json['user_id'], 'user-123');
 expect(json['customer_name'], 'Test User');
 expect(json['order_type'], 'pickup');
 expect(json['status'], 'completed');
-expect(json['total_amount'], 50000.0);
+expect(json['total_amount'], 50000);
+expect(json['total_amount'], isA<int>());
 expect(json['estimated_ready_minutes'], 15);
 expect(json['admin_note'], 'Test note');
 expect(json['order_items'], isA<List>());
@@ -105,7 +109,7 @@ customerName: 'Test User',
 customerPhone: '1234567890',
 orderType: 'pickup',
 status: 'pending',
-totalAmount: 50000.0,
+totalAmount: 50000,
 createdAt: DateTime.parse('2023-10-01T12:00:00Z'),
 items: [],
 );

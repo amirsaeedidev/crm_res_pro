@@ -7,7 +7,7 @@ class OrderRefundManager extends StatefulWidget {
   const OrderRefundManager({super.key, required this.orderId, required this.status, required this.totalAmount});
   final String orderId;
   final String status;
-  final double totalAmount;
+  final int totalAmount;
   @override
   State<OrderRefundManager> createState() => _OrderRefundManagerState();
 }
@@ -57,7 +57,7 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
   }
 
   Future<void> _create() async {
-    final amount = double.tryParse(_amount.text.trim().replaceAll(',', ''));
+    final amount = int.tryParse(_amount.text.trim().replaceAll(',', '').replaceAll('٬', ''));
     if (_reason.text.trim().isEmpty || amount == null || amount <= 0 || amount > widget.totalAmount) {
       _message('علت را وارد کنید و مبلغ را بین صفر تا مبلغ سفارش بگذارید.'); return;
     }
@@ -110,7 +110,7 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
       Text('ثبت درخواست بازپرداخت', style:Theme.of(context).textTheme.titleMedium),
       Text('مبلغ سفارش: ${NumberFormat.decimalPattern().format(widget.totalAmount)} تومان'),
       const SizedBox(height:8),
-      TextField(controller:_amount, keyboardType:const TextInputType.numberWithOptions(decimal:true), decoration:const InputDecoration(labelText:'مبلغ بازپرداخت (تومان)',border:OutlineInputBorder())),
+      TextField(controller:_amount, keyboardType:TextInputType.number, decoration:const InputDecoration(labelText:'مبلغ بازپرداخت (تومان)',border:OutlineInputBorder())),
       const SizedBox(height:8),
       TextField(controller:_reason, minLines:2, maxLines:3, decoration:const InputDecoration(labelText:'علت بازپرداخت',border:OutlineInputBorder())),
       const SizedBox(height:8),
@@ -127,7 +127,7 @@ class _OrderRefundManagerState extends State<OrderRefundManager> {
       ..._rows.map((row) {
         final status = (row['status'] ?? 'pending').toString();
         return ListTile(contentPadding:EdgeInsets.zero,
-          title:Text('${NumberFormat.decimalPattern().format((row['amount'] as num?)?.toDouble() ?? 0)} تومان • ${_label(status)}'),
+          title:Text('${NumberFormat.decimalPattern().format((row['amount'] as num?)?.round() ?? 0)} تومان • ${_label(status)}'),
           subtitle:Text('${row['reason']} • ${row['refund_method']}'),
           trailing:PopupMenuButton<String>(enabled:!_busy && status != 'refunded' && status != 'rejected',
             onSelected:(v)=>_setStatus(row,v), itemBuilder:(_)=>const [

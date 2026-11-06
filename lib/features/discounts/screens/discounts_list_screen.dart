@@ -134,7 +134,7 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                   return const EmptyWidget(
                     title: 'تخفیفی یافت نشد',
                     message: 'هیچ تخفیفی مطابق با جستجوی شما یافت نشد.',
-                    icon: HugeIcons.strokeRoundedFilter,
+                    icon: Icons.filter_alt_outlined,
                   );
                 }
 

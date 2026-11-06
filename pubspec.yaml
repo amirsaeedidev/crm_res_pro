@@ -9,6 +9,9 @@ environment:
   sdk: ^3.11.3
 
 dependencies:
+  abrova_push:
+    hosted: https://center.abrova.ir/api/packages/abrova/pub
+    version: ^0.1.28
   flutter:
     sdk: flutter
   flutter_localizations:

@@ -17,7 +17,6 @@ class DiscountsProvider extends ChangeNotifier {
   String _searchQuery = '';
   final int _pageSize = 15;
   int _requestVersion = 0;
-  int _searchVersion = 0;
   bool _disposed = false;
 
   bool get isLoading => _isLoading;
@@ -78,7 +77,6 @@ class DiscountsProvider extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    ++_searchVersion;
     ++_requestVersion;
     super.dispose();
   }

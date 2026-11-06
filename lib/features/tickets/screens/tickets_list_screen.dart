@@ -161,7 +161,7 @@ class _TicketsListScreenState extends State<TicketsListScreen> {
                         width: cardWidth,
                         title: 'خوانده‌نشده',
                         value: provider.counts['unread'] ?? 0,
-                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedMailUnread),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
                         color: AppColors.error,
                         selected: provider.status == 'unread',
                         onTap: () => provider.setStatus('unread'),

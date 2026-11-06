@@ -1112,7 +1112,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             _field(_campaignName, 'نام کمپین'),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: _selectedDiscountId,
+              initialValue: _selectedDiscountId,
               isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'کد تخفیف متصل به کمپین (اختیاری)',
@@ -1440,7 +1440,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                       spacing: 10,
                       runSpacing: 8,
                       children: [
-                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedCursorPointer)),
+                        _metric('کلیک یکتا', '${summary['unique_clickers'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedActivity01)),
                         _metric('سفارش منتسب', '${summary['attributed_orders'] ?? 0}', const HugeIcon(icon: HugeIcons.strokeRoundedShoppingBag01)),
                         _metric('سفارش با کد تخفیف', couponOrders.toString(), const HugeIcon(icon: HugeIcons.strokeRoundedDiscount)),
                       ],

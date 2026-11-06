@@ -152,7 +152,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           decoration: InputDecoration(
             labelText: 'جست‌وجوی مشتری با نام یا شماره تلفن',
             hintText: 'نام یا شماره موبایل را وارد کنید',
-            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserSearch),
+            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup),
             suffixIcon: customerSearchController.text.isEmpty
                 ? null
                 : IconButton(
@@ -222,7 +222,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
                     : ListView.separated(
                         shrinkWrap: true,
                         itemCount: customerSuggestions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, index) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final customer = customerSuggestions[index];
                           return ListTile(
