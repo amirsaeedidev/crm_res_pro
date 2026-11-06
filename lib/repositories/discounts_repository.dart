@@ -51,9 +51,6 @@ class DiscountsRepository {
       if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
         await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
       }
-      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
-        await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
-      }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
       result['product_ids'] = data['product_ids'] ?? const [];
@@ -72,8 +69,14 @@ class DiscountsRepository {
       if (data.containsKey('target_phones') || data.containsKey('restricted_to_customers')) {
         await _syncTargetPhones(id, data['target_phones'], data['restricted_to_customers'] == true);
       }
+      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
+        await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
+      }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
+      result['product_ids'] = data['product_ids'] ?? const [];
+      result['category_ids'] = data['category_ids'] ?? const [];
+      result['server_now'] = (await _client.rpc('admin_get_database_time')).toString();
       return DiscountModel.fromJson(result);
     } on PostgrestException catch (e, st) {
       LoggerService.error('Update discount failed', error: e, stackTrace: st);
