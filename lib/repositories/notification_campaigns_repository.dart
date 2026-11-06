@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../core/services/supabase_service.dart';
 
@@ -14,7 +15,7 @@ class NotificationCampaignsRepository {
         .select(
           'id,campaign_type,title,body,audience,delivery_channels,status,'
           'target_count,sent_count,failed_count,channel_results,metadata,'
-          'created_at,sent_at,source_campaign_id,discount_id,sms_campaign_id',
+          'created_at,sent_at,source_campaign_id,discount_id,sms_campaign_id,request_key',
         )
         .order('created_at', ascending: false)
         .limit(limit);
@@ -112,6 +113,7 @@ class NotificationCampaignsRepository {
             'p_audience': audienceMode == 'targeted_discount' ? 'selected_customers' : audienceMode,
             'p_customer_ids': customerIds,
             'p_source_campaign_id': campaign['id'],
+            'p_request_key': const Uuid().v4(),
           },
         );
         if (response is! Map) throw const FormatException('پاسخ ارسال مجدد تخفیف معتبر نیست.');
