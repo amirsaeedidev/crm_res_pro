@@ -399,3 +399,29 @@ before insert or update of code on public.discounts
 for each row execute function public.normalize_discount_code();
 update public.discounts set code=pg_catalog.upper(pg_catalog.btrim(code))
 where code is distinct from pg_catalog.upper(pg_catalog.btrim(code));
+
+
+-- Route the legacy customer RPC through the same server-side validation.
+-- Legacy clients still cannot send an idempotency key, but no longer bypass
+-- product/category scope, redemption history, or cancellation capacity release.
+create or replace function public.place_order(
+  p_order_type text,
+  p_items jsonb,
+  p_address_id uuid default null,
+  p_address_line text default null,
+  p_table_number integer default null,
+  p_table_id uuid default null,
+  p_note text default null,
+  p_discount_code text default null
+) returns uuid
+language plpgsql security definer set search_path = ''
+as $function$
+begin
+  return public.place_order_idempotent(
+    pg_catalog.gen_random_uuid(),p_order_type,p_items,p_address_id,
+    p_address_line,p_table_number,p_table_id,p_note,p_discount_code
+  );
+end;
+$function$;
+revoke all on function public.place_order(text,jsonb,uuid,text,integer,uuid,text,text) from public,anon;
+grant execute on function public.place_order(text,jsonb,uuid,text,integer,uuid,text,text) to authenticated;
