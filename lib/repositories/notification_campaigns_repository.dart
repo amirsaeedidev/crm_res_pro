@@ -110,7 +110,7 @@ class NotificationCampaignsRepository {
           params: {
             'p_discount_id': discountId,
             'p_channels': failedChannels.toList(growable: false),
-            'p_audience': audienceMode == 'targeted_discount' ? 'selected_customers' : audienceMode,
+            'p_audience': (audienceMode == 'targeted_discount' || audienceMode == 'inactive_30d') ? 'selected_customers' : audienceMode,
             'p_customer_ids': customerIds,
             'p_source_campaign_id': campaign['id'],
             'p_request_key': const Uuid().v4(),
