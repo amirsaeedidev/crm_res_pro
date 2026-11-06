@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/utils/app_error_message.dart';
 import 'package:provider/provider.dart';
 
@@ -80,6 +81,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   List<Map<String, dynamic>> _scopeCategories = [];
   bool _scopeLoading = false;
   bool _isLoading = false;
+  String? _dispatchRequestKey;
 
   bool get isEditing => widget.discountId != null;
 
@@ -410,6 +412,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           final savedId = isEditing
               ? widget.discountId!
               : await repository.getDiscountIdByCode(_codeController.text.trim().toUpperCase());
+          _dispatchRequestKey ??= const Uuid().v4();
           final result = await repository.dispatchDiscountDelivery(
             discountId: savedId,
             channels: _deliveryChannels.toList(growable: false),
@@ -417,7 +420,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
             customerIds: _deliveryAudience == 'selected_customers'
                 ? _selectedCustomers.keys.toList(growable: false)
                 : const [],
+            requestKey: _dispatchRequestKey!,
           );
+          _dispatchRequestKey = null;
           final status = (result['status'] ?? 'failed').toString();
           final sent = (result['sent_count'] as num?)?.toInt() ?? 0;
           final failed = (result['failed_count'] as num?)?.toInt() ?? 0;
