@@ -409,6 +409,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       ],
                     ),
                     const SizedBox(height: AppSizes.md),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.lg),
 
               // Limits & Conditions Card
               AppCard(
