@@ -184,8 +184,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست.'))),
         const SizedBox(height: 8),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('نمایش محصول در منو'), subtitle: const Text('خاموش باشد، غذا از منوی عمومی حذف می‌شود.')),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('قابل سفارش باشد'), subtitle: const Text('برای تمام‌شدن موقت غذا خاموش کنید؛ ثبت سفارش در دیتابیس هم مسدود می‌شود.')),
-        if (!_available) TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجود بودن (اختیاری)', border: OutlineInputBorder())),
         if (_editing) ...[
           const SizedBox(height: 20),
           const Divider(),
