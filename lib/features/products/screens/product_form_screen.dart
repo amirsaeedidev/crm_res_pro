@@ -120,11 +120,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<ProductsProvider>();
     setState(() => _saving = true);
+    String? uploadedImageUrl;
+    var productSaved = false;
+    final previousImageUrl = _imageUrl ?? '';
     try {
-      var imageUrl = _imageUrl ?? '';
-      if (_image != null) imageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
+      var imageUrl = previousImageUrl;
+      if (_image != null) {
+        uploadedImageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
+        imageUrl = uploadedImageUrl;
+      }
       final percentage = double.tryParse(_discountPercent.text.trim()) ?? 0.0;
-      final labels = _labels.text.split(RegExp(r'[,،\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+      final labels = _labels.text.split(RegExp(r'[,،\\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+      final priceText = _price.text.trim().replaceAll(',', '').replaceAll('٬', '');
       final data = <String, dynamic>{
         'name': _name.text.trim(),
         'description': _description.text.trim(),
@@ -133,7 +140,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'discount_percent': percentage,
         'is_discount_active': _discountEnabled,
         'sort_order': int.tryParse(_sortOrder.text.trim()) ?? 0,
-        'price': int.parse(_price.text.trim()),
+        'price': int.parse(priceText),
         'image_url': imageUrl,
         'category_id': _categoryId,
         'is_popular': _popular,
@@ -143,11 +150,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       };
       final ok = _editing ? await provider.updateProduct(widget.productId!, data) : await provider.createProduct(data);
       if (!ok) throw Exception(provider.error ?? 'ذخیره محصول انجام نشد.');
+      productSaved = true;
+
+      // The DB now points to the replacement. Delete the old owned object only after this point.
+      if (uploadedImageUrl != null && previousImageUrl.isNotEmpty && previousImageUrl != uploadedImageUrl) {
+        final removed = await UploadService.deletePublicImageUrl(previousImageUrl, bucketName: 'products', folderName: 'products');
+        if (!removed) _message('محصول ذخیره شد، اما حذف تصویر قبلی ناموفق بود؛ تصویر قبلی فعلاً باقی مانده است.');
+      }
+
       await provider.fetchProducts();
       if (!mounted) return;
-      _message(_editing ? 'محصول ویرایش شد.' : 'محصول اضافه شد.');
+      _message(_editing ? 'محصول و تصویر با موفقیت ویرایش شدند.' : 'محصول و تصویر با موفقیت اضافه شدند.');
       Navigator.of(context).pop();
     } catch (e) {
+      // Roll back an upload that was never referenced by a successfully saved product.
+      if (!productSaved && uploadedImageUrl != null) {
+        await UploadService.deletePublicImageUrl(uploadedImageUrl, bucketName: 'products', folderName: 'products');
+      }
       _message(AppErrorMessage.from(e, fallback: 'ذخیره محصول ناموفق بود. اطلاعات واردشده و اتصال را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -184,7 +203,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
         OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'تصویر ذخیره‌شده موجود است؛ برای جایگزینی انتخاب کنید'))),
         if (_imageBytes != null) Padding(padding: const EdgeInsets.only(top: 12), child: Image.memory(_imageBytes!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.')))
-        else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست.'))),
+        else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست؛ برای جایگزینی، تصویر جدید انتخاب کنید.'))),
         const SizedBox(height: 8),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('نمایش محصول در منو'), subtitle: const Text('خاموش باشد، غذا از منوی عمومی حذف می‌شود.')),
         if (_editing) ...[
