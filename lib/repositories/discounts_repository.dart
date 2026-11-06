@@ -10,11 +10,12 @@ class DiscountsRepository {
   Future<List<DiscountModel>> getDiscounts({int page = 1, int pageSize = 15, String? searchQuery}) async {
     if (page < 1 || pageSize < 1) throw ArgumentError('page and pageSize must be positive');
     try {
+      final serverNow = DateTime.parse((await _client.rpc('admin_get_database_time')).toString());
       var query = _client.from('discounts').select('*');
       final search = searchQuery?.trim();
       if (search != null && search.isNotEmpty) query = query.or('title.ilike.%${_safeFilter(search)}%,code.ilike.%${_safeFilter(search)}%');
       final rows = await query.order('created_at', ascending: false).range((page - 1) * pageSize, page * pageSize - 1);
-      return rows.map((row) => DiscountModel.fromJson(Map<String, dynamic>.from(row))).toList();
+      return rows.map((row) => DiscountModel.fromJson({...Map<String, dynamic>.from(row), 'server_now': serverNow.toIso8601String()})).toList();
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch discounts failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'دریافت تخفیف‌ها'));
@@ -23,10 +24,16 @@ class DiscountsRepository {
 
   Future<DiscountModel> getDiscountById(String id) async {
     try {
+      final serverNow = DateTime.parse((await _client.rpc('admin_get_database_time')).toString());
       final row = await _client.from('discounts').select('*').eq('id', id).single();
       final targets = await _client.from('discount_customer_targets').select('phone_snapshot').eq('discount_id', id);
+      final productTargets = await _client.from('discount_product_targets').select('product_id').eq('discount_id', id);
+      final categoryTargets = await _client.from('discount_category_targets').select('category_id').eq('discount_id', id);
       final data = Map<String, dynamic>.from(row);
       data['target_phones'] = targets.map((target) => (target['phone_snapshot'] ?? '').toString()).where((phone) => phone.isNotEmpty).toList();
+      data['product_ids'] = productTargets.map((target) => target['product_id'].toString()).toList();
+      data['category_ids'] = categoryTargets.map((target) => target['category_id'].toString()).toList();
+      data['server_now'] = serverNow.toIso8601String();
       return DiscountModel.fromJson(data);
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch discount by ID failed', error: e, stackTrace: st);
@@ -40,6 +47,9 @@ class DiscountsRepository {
       final id = row['id'].toString();
       if (data.containsKey('target_phones') || data.containsKey('restricted_to_customers')) {
         await _syncTargetPhones(id, data['target_phones'], data['restricted_to_customers'] == true);
+      }
+      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
+        await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
       }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
@@ -55,6 +65,9 @@ class DiscountsRepository {
       final row = await _client.from('discounts').update(_normalize(data)).eq('id', id).select().single();
       if (data.containsKey('target_phones') || data.containsKey('restricted_to_customers')) {
         await _syncTargetPhones(id, data['target_phones'], data['restricted_to_customers'] == true);
+      }
+      if (data.containsKey('product_ids') || data.containsKey('category_ids')) {
+        await _syncScopeTargets(id, data['product_ids'], data['category_ids']);
       }
       final result = Map<String, dynamic>.from(row);
       result['target_phones'] = _targetPhoneList(data['target_phones']);
@@ -89,6 +102,7 @@ class DiscountsRepository {
     copyAlias('max_discount_amount','max_discount_amount');
     copyAlias('restricted_to_customers','restricted_to_customers');
     copyAlias('per_user_usage_limit','per_user_usage_limit');
+    copyAlias('allow_with_product_discount','allow_with_product_discount');
     if (source.containsKey('usage_limit')) out['usage_limit'] = source['usage_limit'];
     if (source.containsKey('total_usage_limit')) out['usage_limit'] = source['total_usage_limit'];
     copyAlias('used_count','used_count'); copyAlias('is_active','is_active');
@@ -99,6 +113,8 @@ class DiscountsRepository {
     copyAlias('updated_at','updated_at');
     if (source.containsKey('restricted_to_customers')) out['restricted_to_customers'] = source['restricted_to_customers'] == true;
     out.remove('target_phones');
+    out.remove('product_ids');
+    out.remove('category_ids');
     out.removeWhere((key, value) => value == null && !{'max_discount_amount','usage_limit','per_user_usage_limit','starts_at','expires_at','description'}.contains(key));
     return out;
   }
@@ -119,6 +135,16 @@ class DiscountsRepository {
     if (digits.startsWith('0') && digits.length >= 10) digits = '98${digits.substring(1)}';
     if (!digits.startsWith('98') && digits.length == 10) digits = '98$digits';
     return digits;
+  }
+
+  Future<void> _syncScopeTargets(String discountId, dynamic rawProducts, dynamic rawCategories) async {
+    final productIds = rawProducts is List ? rawProducts.map((e) => e.toString()).toSet().toList() : <String>[];
+    final categoryIds = rawCategories is List ? rawCategories.map((e) => e.toString()).toSet().toList() : <String>[];
+    await _client.rpc('admin_sync_discount_scopes', params: {
+      'p_discount_id': discountId,
+      'p_product_ids': productIds,
+      'p_category_ids': categoryIds,
+    });
   }
 
   Future<void> _syncTargetPhones(String discountId, dynamic rawPhones, bool restricted) async {
