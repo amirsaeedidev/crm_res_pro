@@ -334,6 +334,21 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                   onPressed: () => _showRedemptionHistory(context, discount),
                 ),
                 IconButton(
+                  tooltip: discount.isActive ? 'غیرفعال کردن تخفیف' : 'فعال کردن تخفیف',
+                  icon: Icon(
+                    discount.isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                    color: discount.isActive ? Colors.orange : Colors.green,
+                  ),
+                  onPressed: () async {
+                    final ok = await provider.toggleDiscountStatus(discount.id, !discount.isActive);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(ok ? (discount.isActive ? 'تخفیف غیرفعال شد.' : 'تخفیف فعال شد.') : (provider.error ?? 'تغییر وضعیت تخفیف ناموفق بود.')),
+                    ));
+                  },
+                ),
+
+                IconButton(
                   icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                   onPressed: () {
                     context.push('/discounts/edit/${discount.id}');
@@ -402,6 +417,20 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    IconButton(
+                      tooltip: discount.isActive ? 'غیرفعال کردن تخفیف' : 'فعال کردن تخفیف',
+                      icon: Icon(
+                        discount.isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                        color: discount.isActive ? Colors.orange : Colors.green,
+                      ),
+                      onPressed: () async {
+                        final ok = await provider.toggleDiscountStatus(discount.id, !discount.isActive);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(ok ? (discount.isActive ? 'تخفیف غیرفعال شد.' : 'تخفیف فعال شد.') : (provider.error ?? 'تغییر وضعیت تخفیف ناموفق بود.')),
+                        ));
+                      },
+                    ),
                     IconButton(
                       icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                       onPressed: () {
