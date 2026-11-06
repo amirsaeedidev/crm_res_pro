@@ -1,4 +1,5 @@
 name: Flutter Analyze
+# Phase 3 discount and campaign changes are validated on this stacked PR branch.
 
 on:
   push:
