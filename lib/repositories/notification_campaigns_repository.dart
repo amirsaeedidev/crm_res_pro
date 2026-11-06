@@ -67,11 +67,20 @@ class NotificationCampaignsRepository {
       final channels = (campaign['delivery_channels'] as List? ?? const [])
           .map((value) => value.toString())
           .toList(growable: false);
+      final metadata = campaign['metadata'] is Map
+          ? Map<String, dynamic>.from(campaign['metadata'] as Map)
+          : <String, dynamic>{};
+      final audienceMode = (metadata['audience_mode'] ?? campaign['audience'] ?? 'all_customers').toString();
+      final customerIds = (metadata['customer_ids'] as List? ?? const [])
+          .map((value) => value.toString())
+          .toList(growable: false);
       final response = await _client.rpc(
-        'admin_dispatch_discount_delivery',
+        'admin_dispatch_discount_delivery_v2',
         params: {
           'p_discount_id': discountId,
           'p_channels': channels,
+          'p_audience': audienceMode == 'targeted_discount' ? 'selected_customers' : audienceMode,
+          'p_customer_ids': customerIds,
           'p_source_campaign_id': campaign['id'],
         },
       );
