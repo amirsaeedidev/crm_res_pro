@@ -14,7 +14,7 @@ class NotificationCampaignsRepository {
         .select(
           'id,campaign_type,title,body,audience,delivery_channels,status,'
           'target_count,sent_count,failed_count,channel_results,metadata,'
-          'created_at,sent_at,source_campaign_id,discount_id',
+          'created_at,sent_at,source_campaign_id,discount_id,sms_campaign_id',
         )
         .order('created_at', ascending: false)
         .limit(limit);
@@ -64,30 +64,60 @@ class NotificationCampaignsRepository {
       if (discountId == null || discountId.isEmpty) {
         throw ArgumentError('شناسه تخفیف برای ارسال مجدد موجود نیست.');
       }
-      final channels = (campaign['delivery_channels'] as List? ?? const [])
-          .map((value) => value.toString())
-          .toList(growable: false);
-      final metadata = campaign['metadata'] is Map
-          ? Map<String, dynamic>.from(campaign['metadata'] as Map)
+      final channelResults = campaign['channel_results'] is Map
+          ? Map<String, dynamic>.from(campaign['channel_results'] as Map)
           : <String, dynamic>{};
-      final audienceMode = (metadata['audience_mode'] ?? campaign['audience'] ?? 'all_customers').toString();
-      final customerIds = (metadata['customer_ids'] as List? ?? const [])
-          .map((value) => value.toString())
-          .toList(growable: false);
-      final response = await _client.rpc(
-        'admin_dispatch_discount_delivery_v2',
-        params: {
-          'p_discount_id': discountId,
-          'p_channels': channels,
-          'p_audience': audienceMode == 'targeted_discount' ? 'selected_customers' : audienceMode,
-          'p_customer_ids': customerIds,
-          'p_source_campaign_id': campaign['id'],
-        },
-      );
-      if (response is! Map) {
-        throw const FormatException('پاسخ ارسال مجدد تخفیف معتبر نیست.');
+      final failedChannels = channelResults.entries
+          .where((entry) {
+            final value = entry.value is Map ? Map<String, dynamic>.from(entry.value as Map) : <String, dynamic>{};
+            return value['status'] == 'failed' || value['status'] == 'partial';
+          })
+          .map((entry) => entry.key)
+          .where((channel) => {'banner', 'notification', 'sms'}.contains(channel))
+          .toSet();
+      if (failedChannels.isEmpty) {
+        throw StateError('در این کمپین کانال ناموفقی برای ارسال مجدد وجود ندارد.');
       }
-      return Map<String, dynamic>.from(response);
+
+      final result = <String, dynamic>{'success': true};
+      if (failedChannels.remove('sms')) {
+        final smsResult = channelResults['sms'] is Map
+            ? Map<String, dynamic>.from(channelResults['sms'] as Map)
+            : <String, dynamic>{};
+        final smsCampaignId = (campaign['sms_campaign_id'] ?? smsResult['sms_campaign_id'])?.toString();
+        if (smsCampaignId == null || smsCampaignId.isEmpty) {
+          throw StateError('شناسه کمپین پیامکی برای تلاش مجدد موجود نیست.');
+        }
+        final retry = await _client.rpc(
+          'admin_retry_sms_campaign_failures',
+          params: {'p_campaign_id': smsCampaignId},
+        );
+        if (retry is! Map) throw const FormatException('پاسخ تلاش مجدد پیامک معتبر نیست.');
+        result['sms_retry'] = Map<String, dynamic>.from(retry);
+      }
+
+      if (failedChannels.isNotEmpty) {
+        final metadata = campaign['metadata'] is Map
+            ? Map<String, dynamic>.from(campaign['metadata'] as Map)
+            : <String, dynamic>{};
+        final audienceMode = (metadata['audience_mode'] ?? campaign['audience'] ?? 'all_customers').toString();
+        final customerIds = (metadata['customer_ids'] as List? ?? const [])
+            .map((value) => value.toString())
+            .toList(growable: false);
+        final response = await _client.rpc(
+          'admin_dispatch_discount_delivery_v2',
+          params: {
+            'p_discount_id': discountId,
+            'p_channels': failedChannels.toList(growable: false),
+            'p_audience': audienceMode == 'targeted_discount' ? 'selected_customers' : audienceMode,
+            'p_customer_ids': customerIds,
+            'p_source_campaign_id': campaign['id'],
+          },
+        );
+        if (response is! Map) throw const FormatException('پاسخ ارسال مجدد تخفیف معتبر نیست.');
+        result['channel_retry'] = Map<String, dynamic>.from(response);
+      }
+      return result;
     }
 
     if (campaignType != 'manual') {
