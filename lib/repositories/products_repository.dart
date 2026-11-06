@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/supabase_service.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/upload_service.dart';
 import '../models/product_model.dart';
 
 class ProductsRepository {
@@ -55,7 +56,13 @@ class ProductsRepository {
 
   Future<void> deleteProduct(String id) async {
     try {
+      final previous = await _client.from('products').select('image_url').eq('id', id).maybeSingle();
+      final previousImageUrl = previous?['image_url']?.toString();
       await _client.from('products').delete().eq('id', id);
+      if (previousImageUrl != null && previousImageUrl.isNotEmpty) {
+        final removed = await UploadService.deletePublicImageUrl(previousImageUrl, bucketName: 'products', folderName: 'products');
+        if (!removed) LoggerService.error('Product row deleted but Storage image cleanup failed for product=$id');
+      }
     } on PostgrestException catch (e, st) {
       LoggerService.error('Delete product failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'حذف محصول'));
