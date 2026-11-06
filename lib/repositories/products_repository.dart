@@ -15,7 +15,7 @@ class ProductsRepository {
       final search = searchQuery?.trim();
       if (search != null && search.isNotEmpty) query = query.ilike('name', '%${_escapeLike(search)}%');
       if (categoryId != null && categoryId.isNotEmpty) query = query.eq('category_id', categoryId);
-      final rows = await query.order('created_at', ascending: false).range(start, start + pageSize - 1);
+      final rows = await query.order('sort_order', ascending: true).order('created_at', ascending: false).range(start, start + pageSize - 1);
       return rows.map((row) => ProductModel.fromJson(Map<String, dynamic>.from(row))).toList();
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch products failed', error: e, stackTrace: st);
@@ -69,7 +69,7 @@ class ProductsRepository {
     for (final key in ['discounted_price', 'discountedPrice', 'stock', 'status', 'category_name', 'categories', 'id', 'created_at']) {
       data.remove(key);
     }
-    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','price','image_url','is_active','is_available','unavailable_reason','is_popular','rating','review_count','category_id'}.contains(key));
+    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','is_discount_active','sort_order','price','image_url','is_active','is_available','unavailable_reason','is_popular','rating','review_count','category_id'}.contains(key));
     if (data['price'] is num) data['price'] = (data['price'] as num).round();
     if (data['discount_percent'] is num) data['discount_percent'] = (data['discount_percent'] as num).clamp(0, 100).toDouble();
     if (data['labels'] is List) data['labels'] = (data['labels'] as List).map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toSet().toList();
