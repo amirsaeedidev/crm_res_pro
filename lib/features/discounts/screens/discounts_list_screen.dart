@@ -13,6 +13,7 @@ import '../../../core/widgets/app_search.dart';
 import '../../../core/widgets/custom_chip.dart';
 import '../../../models/discount_model.dart';
 import '../../../providers/discounts_provider.dart';
+import '../../../repositories/discounts_repository.dart';
 import '../../../shared/dialogs/delete_dialog.dart';
 import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
@@ -162,6 +163,53 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     );
   }
 
+  Future<void> _showRedemptionHistory(BuildContext context, DiscountModel discount) async {
+    try {
+      final rows = await context.read<DiscountsRepository>().getDiscountRedemptions(discount.id);
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('سوابق مصرف ${discount.code}'),
+          content: SizedBox(
+            width: 560,
+            height: 420,
+            child: rows.isEmpty
+                ? const Center(child: Text('هنوز مصرفی برای این کد ثبت نشده است.'))
+                : ListView.separated(
+                    itemCount: rows.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final row = rows[index];
+                      final released = row['status'] == 'released';
+                      final date = DateTime.tryParse((row['redeemed_at'] ?? '').toString());
+                      final customerName = (row['customer_name'] ?? '').toString();
+                      final amount = (row['discount_amount'] as num?)?.round() ?? 0;
+                      return ListTile(
+                        title: Text(customerName.isEmpty ? 'مشتری' : customerName),
+                        subtitle: Text('${row['phone'] ?? '—'} • سفارش ${row['order_code'] ?? '—'}\n${date == null ? '—' : DateFormat('yyyy/MM/dd HH:mm').format(date.toLocal())}'),
+                        isThreeLine: true,
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('${NumberFormat('#,###').format(amount)} تومان'),
+                            Text(released ? 'ظرفیت آزادشده' : 'مصرف‌شده', style: TextStyle(color: released ? Colors.grey : Colors.green, fontSize: 11)),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))],
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('دریافت سوابق مصرف ناموفق بود: $error')));
+    }
+  }
+
   Widget _buildDesktopTable(BuildContext context, DiscountsProvider provider) {
     return AppCard(
       padding: EdgeInsets.zero,
@@ -281,6 +329,11 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
             child: Row(
               children: [
                 IconButton(
+                  tooltip: 'سوابق مصرف',
+                  icon: const Icon(Icons.history, color: AppColors.primary),
+                  onPressed: () => _showRedemptionHistory(context, discount),
+                ),
+                IconButton(
                   icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                   onPressed: () {
                     context.push('/discounts/edit/${discount.id}');
@@ -324,9 +377,14 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                     discount.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
+                  IconButton(
+                    tooltip: 'سوابق مصرف',
+                    icon: const Icon(Icons.history, color: AppColors.primary),
+                    onPressed: () => _showRedemptionHistory(context, discount),
+                  ),
                   CustomChip(
-                    label: _getStatusText(discount.isActive, discount.endDate),
-                    type: _getStatusChipType(discount.isActive, discount.endDate),
+                    label: _getStatusText(discount),
+                    type: _getStatusChipType(discount),
                   ),
                 ],
               ),
