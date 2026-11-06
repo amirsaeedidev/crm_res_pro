@@ -27,6 +27,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final _aboutDish = TextEditingController();
   final _labels = TextEditingController();
   final _discountPercent = TextEditingController(text: '10');
+  final _sortOrder = TextEditingController(text: '0');
   XFile? _image;
   Uint8List? _imageBytes;
   String? _imageUrl;
@@ -62,7 +63,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _description.text = product.description;
       _aboutDish.text = product.aboutDish;
       _labels.text = product.labels.join(', ');
-      _discountEnabled = product.discountPercent > 0;
+      _discountEnabled = product.isDiscountActive;
+      _unavailableReason.text = product.isAvailable ? '' : product.unavailableReason;
+      _sortOrder.text = product.sortOrder.toString();
       _discountPercent.text = product.discountPercent.toStringAsFixed(product.discountPercent % 1 == 0 ? 0 : 2);
       _imageUrl = product.imageUrl;
       _categoryId = product.categoryId;
@@ -128,6 +131,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'about_dish': _aboutDish.text.trim(),
         'labels': labels,
         'discount_percent': percentage,
+        'is_discount_active': _discountEnabled,
+        'sort_order': int.tryParse(_sortOrder.text.trim()) ?? 0,
         'price': int.parse(_price.text.trim()),
         'image_url': imageUrl,
         'category_id': _categoryId,
@@ -167,8 +172,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         const SizedBox(height: 14),
         TextFormField(controller: _labels, decoration: const InputDecoration(labelText: 'لیبل‌ها', hintText: 'پرطرفدار، تند، گیاهی، جدید', helperText: 'لیبل‌ها را با ویرگول جدا کنید.', border: OutlineInputBorder())),
         const SizedBox(height: 8),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _discountEnabled, onChanged: _saving ? null : (v) => setState(() => _discountEnabled = v), title: const Text('اعمال تخفیف روی محصول'), subtitle: const Text('قیمت تخفیف‌خورده در سفارش هم از سمت دیتابیس محاسبه می‌شود.')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _discountEnabled, onChanged: _saving ? null : (v) => setState(() { _discountEnabled = v; if (v && (double.tryParse(_discountPercent.text) ?? 0) <= 0) _discountPercent.text = '10'; }), title: const Text('اعمال تخفیف روی محصول'), subtitle: const Text('قیمت تخفیف‌خورده در سفارش هم از سمت دیتابیس محاسبه می‌شود.')),
         if (_discountEnabled) Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: _discountPercent, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'درصد تخفیف', suffixText: '%', border: OutlineInputBorder()), validator: _validatePercent)),
+        const SizedBox(height: 12),
+        TextFormField(controller: _sortOrder, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش (عدد کمتر، بالاتر)', border: OutlineInputBorder()), validator: (v) { final n = int.tryParse((v ?? '').trim()); return n == null || n < 0 ? 'ترتیب باید عدد صحیح صفر یا بیشتر باشد.' : null; }),
+        const SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('موجود و قابل سفارش'), subtitle: const Text('با خاموش کردن، محصول در اپ مشتری ناموجود نمایش داده می‌شود.')),
+        if (!_available) Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجودی (اختیاری)', border: OutlineInputBorder()))),
         if (_discountEnabled && double.tryParse(_discountPercent.text) != null && double.tryParse(_price.text) != null)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
         OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'تصویر ذخیره‌شده موجود است؛ برای جایگزینی انتخاب کنید'))),
