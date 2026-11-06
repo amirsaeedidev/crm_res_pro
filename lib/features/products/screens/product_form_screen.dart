@@ -123,7 +123,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     try {
       var imageUrl = _imageUrl ?? '';
       if (_image != null) imageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
-      final percentage = _discountEnabled ? double.parse(_discountPercent.text.trim()) : 0.0;
+      final percentage = double.tryParse(_discountPercent.text.trim()) ?? 0.0;
       final labels = _labels.text.split(RegExp(r'[,،\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
       final data = <String, dynamic>{
         'name': _name.text.trim(),
