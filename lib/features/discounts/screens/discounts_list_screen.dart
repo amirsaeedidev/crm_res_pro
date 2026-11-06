@@ -361,8 +361,12 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                       context: context,
                       title: 'حذف تخفیف',
                       message: 'آیا از حذف تخفیف "${discount.title}" مطمئن هستید؟',
-                      onDelete: () {
-                        provider.deleteDiscount(discount.id);
+                      onDelete: () async {
+                        final deleted = await provider.deleteDiscount(discount.id);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(deleted ? 'تخفیف حذف شد.' : (provider.error ?? 'حذف تخفیف ناموفق بود؛ اگر سابقه مصرف دارد آن را غیرفعال کنید.')),
+                        ));
                       },
                     );
                   },
@@ -444,8 +448,12 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                           context: context,
                           title: 'حذف تخفیف',
                           message: 'آیا از حذف تخفیف "${discount.title}" مطمئن هستید؟',
-                          onDelete: () {
-                            provider.deleteDiscount(discount.id);
+                          onDelete: () async {
+                            final deleted = await provider.deleteDiscount(discount.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(deleted ? 'تخفیف حذف شد.' : (provider.error ?? 'حذف تخفیف ناموفق بود؛ اگر سابقه مصرف دارد آن را غیرفعال کنید.')),
+                            ));
                           },
                         );
                       },
