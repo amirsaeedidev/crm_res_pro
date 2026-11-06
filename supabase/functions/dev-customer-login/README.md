@@ -1,31 +1,32 @@
 # Development-only phone identity login
 
-This endpoint is for personal development/testing only. It is not real phone verification and must never be enabled for public use.
+This endpoint is strictly for personal development/testing. It is not real phone verification and must never be enabled for public use.
 
 ## Supabase Edge Function secrets
 
 Configure in Supabase Dashboard → Edge Functions → Secrets:
 
 - `DEV_PHONE_LOGIN_ENABLED=true`
-- `DEV_PHONE_LOGIN_CODE=<private test code, at least 4 characters>`
-- `DEV_PHONE_LOGIN_HMAC_SECRET=<random secret, at least 32 characters>`
-- `DEV_PHONE_LOGIN_ALLOWED_PHONES=<comma-separated test numbers, 09xxxxxxxxx format>`
+- `DEV_PHONE_LOGIN_CLIENT_KEY=<random value with at least 32 characters>`
+- `DEV_PHONE_LOGIN_CODE=<private test code>`
+- `DEV_PHONE_LOGIN_HMAC_SECRET=<random secret with at least 32 characters>`
+- `DEV_PHONE_LOGIN_ALLOWED_PHONES=<comma-separated test numbers in 09xxxxxxxxx format>`
 
-Do not commit these values, add them to Flutter assets, or expose them to the client. Only allowlisted phone numbers can receive accounts. The HMAC secret derives a stable, unique server-side password for each normalized phone.
+Do not commit these values. The HMAC secret derives a stable server-side password per normalized phone. The client key is passed only by a local debug build; it is extractable from a compiled app and is not a production secret. The phone allowlist is the additional server-side restriction.
 
-Supabase automatically provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. The service-role key is used only inside this server function.
+Supabase automatically provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. The service-role key is used only inside this function and never sent to Flutter.
 
-## Auth configuration
+## Deployment
 
-Enable Supabase Auth → Sign In / Providers → Anonymous Sign-Ins. Flutter obtains a short-lived anonymous session to invoke this JWT-protected function. The function verifies that caller is anonymous, creates/signs in the phone-specific permanent Auth user, updates that user's profile phone, and deletes the temporary bootstrap identity.
+Deploy this function with `verify_jwt=false` because it authenticates the personal development client using its own server-checked header. The function fails closed unless all required secrets are configured. Do not change the existing disabled `dev-phone-login` endpoint.
 
 ## Flutter development run
 
 ```bash
-flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=ENABLE_DEV_PHONE_LOGIN=true
+flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=ENABLE_DEV_PHONE_LOGIN=true --dart-define=DEV_PHONE_LOGIN_CLIENT_KEY=...
 ```
 
-The app also checks `kDebugMode`, so release builds reject this flow even if the define is accidentally present. Never pass `ENABLE_DEV_PHONE_LOGIN=true` to release builds.
+The app also checks `kDebugMode`, so release builds reject this flow even if the define is accidentally present. Never pass either development define to release builds, and never distribute this debug build.
 
 ## Existing records
 
