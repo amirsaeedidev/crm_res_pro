@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const headers = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-dev-login-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
@@ -48,16 +48,21 @@ Deno.serve(async (req: Request) => {
     if (Deno.env.get("DEV_PHONE_LOGIN_ENABLED") !== "true") {
       return reply({ error: "DEVELOPMENT_LOGIN_DISABLED" }, 404);
     }
+    const expectedClientKey = Deno.env.get("DEV_PHONE_LOGIN_CLIENT_KEY") ?? "";
     const expectedCode = Deno.env.get("DEV_PHONE_LOGIN_CODE") ?? "";
     const hmacSecret = Deno.env.get("DEV_PHONE_LOGIN_HMAC_SECRET") ?? "";
     const allowedPhones = (Deno.env.get("DEV_PHONE_LOGIN_ALLOWED_PHONES") ?? "")
       .split(",").map(normalizePhone).filter((v): v is string => v !== null);
-    if (expectedCode.length < 4 || hmacSecret.length < 32 || allowedPhones.length === 0) {
+
+    if (expectedClientKey.length < 32 || expectedCode.length < 4 ||
+        hmacSecret.length < 32 || allowedPhones.length === 0) {
       return reply({ error: "DEVELOPMENT_LOGIN_NOT_CONFIGURED" }, 503);
     }
+    const suppliedKey = req.headers.get("x-dev-login-key") ?? "";
+    if (!safeEqual(suppliedKey, expectedClientKey)) {
+      return reply({ error: "INVALID_DEVELOPMENT_CLIENT" }, 401);
+    }
 
-    const token = (req.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i)?.[1];
-    if (!token) return reply({ error: "ANONYMOUS_SESSION_REQUIRED" }, 401);
     const body = await req.json().catch(() => null);
     if (!body || typeof body.phone !== "string" || typeof body.code !== "string") {
       return reply({ error: "INVALID_REQUEST" }, 400);
@@ -75,11 +80,6 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
     });
-    const caller = await admin.auth.getUser(token);
-    if (caller.error || !caller.data.user || caller.data.user.is_anonymous !== true) {
-      return reply({ error: "ANONYMOUS_SESSION_REQUIRED" }, 401);
-    }
-
     const emailHash = await digest(phone);
     const email = `dev-${emailHash.slice(0, 48)}@customer.invalid`;
     const password = await derivedPassword(phone, hmacSecret);
@@ -108,7 +108,6 @@ Deno.serve(async (req: Request) => {
       return reply({ error: "CUSTOMER_PROFILE_SYNC_FAILED" }, 500);
     }
 
-    await admin.auth.admin.deleteUser(caller.data.user.id);
     return reply({
       access_token: login.data.session.access_token,
       refresh_token: login.data.session.refresh_token,
