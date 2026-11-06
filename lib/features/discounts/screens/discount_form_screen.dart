@@ -363,7 +363,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
 
       final discountData = {
         'title': _titleController.text,
-        'code': _codeController.text.toUpperCase(),
+        'code': _codeController.text.trim().toUpperCase(),
         'type': _selectedType == 'Percentage' ? 'percentage' : 'fixed_amount',
         'value': _parseNumber(_valueController.text),
         'min_purchase_amount': _minPurchaseController.text.isEmpty ? null : _parseNumber(_minPurchaseController.text),
