@@ -109,6 +109,29 @@ class DiscountsRepository {
     return Map<String, dynamic>.from(response);
   }
 
+  Future<List<Map<String, dynamic>>> getDiscountRedemptions(String discountId) async {
+    final rows = await _client
+        .from('discount_redemptions')
+        .select('user_id,code_snapshot,discount_amount,status,redeemed_at,released_at,orders(order_code,daily_queue_number)')
+        .eq('discount_id', discountId)
+        .order('redeemed_at', ascending: false);
+    final userIds = rows.map((row) => row['user_id'].toString()).toSet().toList();
+    final profiles = userIds.isEmpty
+        ? <Map<String, dynamic>>[]
+        : (await _client.from('profiles').select('id,first_name,last_name,phone').inFilter('id', userIds))
+            .map((row) => Map<String, dynamic>.from(row)).toList();
+    final profileById = {for (final profile in profiles) profile['id'].toString(): profile};
+    return rows.map((raw) {
+      final row = Map<String, dynamic>.from(raw);
+      final profile = profileById[row['user_id'].toString()] ?? const <String, dynamic>{};
+      final order = row['orders'] is Map ? Map<String, dynamic>.from(row['orders'] as Map) : const <String, dynamic>{};
+      row['customer_name'] = '${profile['first_name'] ?? ''} ${profile['last_name'] ?? ''}'.trim();
+      row['phone'] = profile['phone']?.toString() ?? '';
+      row['order_code'] = order['order_code']?.toString() ?? order['daily_queue_number']?.toString() ?? '—';
+      return row;
+    }).toList(growable: false);
+  }
+
   Future<void> deleteDiscount(String id) async {
     try { await _client.from('discounts').delete().eq('id', id); }
     on PostgrestException catch (e, st) {
