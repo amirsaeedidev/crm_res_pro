@@ -82,7 +82,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   void dispose() {
-    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _unavailableReason.dispose();
+    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _sortOrder.dispose(); _unavailableReason.dispose();
     super.dispose();
   }
 
@@ -176,6 +176,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         if (_discountEnabled) Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: _discountPercent, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'درصد تخفیف', suffixText: '%', border: OutlineInputBorder()), validator: _validatePercent)),
         const SizedBox(height: 12),
         TextFormField(controller: _sortOrder, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش (عدد کمتر، بالاتر)', border: OutlineInputBorder()), validator: (v) { final n = int.tryParse((v ?? '').trim()); return n == null || n < 0 ? 'ترتیب باید عدد صحیح صفر یا بیشتر باشد.' : null; }),
+        const SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('قابل سفارش باشد'), subtitle: const Text('در صورت ناموجود بودن، محصول در اپ مشتری قابل سفارش نخواهد بود.')),
+        if (!_available) TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجود بودن (اختیاری)', border: OutlineInputBorder())),
         const SizedBox(height: 12),
         if (_discountEnabled && double.tryParse(_discountPercent.text) != null && double.tryParse(_price.text) != null)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
