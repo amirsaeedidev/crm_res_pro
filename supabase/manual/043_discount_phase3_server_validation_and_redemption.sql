@@ -425,3 +425,24 @@ end;
 $function$;
 revoke all on function public.place_order(text,jsonb,uuid,text,integer,uuid,text,text) from public,anon;
 grant execute on function public.place_order(text,jsonb,uuid,text,integer,uuid,text,text) to authenticated;
+
+
+-- Reject SQL NULL and non-array item payloads explicitly, and reject a null order type.
+do $migration$
+declare v_definition text;
+begin
+  select pg_get_functiondef('public.quote_discount_code(text,jsonb)'::regprocedure) into v_definition;
+  v_definition := replace(v_definition,
+    'if jsonb_typeof(p_items) <> ''array'' or jsonb_array_length(p_items)=0 then',
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' or jsonb_array_length(p_items)=0 then');
+  execute v_definition;
+  select pg_get_functiondef('public.place_order_idempotent(uuid,text,jsonb,uuid,text,integer,uuid,text,text)'::regprocedure) into v_definition;
+  v_definition := replace(v_definition,
+    'if jsonb_typeof(p_items)<>''array'' or jsonb_array_length(p_items)=0 then',
+    'if p_items is null or jsonb_typeof(p_items) is distinct from ''array'' or jsonb_array_length(p_items)=0 then');
+  v_definition := replace(v_definition,
+    'if p_order_type not in (''delivery'',''pickup'',''dine_in'') then',
+    'if p_order_type is null or p_order_type not in (''delivery'',''pickup'',''dine_in'') then');
+  execute v_definition;
+end;
+$migration$;
