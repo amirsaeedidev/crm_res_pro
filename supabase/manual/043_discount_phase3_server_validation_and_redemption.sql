@@ -353,3 +353,23 @@ grant execute on function public.admin_get_database_time() to authenticated;
 revoke all on function public.get_customer_server_time() from public,anon;
 grant execute on function public.get_customer_server_time() to authenticated;
 revoke all on function public.release_discount_redemption_on_cancel() from public,anon,authenticated;
+
+
+-- Backfill historical discount use from orders and reconcile the global counter.
+insert into public.discount_redemptions
+  (discount_id,order_id,user_id,code_snapshot,discount_amount,status,redeemed_at,released_at)
+select d.id,o.id,o.user_id,d.code,coalesce(o.discount_amount,0),
+       case when o.status='cancelled' then 'released' else 'redeemed' end,
+       coalesce(o.created_at,pg_catalog.now()),
+       case when o.status='cancelled' then coalesce(o.updated_at,o.created_at,pg_catalog.now()) else null end
+from public.orders o
+join public.discounts d on pg_catalog.upper(d.code)=pg_catalog.upper(o.discount_code)
+where nullif(pg_catalog.btrim(coalesce(o.discount_code,'')),'') is not null
+  and o.user_id is not null
+on conflict (order_id) do nothing;
+
+update public.discounts d
+set used_count = (
+  select count(*)::integer from public.discount_redemptions r
+  where r.discount_id=d.id and r.status='redeemed'
+), updated_at=pg_catalog.now();
