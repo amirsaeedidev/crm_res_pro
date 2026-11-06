@@ -166,7 +166,9 @@ class DiscountsRepository {
     final source = Map<String, dynamic>.from(input);
     final out = <String, dynamic>{};
     void copyAlias(String from, String to) { if (source.containsKey(from)) out[to] = source[from]; }
-    copyAlias('title','title'); copyAlias('code','code'); copyAlias('description','description');
+    copyAlias('title','title');
+    if (source.containsKey('code')) out['code'] = source['code'].toString().trim().toUpperCase();
+    copyAlias('description','description');
     copyAlias('discount_value','discount_value');
     if (source.containsKey('value')) out['discount_value'] = source['value'];
     if (source.containsKey('discount_type') || source.containsKey('type')) {
