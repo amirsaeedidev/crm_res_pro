@@ -417,6 +417,25 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                       (row['campaign_type'] == 'discount' &&
                                           (row['discount_id']?.toString().isNotEmpty ?? false) &&
                                           hasFailedDiscountChannel);
+                                  final channelStatusLabels = <String, String>{
+                                    'completed': 'موفق',
+                                    'partial': 'ناقص',
+                                    'failed': 'ناموفق',
+                                    'queued': 'در صف',
+                                    'sending': 'در حال ارسال',
+                                    'cancelled': 'لغوشده',
+                                  };
+                                  final channelDetails = channelResults.entries.map((entry) {
+                                    final value = entry.value is Map ? Map<String, dynamic>.from(entry.value as Map) : <String, dynamic>{};
+                                    final channelName = switch (entry.key) {
+                                      'banner' => 'بنر',
+                                      'notification' => 'اعلان',
+                                      'sms' => 'پیامک',
+                                      _ => entry.key,
+                                    };
+                                    final channelStatus = channelStatusLabels[(value['status'] ?? '').toString()] ?? '—';
+                                    return '$channelName: $channelStatus';
+                                  }).join(' • ');
                                   final status = switch ((row['status'] ?? '').toString()) {
                                     'completed' => 'تکمیل‌شده',
                                     'partial' => 'ارسال ناقص',
@@ -430,7 +449,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                     contentPadding: EdgeInsets.zero,
                                     title: Text((row['title'] ?? 'اعلان').toString()),
                                     subtitle: Text(
-                                      '$status • ${row['sent_count'] ?? 0} ارسال از ${row['target_count'] ?? 0} هدف • $audience • $channels\n$dateLabel',
+                                      '$status • ${row['sent_count'] ?? 0} موفق • ${row['failed_count'] ?? 0} ناموفق • $audience • $channels\n$channelDetails\n$dateLabel',
                                     ),
                                     isThreeLine: true,
                                     trailing: isResendable
