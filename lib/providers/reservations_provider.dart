@@ -97,19 +97,35 @@ class ReservationsProvider extends ChangeNotifier {
     await fetchReservations();
   }
 
-  Future<bool> updateReservationStatus(String id, String newStatus) async {
+  Future<bool> updateReservationStatus(String id, String newStatus, {String? reason, int? delayMinutes, String? delayNote}) async {
     _isUpdating = true;
     notifyListeners();
-
     try {
-      await _repository.updateReservationStatus(id, newStatus);
-      
+      await _repository.updateReservationStatus(id, newStatus, reason: reason, delayMinutes: delayMinutes, delayNote: delayNote);
       await fetchReservations();
       return true;
     } catch (e, st) {
       LoggerService.error('Update reservation status failed', error: e, stackTrace: st);
       _error = AppErrorMessage.from(e);
       return false;
+    } finally {
+      _isUpdating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> convertReservationToOrder(String reservationId) async {
+    _isUpdating = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final orderId = await _repository.convertReservationToOrder(reservationId);
+      await fetchReservations();
+      return orderId;
+    } catch (e, st) {
+      LoggerService.error('Convert reservation to order failed', error: e, stackTrace: st);
+      _error = AppErrorMessage.from(e);
+      return null;
     } finally {
       _isUpdating = false;
       notifyListeners();
