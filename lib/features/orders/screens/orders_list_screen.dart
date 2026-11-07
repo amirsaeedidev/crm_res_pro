@@ -243,8 +243,10 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         child: AppTable(
                           minWidth: 900,
                           headers: const [
-                            'شماره سفارش',
+                            'شماره صف',
+                            'کد سفارش',
                             'مشتری',
+                            'منبع ثبت',
                             'تاریخ',
                             'مبلغ',
                             'وضعیت',
@@ -269,6 +271,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                                       color: AppColors.getPrimaryText(context),
                                       fontWeight: FontWeight.bold,
                                     ),
+                              ),
+                              CustomChip(
+                                label: switch (order.orderSource) {
+                                  'reservation' => 'رزرو',
+                                  'crm_walk_in' => 'ثبت در CRM',
+                                  _ => 'اپ مشتری',
+                                },
+                                type: order.orderSource == 'customer_app' ? ChipType.info : ChipType.success,
                               ),
                               Text(
                                 _formatDate(order.createdAt),
