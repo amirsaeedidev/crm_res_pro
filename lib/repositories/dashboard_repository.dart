@@ -8,32 +8,44 @@ import '../models/order_model.dart';
 class DashboardRepository {
   final SupabaseClient _client = SupabaseService.client;
 
-  /// Fetch dashboard statistics from the real Supabase RPC.
-  Future<StatisticsModel> getStatistics() async {
+  /// All dashboard aggregates are calculated in one guarded Supabase RPC.
+  Future<StatisticsModel> getStatistics({
+    DateTime? startAt,
+    DateTime? endAt,
+    String orderSource = 'all',
+    String paymentMode = 'all',
+  }) async {
     try {
-      final dynamic response = await _client.rpc('get_dashboard_stats');
+      final dynamic response = await _client.rpc(
+        'get_crm_dashboard_overview',
+        params: {
+          'p_start_at': startAt?.toUtc().toIso8601String(),
+          'p_end_at': endAt?.toUtc().toIso8601String(),
+          'p_order_source': orderSource,
+          'p_payment_mode': paymentMode,
+        },
+      );
 
       if (response is! Map) {
         throw FormatException(
-          'پاسخ تابع get_dashboard_stats باید یک JSON object باشد؛ '
+          'پاسخ تابع get_crm_dashboard_overview باید یک JSON object باشد؛ '
           'نوع دریافت‌شده: ${response.runtimeType}',
         );
       }
 
-      final json = Map<String, dynamic>.from(response);
-
-      return StatisticsModel.fromJson(json);
+      return StatisticsModel.fromJson(Map<String, dynamic>.from(response));
     } on PostgrestException catch (e, st) {
       LoggerService.error(
-        'Fetch dashboard statistics failed',
+        'Fetch dashboard overview failed',
         error: e,
         stackTrace: st,
       );
 
-      if (e.message.contains('Administrator access required')) {
+      if (e.code == '42501' ||
+          e.message.contains('Administrator access required')) {
         throw Exception(
           'دسترسی به آمار داشبورد مجاز نیست. '
-          'نقش ادمین، وضعیت حساب و نشست ورود را بررسی کنید.',
+          'نقش مدیر و نشست ورود را بررسی کنید.',
         );
       }
 
@@ -43,20 +55,18 @@ class DashboardRepository {
       );
     } on FormatException catch (e, st) {
       LoggerService.error(
-        'Invalid dashboard statistics response',
+        'Invalid dashboard overview response',
         error: e,
         stackTrace: st,
       );
-
       throw Exception(e.message);
     } catch (e, st) {
       LoggerService.error(
-        'Unexpected dashboard statistics error',
+        'Unexpected dashboard overview error',
         error: e,
         stackTrace: st,
       );
-
-      throw Exception('خطا در پردازش آمار داشبورد: $e');
+      rethrow;
     }
   }
 
@@ -82,10 +92,7 @@ class DashboardRepository {
                 'ساختار یکی از سفارش‌های دریافتی معتبر نیست.',
               );
             }
-
-            final json = Map<String, dynamic>.from(row);
-
-            return OrderModel.fromJson(json);
+            return OrderModel.fromJson(Map<String, dynamic>.from(row));
           })
           .toList(growable: false);
     } on PostgrestException catch (e, st) {
@@ -94,7 +101,6 @@ class DashboardRepository {
         error: e,
         stackTrace: st,
       );
-
       throw Exception(
         'خطا در دریافت سفارش‌های اخیر '
         '(کد ${e.code ?? 'نامشخص'}): ${e.message}',
@@ -105,7 +111,6 @@ class DashboardRepository {
         error: e,
         stackTrace: st,
       );
-
       throw Exception(e.message);
     } catch (e, st) {
       LoggerService.error(
@@ -113,7 +118,6 @@ class DashboardRepository {
         error: e,
         stackTrace: st,
       );
-
       throw Exception('خطا در پردازش سفارش‌های اخیر: $e');
     }
   }

@@ -3,9 +3,9 @@ name: Flutter Analyze
 
 on:
   push:
-    branches: [main, fix/notification-history-and-audit]
+    branches: [main, fix/notification-history-and-audit, integration/phase11-security-dashboard]
   pull_request:
-    branches: [main, fix/notification-history-and-audit]
+    branches: [main, fix/notification-history-and-audit, feature/phase9-reservations-tables]
   workflow_dispatch:
 
 permissions:
