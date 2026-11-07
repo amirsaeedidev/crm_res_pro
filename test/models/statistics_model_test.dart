@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crm_res_pro/models/statistics_model.dart';
+import 'package:crm_panel/models/statistics_model.dart';
 
 void main() {
   group('StatisticsModel', () {
@@ -74,8 +74,8 @@ void main() {
 
     test('rejects a dashboard response without updated_at', () {
       expect(
-        () => StatisticsModel.fromJson(const {}),
-        throwsFormatException,
+        () => StatisticsModel.fromJson(<String, dynamic>{}),
+        throwsA(isA<FormatException>()),
       );
     });
   });
