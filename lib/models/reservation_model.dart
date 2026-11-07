@@ -61,6 +61,27 @@ class ReservationModel {
       noShowAt: dateValue('no_show_at'), orderId: json['order_id']?.toString(),
     );
   }
+  ReservationModel copyWith({
+    String? id, String? userId, String? tableId, String? customerName,
+    String? customerPhone, DateTime? date, String? time, int? partySize,
+    String? tableNumber, String? note, ReservationStatus? status,
+    DateTime? createdAt, int? durationMinutes, DateTime? arrivedAt,
+    DateTime? delayedAt, int? delayMinutes, String? delayNote,
+    DateTime? cancelledAt, String? cancellationReason, DateTime? noShowAt,
+    String? orderId,
+  }) => ReservationModel(
+    id: id ?? this.id, userId: userId ?? this.userId, tableId: tableId ?? this.tableId,
+    customerName: customerName ?? this.customerName, customerPhone: customerPhone ?? this.customerPhone,
+    date: date ?? this.date, time: time ?? this.time, partySize: partySize ?? this.partySize,
+    tableNumber: tableNumber ?? this.tableNumber, note: note ?? this.note,
+    status: status ?? this.status, createdAt: createdAt ?? this.createdAt,
+    durationMinutes: durationMinutes ?? this.durationMinutes, arrivedAt: arrivedAt ?? this.arrivedAt,
+    delayedAt: delayedAt ?? this.delayedAt, delayMinutes: delayMinutes ?? this.delayMinutes,
+    delayNote: delayNote ?? this.delayNote, cancelledAt: cancelledAt ?? this.cancelledAt,
+    cancellationReason: cancellationReason ?? this.cancellationReason,
+    noShowAt: noShowAt ?? this.noShowAt, orderId: orderId ?? this.orderId,
+  );
+
   @override
   bool operator ==(Object other) => other is ReservationModel && other.id == id;
   @override
