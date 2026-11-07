@@ -20,7 +20,7 @@ class ReservationsListScreen extends StatefulWidget {
 
 class _ReservationsListScreenState extends State<ReservationsListScreen> {
   final _search = TextEditingController();
-  static const _statuses = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
+  static const _statuses = ['all', 'pending', 'confirmed', 'delayed', 'arrived', 'completed', 'no_show', 'cancelled'];
 
   @override
   void initState() { super.initState(); WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -37,7 +37,10 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
   String _statusLabel(String status) => switch (status) {
     'pending' => 'در انتظار',
     'confirmed' => 'تأییدشده',
+    'delayed' => 'دارای تأخیر',
+    'arrived' => 'مشتری حاضر شد',
     'completed' => 'تکمیل‌شده',
+    'no_show' => 'عدم مراجعه',
     'cancelled' => 'لغوشده',
     _ => 'نامشخص',
   };
@@ -58,7 +61,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         '${jalali.year}/${jalali.month.toString().padLeft(2, '0')}/${jalali.day.toString().padLeft(2, '0')}';
     return _persianDigits(formatted);
   }
-  Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'completed' => Colors.green, 'cancelled' => Colors.red, _ => Colors.grey};
+  Color _statusColor(String status) => switch (status) {'pending' => Colors.orange, 'confirmed' => Colors.blue, 'delayed' => Colors.deepOrange, 'arrived' => Colors.teal, 'completed' => Colors.green, 'no_show' => Colors.deepPurple, 'cancelled' => Colors.red, _ => Colors.grey};
 
   Future<void> _showReservationForm([ReservationModel? current]) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -85,6 +88,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     if (tables.isEmpty) { scaffoldMessenger.showSnackBar(const SnackBar(content: Text('هیچ میز فعالی در پایگاه داده ثبت نشده است.'))); return; }
 
     final guestController = TextEditingController(text: (current?.partySize ?? 2).toString());
+    final durationController = TextEditingController(text: (current?.durationMinutes ?? 90).toString());
     final noteController = TextEditingController(text: current?.note ?? '');
     final customerSearchController = TextEditingController();
     String? customerId = current?.userId;
@@ -255,6 +259,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           ),
         const SizedBox(height: 12), DropdownButtonFormField<String>(initialValue: tableId, isExpanded: true, decoration: const InputDecoration(labelText: 'میز', border: OutlineInputBorder()), items: tables.map((t) => DropdownMenuItem(value: t.id, child: Text('میز ${_persianDigits(t.tableNumber)} • ظرفیت ${_persianDigits(t.capacity)}${t.status == TableStatus.occupied ? ' • اشغال' : ''}'))).toList(), onChanged: (value) => setDialogState(() => tableId = value)),
         const SizedBox(height: 12), TextFormField(controller: guestController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'تعداد نفرات', border: OutlineInputBorder())),
+        const SizedBox(height: 12), TextFormField(controller: durationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مدت رزرو (دقیقه؛ ۱۵ تا ۴۸۰)', border: OutlineInputBorder())),
         const SizedBox(height: 12), Row(children: [
           Expanded(child: OutlinedButton.icon(
             onPressed: () async {
@@ -293,7 +298,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         ]),
         const SizedBox(height: 12), TextField(controller: noteController, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)', border: OutlineInputBorder()))
       ]))),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری را از فهرست پیشنهادها انتخاب کنید، سپس میز و تعداد نفرات را بررسی کنید.'))); return; }
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); final duration = int.tryParse(durationController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1 || duration == null || duration < 15 || duration > 480) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری را از فهرست پیشنهادها انتخاب کنید، سپس میز و تعداد نفرات را بررسی کنید.'))); return; }
         TableModel? selectedTable;
         for (final candidate in tables) { if (candidate.id == tableId) { selectedTable = candidate; break; } }
         if (selectedTable == null || guests > selectedTable.capacity) {
@@ -303,7 +308,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         final provider = reservationsProvider;
         final timeValue = '${time.hour.toString().padLeft(2,'0')}:${time.minute.toString().padLeft(2,'0')}:00';
         final ok = current == null
-          ? await provider.createReservation(userId: customerId!, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text)
+          ? await provider.createReservation(userId: customerId!, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text, durationMinutes: duration)
           : await provider.updateReservationDetails(id: current.id, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text);
         if (!dialogContext.mounted) return;
         if (ok) {
@@ -315,17 +320,91 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     )));
     customerLookupDebounce?.cancel();
     customerSearchController.dispose();
-    guestController.dispose(); noteController.dispose();
+    guestController.dispose(); durationController.dispose(); noteController.dispose();
     if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
+  }
+
+  List<PopupMenuEntry<String>> _statusMenuItems(ReservationModel reservation) {
+    final options = switch (reservation.status) {
+      ReservationStatus.pending => const [
+        ('confirmed', 'تأیید'),
+        ('delayed', 'ثبت تأخیر'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.confirmed => const [
+        ('delayed', 'ثبت تأخیر'),
+        ('arrived', 'ثبت ورود مشتری'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.delayed => const [
+        ('confirmed', 'بازگشت به تأیید'),
+        ('arrived', 'ثبت ورود مشتری'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.arrived => const [
+        ('completed', 'تکمیل رزرو'),
+        ('cancelled', 'لغو رزرو'),
+      ],
+      _ => const <(String, String)>[],
+    };
+    return options.map((option) => PopupMenuItem<String>(
+      value: option.$1,
+      child: Text(option.$2),
+    )).toList(growable: false);
   }
 
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
     final provider = context.read<ReservationsProvider>();
     final tablesProvider = context.read<TablesProvider>();
-    final ok = await provider.updateReservationStatus(reservation.id, status);
+    String? reason;
+    String? delayNote;
+    int? delayMinutes;
+    if (status == 'cancelled') {
+      final controller = TextEditingController();
+      reason = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
+        title: const Text('لغو رزرو'),
+        content: TextField(controller: controller, autofocus: true, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'دلیل لغو (اجباری)')),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')), FilledButton(onPressed: () { if (controller.text.trim().isNotEmpty) Navigator.pop(ctx, controller.text.trim()); }, child: const Text('ثبت لغو'))],
+      ));
+      controller.dispose();
+      if (reason == null) return;
+    }
+    if (status == 'delayed') {
+      final minutesController = TextEditingController(text: '15');
+      final noteController = TextEditingController();
+      final result = await showDialog<(int, String?)>(context: context, builder: (ctx) => AlertDialog(
+        title: const Text('ثبت تأخیر مشتری'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: minutesController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مدت تأخیر به دقیقه')),
+          const SizedBox(height: 8),
+          TextField(controller: noteController, decoration: const InputDecoration(labelText: 'توضیح (اختیاری)')),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')), FilledButton(onPressed: () { final value = int.tryParse(minutesController.text); if (value != null && value > 0 && value <= 480) Navigator.pop(ctx, (value, noteController.text.trim())); }, child: const Text('ثبت'))],
+      ));
+      minutesController.dispose(); noteController.dispose();
+      if (result == null) return;
+      delayMinutes = result.$1; delayNote = result.$2;
+    }
+    final ok = await provider.updateReservationStatus(reservation.id, status, reason: reason, delayMinutes: delayMinutes, delayNote: delayNote);
     if (!mounted) return;
     if (!ok) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error ?? 'تغییر وضعیت رزرو ناموفق بود.')));
     await tablesProvider.fetchTables();
+  }
+
+  Future<void> _convertToOrder(ReservationModel reservation) async {
+    final provider = context.read<ReservationsProvider>();
+    final orderId = await provider.convertReservationToOrder(reservation.id);
+    if (!mounted) return;
+    if (orderId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error ?? 'تبدیل رزرو به سفارش ناموفق بود.')));
+      return;
+    }
+    await context.read<TablesProvider>().fetchTables();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('سفارش حضوری با موفقیت ایجاد شد: ${orderId.substring(0, 8).toUpperCase()}')));
   }
 
   @override
@@ -375,7 +454,16 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [Expanded(child: Text(reservation.customerName.isEmpty ? 'مشتری بدون نام' : reservation.customerName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: _statusColor(reservation.status.name).withValues(alpha: .12), borderRadius: BorderRadius.circular(20)), child: Text(_statusLabel(reservation.status.name), style: TextStyle(color: _statusColor(reservation.status.name))))]),
           const SizedBox(height: 8), Text('تلفن: ${reservation.customerPhone.isEmpty ? 'ثبت نشده' : reservation.customerPhone}'), Text('تاریخ: ${_formatDate(reservation.date)} • ساعت: ${_persianDigits(reservation.time)} • نفرات: ${_persianDigits(reservation.partySize)}'), Text('میز: ${reservation.tableNumber.isEmpty ? 'نامشخص' : reservation.tableNumber}'), if (reservation.note?.isNotEmpty == true) Text('یادداشت: ${reservation.note}'),
-          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => const [PopupMenuItem(value: 'pending', child: Text('در انتظار')), PopupMenuItem(value: 'confirmed', child: Text('تأیید')), PopupMenuItem(value: 'completed', child: Text('تکمیل')), PopupMenuItem(value: 'cancelled', child: Text('لغو'))], child: const Chip(avatar: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeftRight, size: 18), label: Text('وضعیت')))])
+          if (reservation.delayMinutes != null) Text('مدت تأخیر: ${_persianDigits(reservation.delayMinutes)} دقیقه'),
+          if (reservation.delayNote?.isNotEmpty == true) Text('توضیح تأخیر: ${reservation.delayNote}'),
+          if (reservation.cancellationReason?.isNotEmpty == true) Text('دلیل لغو: ${reservation.cancellationReason}'),
+          Text('مدت رزرو: ${_persianDigits(reservation.durationMinutes)} دقیقه'),
+          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [if (['pending', 'confirmed', 'delayed'].contains(reservation.status.name)) OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => _statusMenuItems(reservation), child: const Chip(avatar: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeftRight, size: 18), label: Text('وضعیت'))),
+          if (reservation.orderId == null && !['cancelled','completed','no_show'].contains(reservation.status.name))
+            OutlinedButton.icon(onPressed: () => _convertToOrder(reservation), icon: const Icon(Icons.restaurant, size: 18), label: const Text('تبدیل به سفارش'))
+          else if (reservation.orderId != null)
+            Chip(avatar: const Icon(Icons.receipt_long, size: 16), label: Text('سفارش ${reservation.orderId!.substring(0, 8)}'))
+          ])
         ])));
       })), Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: provider.currentPage > 1 ? () => provider.changePage(provider.currentPage - 1) : null, icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01)), Text('صفحه ${_persianDigits(provider.currentPage)}'), IconButton(onPressed: provider.reservations.length == 15 ? () => provider.changePage(provider.currentPage + 1) : null, icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01))])]);
     }))
