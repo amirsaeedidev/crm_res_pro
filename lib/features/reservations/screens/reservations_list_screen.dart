@@ -88,6 +88,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     if (tables.isEmpty) { scaffoldMessenger.showSnackBar(const SnackBar(content: Text('هیچ میز فعالی در پایگاه داده ثبت نشده است.'))); return; }
 
     final guestController = TextEditingController(text: (current?.partySize ?? 2).toString());
+    final durationController = TextEditingController(text: (current?.durationMinutes ?? 90).toString());
     final noteController = TextEditingController(text: current?.note ?? '');
     final customerSearchController = TextEditingController();
     String? customerId = current?.userId;
@@ -258,6 +259,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           ),
         const SizedBox(height: 12), DropdownButtonFormField<String>(initialValue: tableId, isExpanded: true, decoration: const InputDecoration(labelText: 'میز', border: OutlineInputBorder()), items: tables.map((t) => DropdownMenuItem(value: t.id, child: Text('میز ${_persianDigits(t.tableNumber)} • ظرفیت ${_persianDigits(t.capacity)}${t.status == TableStatus.occupied ? ' • اشغال' : ''}'))).toList(), onChanged: (value) => setDialogState(() => tableId = value)),
         const SizedBox(height: 12), TextFormField(controller: guestController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'تعداد نفرات', border: OutlineInputBorder())),
+        const SizedBox(height: 12), TextFormField(controller: durationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مدت رزرو (دقیقه؛ ۱۵ تا ۴۸۰)', border: OutlineInputBorder())),
         const SizedBox(height: 12), Row(children: [
           Expanded(child: OutlinedButton.icon(
             onPressed: () async {
@@ -296,7 +298,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         ]),
         const SizedBox(height: 12), TextField(controller: noteController, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)', border: OutlineInputBorder()))
       ]))),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری را از فهرست پیشنهادها انتخاب کنید، سپس میز و تعداد نفرات را بررسی کنید.'))); return; }
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')), FilledButton(onPressed: () async { final guests = int.tryParse(guestController.text.trim()); final duration = int.tryParse(durationController.text.trim()); if (customerId == null || tableId == null || guests == null || guests < 1 || duration == null || duration < 15 || duration > 480) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('مشتری را از فهرست پیشنهادها انتخاب کنید، سپس میز و تعداد نفرات را بررسی کنید.'))); return; }
         TableModel? selectedTable;
         for (final candidate in tables) { if (candidate.id == tableId) { selectedTable = candidate; break; } }
         if (selectedTable == null || guests > selectedTable.capacity) {
@@ -306,7 +308,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
         final provider = reservationsProvider;
         final timeValue = '${time.hour.toString().padLeft(2,'0')}:${time.minute.toString().padLeft(2,'0')}:00';
         final ok = current == null
-          ? await provider.createReservation(userId: customerId!, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text)
+          ? await provider.createReservation(userId: customerId!, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text, durationMinutes: duration)
           : await provider.updateReservationDetails(id: current.id, tableId: tableId!, guestCount: guests, date: date, time: timeValue, note: noteController.text);
         if (!dialogContext.mounted) return;
         if (ok) {
@@ -318,7 +320,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     )));
     customerLookupDebounce?.cancel();
     customerSearchController.dispose();
-    guestController.dispose(); noteController.dispose();
+    guestController.dispose(); durationController.dispose(); noteController.dispose();
     if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
   }
 
