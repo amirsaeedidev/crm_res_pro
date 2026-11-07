@@ -111,14 +111,14 @@ class _ReportsScreenState extends State<ReportsScreen>
         final chart = Map<String, dynamic>.from(report['chart_data'] as Map? ?? {});
         final tables = (chart['tables'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
         final hours = (chart['hours'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-        Widget metric(String label, String value, IconData icon) => Expanded(child: Card(child: Padding(
+        Widget metric(String label, String value, IconData icon) => Card(child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(icon, color: _blue), const SizedBox(height: 8),
             Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Text(label, style: const TextStyle(color: Colors.black54)),
           ]),
-        )));
+        ));
         return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Wrap(spacing: 8, runSpacing: 8, children: [
             SizedBox(width: mobile ? 150 : 220, child: metric('تعداد استفاده', _digits(summary['total_orders'] ?? 0), Icons.receipt_long)),
