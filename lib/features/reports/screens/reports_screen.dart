@@ -25,6 +25,9 @@ class _ReportsScreenState extends State<ReportsScreen>
   DateRangeFilter _selectedFilter = DateRangeFilter.thisMonth;
   DateTimeRange? _customDateRange;
   Future<Map<String, dynamic>>? _tableUsageFuture;
+  Future<Map<String, dynamic>>? _dashboardOverviewFuture;
+  String _orderSource = 'all';
+  String _paymentMode = 'all';
 
   static const _ink = Color(0xFF14264B);
   static const _blue = Color(0xFF3977EE);
@@ -85,6 +88,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
     _tableUsageFuture = _loadTableUsageReport(startDate, endDate);
+    _dashboardOverviewFuture = _loadDashboardOverview(startDate, endDate);
   }
 
   Future<Map<String, dynamic>> _loadTableUsageReport(DateTime startDate, DateTime endDate) async {
@@ -93,6 +97,86 @@ class _ReportsScreenState extends State<ReportsScreen>
       'end_date': endDate.toUtc().toIso8601String(),
     });
     return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<Map<String, dynamic>> _loadDashboardOverview(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final response = await SupabaseService.client.rpc(
+      'get_crm_dashboard_overview',
+      params: {
+        'p_start_at': startDate.toUtc().toIso8601String(),
+        'p_end_at': endDate.toUtc().toIso8601String(),
+        'p_order_source': _orderSource,
+        'p_payment_mode': _paymentMode,
+      },
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Widget _filteredDashboardOverview(BuildContext context, bool mobile) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _dashboardOverviewFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: AppLoading(size: 30));
+        }
+        if (snapshot.hasError) {
+          return _sectionCard(
+            title: 'نمای کلی با فیلترهای انتخاب‌شده',
+            subtitle: 'دریافت آمار فیلترشده ناموفق بود',
+            icon: HugeIcons.strokeRoundedDashboardSquare01,
+            child: Text('خطا در دریافت آمار: ${snapshot.error}'),
+          );
+        }
+        final data = snapshot.data ?? const <String, dynamic>{};
+        final orders = Map<String, dynamic>.from(data['orders'] as Map? ?? {});
+        final customers = Map<String, dynamic>.from(data['customers'] as Map? ?? {});
+        final sales = Map<String, dynamic>.from(data['sales'] as Map? ?? {});
+        final discounts = Map<String, dynamic>.from(data['discounts'] as Map? ?? {});
+        final payments = (data['payments'] as List? ?? [])
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList(growable: false);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _metricGrid(context, mobile, [
+              _metric('کل سفارش‌ها', _number(_num(orders, 'total')), HugeIcons.strokeRoundedPackage, _blue, 'با منبع و پرداخت انتخاب‌شده'),
+              _metric('سفارش‌های امروز', _number(_num(orders, 'today')), HugeIcons.strokeRoundedCalendar01, const Color(0xFF8B72E8), 'سفارش‌های ثبت‌شده امروز'),
+              _metric('در حال انجام', _number(_num(orders, 'in_progress')), HugeIcons.strokeRoundedClock01, const Color(0xFFE6A23C), 'سفارش‌های باز'),
+              _metric('تکمیل‌شده', _number(_num(orders, 'completed')), HugeIcons.strokeRoundedCheckmarkCircle01, const Color(0xFF39B982), 'مبنای محاسبه فروش'),
+              _metric('لغوشده', _number(_num(orders, 'cancelled')), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'سفارش‌های لغوشده'),
+              _metric('مجموع فروش', '${_number(_num(sales, 'total'))} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'فقط سفارش‌های تکمیل‌شده'),
+              _metric('میانگین سفارش', '${_number(_num(sales, 'average_order'))} تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'میانگین مبلغ سفارش معتبر'),
+              _metric('مشتریان فعال', _number(_num(customers, 'active')), HugeIcons.strokeRoundedUserGroup, const Color(0xFF39B982), 'حداقل یک سفارش غیرلغوشده'),
+              _metric('مشتریان جدید', _number(_num(customers, 'new')), HugeIcons.strokeRoundedUserAdd01, _blue, 'در بازه زمانی انتخاب‌شده'),
+              _metric('مصرف تخفیف', _number(_num(discounts, 'usage_count')), HugeIcons.strokeRoundedDiscount, const Color(0xFFE6A23C), 'تعداد استفاده‌های ثبت‌شده'),
+            ]),
+            const SizedBox(height: 14),
+            _sectionCard(
+              title: 'تفکیک پرداخت Mock و واقعی',
+              subtitle: 'فقط پرداخت‌های ثبت‌شده در دفتر پرداخت سفارش',
+              icon: HugeIcons.strokeRoundedCreditCard,
+              child: payments.isEmpty
+                  ? const _NoData(message: 'در این بازه پرداخت ثبت‌شده‌ای برای نمایش وجود ندارد.')
+                  : Column(
+                      children: payments.map((payment) {
+                        final mode = payment['payment_mode']?.toString() ?? 'نامشخص';
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(mode == 'mock' ? 'پرداخت Mock' : mode == 'real' ? 'پرداخت واقعی' : mode),
+                          trailing: Text('${_number(_num(payment, 'orders'))} سفارش · ${_number(_num(payment, 'sales'))} تومان'),
+                        );
+                      }).toList(growable: false),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _tableUsageTab(BuildContext context, bool mobile) {
@@ -439,6 +523,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget _buildDateFilters() => Wrap(
         spacing: 8,
         runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _filterChip('امروز', DateRangeFilter.today),
           _filterChip('این هفته', DateRangeFilter.thisWeek),
@@ -451,6 +536,51 @@ class _ReportsScreenState extends State<ReportsScreen>
             backgroundColor: _selectedFilter == DateRangeFilter.custom ? _paleBlue : Colors.white,
             side: BorderSide(color: _selectedFilter == DateRangeFilter.custom ? _blue : const Color(0xFFE3E9F4)),
             onPressed: _pickCustomRange,
+          ),
+          SizedBox(
+            width: 190,
+            child: DropdownButtonFormField<String>(
+              value: _orderSource,
+              isDense: true,
+              decoration: const InputDecoration(
+                labelText: 'منبع سفارش · نمای کلی',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text('همه منابع')),
+                DropdownMenuItem(value: 'customer_app', child: Text('اپ مشتری')),
+                DropdownMenuItem(value: 'crm_walk_in', child: Text('ثبت در CRM')),
+                DropdownMenuItem(value: 'reservation', child: Text('رزرو')),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _orderSource = value);
+                _fetchReport();
+              },
+            ),
+          ),
+          SizedBox(
+            width: 190,
+            child: DropdownButtonFormField<String>(
+              value: _paymentMode,
+              isDense: true,
+              decoration: const InputDecoration(
+                labelText: 'نوع پرداخت · نمای کلی',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text('Mock و واقعی')),
+                DropdownMenuItem(value: 'mock', child: Text('فقط Mock')),
+                DropdownMenuItem(value: 'real', child: Text('فقط واقعی')),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _paymentMode = value);
+                _fetchReport();
+              },
+            ),
           ),
         ],
       );
@@ -480,6 +610,8 @@ class _ReportsScreenState extends State<ReportsScreen>
     num totalTypes, List<Map<String, dynamic>> products,
   ) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _filteredDashboardOverview(context, mobile),
+      const SizedBox(height: 18),
       _metricGrid(context, mobile, [
         _metric('فروش تکمیل‌شده', '${_number(sales)} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'مجموع فروش در بازه انتخابی'),
         _metric('سفارش‌های تکمیل‌شده', _number(orders), HugeIcons.strokeRoundedPackage, const Color(0xFF8B72E8), 'تعداد سفارش‌های نهایی‌شده'),
