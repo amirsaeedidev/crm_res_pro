@@ -148,9 +148,9 @@ class _ReportsScreenState extends State<ReportsScreen>
               _metric('سفارش‌های امروز', _number(_num(orders, 'today')), HugeIcons.strokeRoundedCalendar01, const Color(0xFF8B72E8), 'سفارش‌های ثبت‌شده امروز'),
               _metric('در حال انجام', _number(_num(orders, 'in_progress')), HugeIcons.strokeRoundedAlert02, const Color(0xFFE6A23C), 'سفارش‌های باز'),
               _metric('تکمیل‌شده', _number(_num(orders, 'completed')), HugeIcons.strokeRoundedDashboardSquare01, const Color(0xFF39B982), 'مبنای محاسبه فروش'),
-              _metric('لغوشده', _number(_num(orders, 'cancelled')), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'سفارش‌های لغوشده'),
+              _metric('لغوشده', _number(_num(orders, 'cancelled')), HugeIcons.strokeRoundedAlert02, const Color(0xFFE45B70), 'سفارش‌های لغوشده'),
               _metric('مجموع فروش', '${_number(_num(sales, 'total'))} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'فقط سفارش‌های تکمیل‌شده'),
-              _metric('میانگین سفارش', '${_number(_num(sales, 'average_order'))} تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'میانگین مبلغ سفارش معتبر'),
+              _metric('میانگین سفارش', '${_number(_num(sales, 'average_order'))} تومان', HugeIcons.strokeRoundedChartIncrease, const Color(0xFF8B72E8), 'میانگین مبلغ سفارش معتبر'),
               _metric('مشتریان فعال', _number(_num(customers, 'active')), HugeIcons.strokeRoundedUserGroup, const Color(0xFF39B982), 'حداقل یک سفارش غیرلغوشده'),
               _metric('مشتریان جدید', _number(_num(customers, 'new')), HugeIcons.strokeRoundedUserGroup, _blue, 'در بازه زمانی انتخاب‌شده'),
               _metric('مصرف تخفیف', _number(_num(discounts, 'usage_count')), HugeIcons.strokeRoundedChartIncrease, const Color(0xFFE6A23C), 'تعداد استفاده‌های ثبت‌شده'),
@@ -434,7 +434,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
               backgroundColor: category == 'cancelled' ? const Color(0xFFFFE9ED) : category == 'delayed' ? const Color(0xFFFFF2DB) : _paleBlue,
-              child: HugeIcon(icon:category == 'cancelled' ? HugeIcons.strokeRoundedCancel01 : category == 'delayed' ? HugeIcons.strokeRoundedCalendar01 : HugeIcons.strokeRoundedRepeat,
+              child: HugeIcon(icon:category == 'cancelled' ? HugeIcons.strokeRoundedAlert02 : category == 'delayed' ? HugeIcons.strokeRoundedCalendar01 : HugeIcons.strokeRoundedRepeat,
                 color: category == 'cancelled' ? const Color(0xFFE45B70) : category == 'delayed' ? const Color(0xFFB7791F) : _blue, size: 20),
             ),
             title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -445,7 +445,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (loading) const LinearProgressIndicator(minHeight: 2),
       _metricGrid(context, mobile, [
-        _metric('سفارش لغوشده', _number(cancelled), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'در بازه انتخابی'),
+        _metric('سفارش لغوشده', _number(cancelled), HugeIcons.strokeRoundedAlert02, const Color(0xFFE45B70), 'در بازه انتخابی'),
         _metric('سفارش تأخیردار', _number(delayed), HugeIcons.strokeRoundedCalendar01, const Color(0xFFB7791F), 'نیازمند پیگیری'),
         _metric('مشتری پرتکرار', _number(repeatCustomers), HugeIcons.strokeRoundedRepeat, _blue, 'حداقل ۳ سفارش'),
         _metric('مبلغ لغوشده', '${_number(cancelledAmount)} تومان', HugeIcons.strokeRoundedMoney03, const Color(0xFF8B72E8), 'مجموع مبلغ لغوها'),
@@ -476,7 +476,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           )),
         )),
       const SizedBox(height: 18),
-      reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', HugeIcons.strokeRoundedCancel01, cancelledRows, 'cancelled'),
+      reportCard('سفارش‌های لغوشده', 'به همراه علت لغو و مبلغ سفارش', HugeIcons.strokeRoundedAlert02, cancelledRows, 'cancelled'),
       const SizedBox(height: 16),
       reportCard('سفارش‌های تأخیردار', 'سفارش‌های فعال پس از زمان آماده‌سازی یا تکمیل‌شده دیرتر از زمان تخمینی', HugeIcons.strokeRoundedCalendar01, delayedRows, 'delayed'),
       const SizedBox(height: 16),
@@ -665,7 +665,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _metricGrid(context, mobile, [
         _metric('مجموع فروش', '${_number(sales)} تومان', HugeIcons.strokeRoundedMoney03, _blue, 'بر اساس سفارش‌های تکمیل‌شده'),
-        _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
+        _metric('میانگین هر سفارش', orders > 0 ? '${_number(sales / orders)} تومان' : '۰ تومان', HugeIcons.strokeRoundedChartIncrease, const Color(0xFF8B72E8), 'فروش تقسیم بر تعداد سفارش'),
         _metric('تغییر نسبت به قبل', _percentage(growth), HugeIcons.strokeRoundedArrowUpRight01, growth >= 0 ? const Color(0xFF39B982) : const Color(0xFFE45B70), 'درصد تغییر فروش'),
       ]),
       const SizedBox(height: 18),
