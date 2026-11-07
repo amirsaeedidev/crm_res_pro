@@ -3,6 +3,8 @@ name: Flutter APK Build
 on:
   push:
     branches: [main, integration/phase11-security-dashboard]
+  pull_request:
+    branches: [fix/notification-history-and-audit]
   workflow_dispatch:
 
 permissions:
