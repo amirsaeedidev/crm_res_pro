@@ -443,7 +443,11 @@ END;
 $function$;
 
 -- Keep the existing CRM views and customer data contract, without consent fields.
-CREATE OR REPLACE VIEW public.customer_crm_view AS
+DROP VIEW IF EXISTS public.customer_crm_view;
+DROP VIEW IF EXISTS public.customer_directory_view;
+
+CREATE VIEW public.customer_crm_view
+WITH (security_invoker = true) AS
 SELECT
   p.id, p.email, p.first_name, p.last_name, p.phone, p.avatar_url, p.role, p.status,
   p.created_at,
@@ -470,7 +474,8 @@ LEFT JOIN (
 LEFT JOIN public.customer_wallets w ON w.user_id = p.id
 WHERE p.role = 'customer';
 
-CREATE OR REPLACE VIEW public.customer_directory_view AS
+CREATE VIEW public.customer_directory_view
+WITH (security_invoker = true) AS
 SELECT
   p.id, p.email, p.first_name, p.last_name, p.phone, p.avatar_url, p.role, p.status,
   p.created_at,
@@ -493,6 +498,8 @@ LEFT JOIN LATERAL (
 ) o ON true
 LEFT JOIN public.customer_wallets w ON w.user_id = p.id
 WHERE p.role = 'customer';
+
+GRANT SELECT ON public.customer_crm_view, public.customer_directory_view TO authenticated;
 
 -- Drop the obsolete product consent model and global marketing switch.
 ALTER TABLE public.profiles
