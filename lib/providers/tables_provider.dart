@@ -144,7 +144,7 @@ class TablesProvider extends ChangeNotifier {
     _refreshTimer?.cancel();
     final channel = _realtimeChannel;
     _realtimeChannel = null;
-    if (channel != null) unawaited(SupabaseService.client.removeChannel(channel));
+    if (channel != null) unawaited(SupabaseService.client.removeChannel(channel).then((_) {}));
     super.dispose();
   }
 }
