@@ -68,14 +68,15 @@ class ReservationsRepository {
     }
   }
 
-  Future<void> createReservation({required String userId, required String tableId, required int guestCount, required DateTime date, required TimeOfDayValue time, String? note}) async {
+  Future<void> createReservation({required String userId, required String tableId, required int guestCount, required DateTime date, required TimeOfDayValue time, String? note, int durationMinutes = 90}) async {
     if (guestCount < 1) throw ArgumentError.value(guestCount, 'guestCount');
+    if (durationMinutes < 15 || durationMinutes > 480) throw ArgumentError.value(durationMinutes, 'durationMinutes');
     try {
       await _ensureSlotAvailable(tableId: tableId, date: date, time: time.value);
       await _client.from('reservations').insert({
         'user_id': userId, 'table_id': tableId, 'guest_count': guestCount,
         'reservation_date': date.toIso8601String().substring(0, 10),
-        'reservation_time': time.value, 'note': note?.trim().isEmpty == true ? null : note?.trim(), 'status': 'pending',
+        'reservation_time': time.value, 'duration_minutes': durationMinutes, 'note': note?.trim().isEmpty == true ? null : note?.trim(), 'status': 'pending',
       });
     } on PostgrestException catch (e, st) {
       LoggerService.error('Create reservation failed', error: e, stackTrace: st);
@@ -83,16 +84,17 @@ class ReservationsRepository {
     }
   }
 
-  Future<void> updateReservationDetails({required String id, required String tableId, required int guestCount, required DateTime date, required TimeOfDayValue time, String? note}) async {
+  Future<void> updateReservationDetails({required String id, required String tableId, required int guestCount, required DateTime date, required TimeOfDayValue time, String? note, int durationMinutes = 90}) async {
     if (guestCount < 1) throw ArgumentError.value(guestCount, 'guestCount');
+    if (durationMinutes < 15 || durationMinutes > 480) throw ArgumentError.value(durationMinutes, 'durationMinutes');
     try {
       await _ensureSlotAvailable(tableId: tableId, date: date, time: time.value, excludeReservationId: id);
       final rows = await _client.from('reservations').update({
         'table_id': tableId, 'guest_count': guestCount,
         'reservation_date': date.toIso8601String().substring(0, 10),
-        'reservation_time': time.value, 'note': note?.trim().isEmpty == true ? null : note?.trim(),
+        'reservation_time': time.value, 'duration_minutes': durationMinutes, 'note': note?.trim().isEmpty == true ? null : note?.trim(),
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', id).eq('status', 'pending').select('id');
+      }).eq('id', id).inFilter('status', ['pending', 'confirmed', 'delayed']).select('id');
       if (rows.isEmpty) throw Exception('فقط رزرو در انتظار قابل ویرایش است یا مجوز ویرایش ندارید.');
     } on PostgrestException catch (e, st) {
       LoggerService.error('Update reservation details failed', error: e, stackTrace: st);
