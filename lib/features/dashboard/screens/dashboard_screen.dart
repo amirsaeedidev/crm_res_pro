@@ -5,6 +5,7 @@ import '../../../core/widgets/app_loading.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
+import '../widgets/restaurant_sales_chart.dart';
 import '../../../models/statistics_model.dart';
 import '../widgets/recent_orders_list.dart';
 
@@ -143,6 +144,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    const RestaurantSalesChart(),
                     const SizedBox(height: 24),
                     Text(
                       'آخرین سفارش‌ها',
