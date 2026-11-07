@@ -96,6 +96,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             onChanged: (value) {
               context.read<ProductsProvider>().setSearchQuery(value);
             },
+            useHugeIcons: true,
           ),
           const SizedBox(height: AppSizes.lg),
 
@@ -396,7 +397,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                         color: AppColors.getBackground(context),
                         borderRadius: BorderRadius.circular(AppRadius.medium),
                       ),
-                      child: Icon(Icons.image_outlined, color: AppColors.getSecondaryText(context)),
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedImage01, color: AppColors.getSecondaryText(context)),
                     ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -451,19 +452,19 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.visibility_outlined, color: AppColors.info),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedView, color: AppColors.info),
                         onPressed: () {
                           context.push('/products/details/${product.id}');
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                         onPressed: () {
                           context.push('/products/edit/${product.id}');
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: AppColors.error),
                         onPressed: () {
                           DeleteDialog.show(
                             context: context,

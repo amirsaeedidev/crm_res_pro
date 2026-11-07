@@ -105,7 +105,9 @@ class _MainLayoutState extends State<MainLayout> {
       case '/wallets':
         return 'کیف پول مالی مشتریان';
       case '/notifications':
-        return 'اعلان‌ها';
+        return 'مدیریت اعلان‌ها';
+      case '/notification-inbox':
+        return 'صندوق اعلان‌ها';
       case '/activity-logs':
         return 'ثبت فعالیت‌ها';
       default:

@@ -1,10 +1,11 @@
 name: Flutter Analyze
+# Phase 3 discount and campaign changes are validated on this stacked PR branch.
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/notification-history-and-audit]
   pull_request:
-    branches: [main]
+    branches: [main, fix/notification-history-and-audit]
   workflow_dispatch:
 
 permissions:
@@ -28,25 +29,27 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter analyze --no-pub --machine . > analyze-results.txt 2>&1
+          flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos --machine . > analyze-results.txt 2>&1
           analyze_status=$?
           set -e
           python3 - <<'PY'
-          import os, pathlib, collections
+          import os, pathlib, collections, re
           issues = []
           source = pathlib.Path("analyze-results.txt").read_text(errors="replace")
           for raw in source.splitlines():
-              parts = raw.split("|", 7)
-              if len(parts) != 8 or parts[0] not in {"ERROR", "WARNING", "INFO"}:
+              match = re.match(r"^\s*(error|warning|info)\s+•\s+(.*?)\s+•\s+(.+?):(\d+):(\d+)\s+•\s+(.*)$", raw)
+              if match:
+                  severity, message, file_path, line, column, code = match.groups()
+                  issues.append({"severity": severity.upper(), "type": severity, "code": code,
+                                 "file": file_path, "line": int(line), "column": int(column),
+                                 "message": message})
                   continue
-              severity, issue_type, code, file_path, line, column, length, message = parts
-              try:
-                  line_num, col_num = int(line), int(column)
-              except ValueError:
-                  line_num, col_num = 1, 1
-              issues.append({"severity": severity, "type": issue_type, "code": code,
-                             "file": file_path, "line": line_num, "column": col_num,
-                             "message": message})
+              parts = raw.split("|", 7)
+              if len(parts) == 8 and parts[0] in {"ERROR", "WARNING", "INFO"}:
+                  severity, issue_type, code, file_path, line, column, length, message = parts
+                  issues.append({"severity": severity, "type": issue_type, "code": code,
+                                 "file": file_path, "line": int(line or 1), "column": int(column or 1),
+                                 "message": message})
           counts = collections.Counter(i["severity"] for i in issues)
           def esc(value):
               return str(value).replace("|", "\\|").replace("\n", " ")

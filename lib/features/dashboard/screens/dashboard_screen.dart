@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -44,7 +45,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
 
-          final compactStats = contentWidth < 480;
           final stackCharts = contentWidth < 900;
 
           return Consumer<DashboardProvider>(
@@ -95,7 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       value: stats != null
                           ? '${stats.totalSales.toStringAsFixed(0)} تومان'
                           : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_sales.webp',
+                      icon: HugeIcons.strokeRoundedWallet01,
                       iconColor: AppColors.success,
                       changePercentage: stats != null
                           ? stats.salesGrowthPercentage.toStringAsFixed(1)
@@ -105,29 +105,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // دو کارت کوچک؛ در صفحه باریک زیر هم و در صفحه عریض کنار هم.
-                  if (compactStats) ...[
-                    _buildStatCard(
-                      title: 'سفارشات جدید',
-                      value: stats != null ? stats.totalOrders.toString() : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_orders.webp',
-                      iconColor: AppColors.primary,
-                      changePercentage: stats != null
-                          ? stats.ordersGrowthPercentage.toStringAsFixed(1)
-                          : '0',
-                    ),
-                    const SizedBox(height: AppSizes.md),
-                    _buildStatCard(
-                      title: 'کاربران فعال',
-                      value: stats != null ? stats.totalCustomers.toString() : 'ناموجود',
-                      imageAssetPath: 'assets/images/dashboard_customers.webp',
-                      iconColor: AppColors.accent,
-                      changePercentage: stats != null
-                          ? stats.customersGrowthPercentage.toStringAsFixed(1)
-                          : '0',
-                    ),
-                  ] else
-                    Row(
+                  // دو کارت کوچک همیشه کنار هم نمایش داده می‌شوند.
+                  Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
@@ -136,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: stats != null
                                 ? stats.totalOrders.toString()
                                 : 'ناموجود',
-                            imageAssetPath: 'assets/images/dashboard_orders.webp',
+                            icon: HugeIcons.strokeRoundedShoppingBag01,
                             
                             iconColor: AppColors.primary,
                             changePercentage: stats != null
@@ -151,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: stats != null
                                 ? stats.totalCustomers.toString()
                                 : 'ناموجود',
-                            imageAssetPath: 'assets/images/dashboard_customers.webp',
+                            icon: HugeIcons.strokeRoundedUserGroup,
                             iconColor: AppColors.accent,
                             changePercentage: stats != null
                                 ? stats.customersGrowthPercentage.toStringAsFixed(1)
@@ -226,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard({
     required String title,
     required String value,
-    required String imageAssetPath,
+    required List<List<dynamic>> icon,
     required Color iconColor,
     required String changePercentage,
     bool isFeatured = false,
@@ -234,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return StatisticCard(
       title: title,
       value: value,
-      imageAssetPath: imageAssetPath,
+      icon: icon,
       iconColor: iconColor,
       changePercentage: changePercentage,
       isFeatured: isFeatured,
