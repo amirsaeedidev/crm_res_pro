@@ -69,10 +69,10 @@ begin
     'public.place_order_idempotent(uuid,text,jsonb,uuid,text,integer,uuid,text,text)'::regprocedure
   ) into v_definition;
 
-  if pg_catalog.strpos(v_old_declaration in v_definition) = 0 then
+  if pg_catalog.strpos(v_definition, v_old_declaration) = 0 then
     raise exception 'Could not locate checkout RPC declaration; migration stopped safely.';
   end if;
-  if pg_catalog.strpos(v_old_block in v_definition) = 0 then
+  if pg_catalog.strpos(v_definition, v_old_block) = 0 then
     raise exception 'Could not locate checkout RPC order-item insert block; migration stopped safely.';
   end if;
 
