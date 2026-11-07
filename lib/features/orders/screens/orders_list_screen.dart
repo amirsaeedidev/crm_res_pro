@@ -246,6 +246,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                             'شماره صف',
                             'کد سفارش',
                             'مشتری',
+                            'نوع سفارش',
                             'منبع ثبت',
                             'تاریخ',
                             'مبلغ',
@@ -272,9 +273,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
+                              Text(switch (order.orderType) {
+                                'dine_in' => 'سالن / حضوری',
+                                'pickup' || 'takeaway' => 'بیرون‌بر',
+                                _ => 'ارسال',
+                              }),
                               CustomChip(
                                 label: switch (order.orderSource) {
-                                  'reservation' => 'رزرو',
+                                  'reservation' => 'رزرو / حضوری',
                                   'crm_walk_in' => 'ثبت در CRM',
                                   _ => 'اپ مشتری',
                                 },
