@@ -13,100 +13,98 @@ class DashboardProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _disposed = false;
+  int _requestVersion = 0;
 
   String? _error;
   String? _recentOrdersError;
-
   StatisticsModel? _statistics;
-  List<OrderModel> _recentOrders = [];
+  List<OrderModel> _recentOrders = const [];
+
+  DateTime? _startAt;
+  DateTime? _endAt;
+  String _orderSource = 'all';
+  String _paymentMode = 'all';
 
   bool get isLoading => _isLoading;
-
-  /// Error loading dashboard statistics.
   String? get error => _error;
-
-  /// Error loading recent orders.
   String? get recentOrdersError => _recentOrdersError;
-
   StatisticsModel? get statistics => _statistics;
-
   List<OrderModel> get recentOrders => List.unmodifiable(_recentOrders);
 
-  /// Fetch statistics and recent orders concurrently.
-  ///
-  /// A failure in one request will not prevent the other
-  /// request from updating its data.
-  Future<void> fetchDashboardData() async {
-    if (_disposed || _isLoading) return;
+  DateTime? get startAt => _startAt;
+  DateTime? get endAt => _endAt;
+  String get orderSource => _orderSource;
+  String get paymentMode => _paymentMode;
+
+  /// Fetch filtered statistics and the latest orders. Older responses are
+  /// ignored when the user changes filters before a request finishes.
+  Future<void> fetchDashboardData({
+    DateTime? startAt,
+    DateTime? endAt,
+    String orderSource = 'all',
+    String paymentMode = 'all',
+  }) async {
+    if (_disposed) return;
+
+    final requestVersion = ++_requestVersion;
+    _startAt = startAt;
+    _endAt = endAt;
+    _orderSource = orderSource;
+    _paymentMode = paymentMode;
 
     _isLoading = true;
     _error = null;
     _recentOrdersError = null;
-
     _notifyIfAlive();
 
-    try {
-      await Future.wait<void>([_fetchStatistics(), _fetchRecentOrders()]);
-    } catch (e, st) {
-      // The individual methods handle their own errors.
-      // This catch protects against unexpected failures.
-      LoggerService.error(
-        'Unexpected dashboard loading failure',
-        error: e,
-        stackTrace: st,
-      );
-    } finally {
-      if (!_disposed) {
-        _isLoading = false;
-        _notifyIfAlive();
-      }
+    await Future.wait<void>([
+      _fetchStatistics(requestVersion),
+      _fetchRecentOrders(requestVersion),
+    ]);
+
+    if (!_disposed && requestVersion == _requestVersion) {
+      _isLoading = false;
+      _notifyIfAlive();
     }
   }
 
-  /// Fetch statistics independently.
-  Future<void> _fetchStatistics() async {
+  Future<void> _fetchStatistics(int requestVersion) async {
     try {
-      final result = await _repository.getStatistics();
+      final result = await _repository.getStatistics(
+        startAt: _startAt,
+        endAt: _endAt,
+        orderSource: _orderSource,
+        paymentMode: _paymentMode,
+      );
 
-      if (_disposed) return;
-
+      if (_disposed || requestVersion != _requestVersion) return;
       _statistics = result;
       _error = null;
-
-      LoggerService.info('Dashboard statistics loaded successfully');
-    } catch (e, st) {
-      if (_disposed) return;
-
-      _error = _readableError(e);
-
+      LoggerService.info('Filtered dashboard overview loaded');
+    } catch (error, stackTrace) {
+      if (_disposed || requestVersion != _requestVersion) return;
+      _error = _readableError(error);
       LoggerService.error(
-        'Failed to fetch dashboard statistics',
-        error: e,
-        stackTrace: st,
+        'Failed to fetch dashboard overview',
+        error: error,
+        stackTrace: stackTrace,
       );
     }
   }
 
-  /// Fetch recent orders independently.
-  Future<void> _fetchRecentOrders() async {
+  Future<void> _fetchRecentOrders(int requestVersion) async {
     try {
       final result = await _repository.getRecentOrders(limit: 5);
-
-      if (_disposed) return;
-
+      if (_disposed || requestVersion != _requestVersion) return;
       _recentOrders = result;
       _recentOrdersError = null;
-
-      LoggerService.info('Recent dashboard orders loaded successfully');
-    } catch (e, st) {
-      if (_disposed) return;
-
-      _recentOrdersError = _readableError(e);
-
+    } catch (error, stackTrace) {
+      if (_disposed || requestVersion != _requestVersion) return;
+      _recentOrdersError = _readableError(error);
       LoggerService.error(
         'Failed to fetch recent dashboard orders',
-        error: e,
-        stackTrace: st,
+        error: error,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -119,14 +117,13 @@ class DashboardProvider extends ChangeNotifier {
   }
 
   void _notifyIfAlive() {
-    if (!_disposed) {
-      notifyListeners();
-    }
+    if (!_disposed) notifyListeners();
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _requestVersion++;
     super.dispose();
   }
 }
