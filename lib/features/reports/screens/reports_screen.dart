@@ -146,20 +146,20 @@ class _ReportsScreenState extends State<ReportsScreen>
             _metricGrid(context, mobile, [
               _metric('کل سفارش‌ها', _number(_num(orders, 'total')), HugeIcons.strokeRoundedPackage, _blue, 'با منبع و پرداخت انتخاب‌شده'),
               _metric('سفارش‌های امروز', _number(_num(orders, 'today')), HugeIcons.strokeRoundedCalendar01, const Color(0xFF8B72E8), 'سفارش‌های ثبت‌شده امروز'),
-              _metric('در حال انجام', _number(_num(orders, 'in_progress')), HugeIcons.strokeRoundedClock01, const Color(0xFFE6A23C), 'سفارش‌های باز'),
-              _metric('تکمیل‌شده', _number(_num(orders, 'completed')), HugeIcons.strokeRoundedCheckmarkCircle01, const Color(0xFF39B982), 'مبنای محاسبه فروش'),
+              _metric('در حال انجام', _number(_num(orders, 'in_progress')), HugeIcons.strokeRoundedAlert02, const Color(0xFFE6A23C), 'سفارش‌های باز'),
+              _metric('تکمیل‌شده', _number(_num(orders, 'completed')), HugeIcons.strokeRoundedDashboardSquare01, const Color(0xFF39B982), 'مبنای محاسبه فروش'),
               _metric('لغوشده', _number(_num(orders, 'cancelled')), HugeIcons.strokeRoundedCancel01, const Color(0xFFE45B70), 'سفارش‌های لغوشده'),
               _metric('مجموع فروش', '${_number(_num(sales, 'total'))} تومان', HugeIcons.strokeRoundedWallet01, _blue, 'فقط سفارش‌های تکمیل‌شده'),
               _metric('میانگین سفارش', '${_number(_num(sales, 'average_order'))} تومان', HugeIcons.strokeRoundedCalculator, const Color(0xFF8B72E8), 'میانگین مبلغ سفارش معتبر'),
               _metric('مشتریان فعال', _number(_num(customers, 'active')), HugeIcons.strokeRoundedUserGroup, const Color(0xFF39B982), 'حداقل یک سفارش غیرلغوشده'),
-              _metric('مشتریان جدید', _number(_num(customers, 'new')), HugeIcons.strokeRoundedUserAdd01, _blue, 'در بازه زمانی انتخاب‌شده'),
-              _metric('مصرف تخفیف', _number(_num(discounts, 'usage_count')), HugeIcons.strokeRoundedDiscount, const Color(0xFFE6A23C), 'تعداد استفاده‌های ثبت‌شده'),
+              _metric('مشتریان جدید', _number(_num(customers, 'new')), HugeIcons.strokeRoundedUserGroup, _blue, 'در بازه زمانی انتخاب‌شده'),
+              _metric('مصرف تخفیف', _number(_num(discounts, 'usage_count')), HugeIcons.strokeRoundedChartIncrease, const Color(0xFFE6A23C), 'تعداد استفاده‌های ثبت‌شده'),
             ]),
             const SizedBox(height: 14),
             _sectionCard(
               title: 'تفکیک پرداخت Mock و واقعی',
               subtitle: 'فقط پرداخت‌های ثبت‌شده در دفتر پرداخت سفارش',
-              icon: HugeIcons.strokeRoundedCreditCard,
+              icon: HugeIcons.strokeRoundedWallet01,
               child: payments.isEmpty
                   ? const _NoData(message: 'در این بازه پرداخت ثبت‌شده‌ای برای نمایش وجود ندارد.')
                   : Column(
