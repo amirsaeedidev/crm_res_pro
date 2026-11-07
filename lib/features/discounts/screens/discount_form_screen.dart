@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/utils/app_error_message.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ import '../../../models/user_model.dart';
 import '../../../repositories/customers_repository.dart';
 import '../../../providers/discounts_provider.dart';
 import '../../../repositories/discounts_repository.dart';
+import '../../../core/services/supabase_service.dart';
 
 class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
   @override
@@ -70,8 +72,16 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   DateTime? _endDate;
   bool _isActive = true;
   bool _restrictedToCustomers = false;
+  String _deliveryAudience = 'all_customers';
   final Set<String> _deliveryChannels = {'notification'};
+  bool _allowWithProductDiscount = false;
+  final Set<String> _selectedProductIds = {};
+  final Set<String> _selectedCategoryIds = {};
+  List<Map<String, dynamic>> _scopeProducts = [];
+  List<Map<String, dynamic>> _scopeCategories = [];
+  bool _scopeLoading = false;
   bool _isLoading = false;
+  String? _dispatchRequestKey;
 
   bool get isEditing => widget.discountId != null;
 
@@ -80,6 +90,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
   @override
   void initState() {
     super.initState();
+    _loadScopeOptions();
     if (isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         DiscountModel? discount;
@@ -103,9 +114,13 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           _startDate = discount.startDate;
           _endDate = discount.endDate;
           _isActive = discount.isActive;
+          _deliveryAudience = discount.restrictedToCustomers ? 'selected_customers' : 'all_customers';
           _deliveryChannels
             ..clear()
             ..addAll(discount.deliveryChannels);
+          _allowWithProductDiscount = discount.allowWithProductDiscount;
+          _selectedProductIds.addAll(discount.productIds);
+          _selectedCategoryIds.addAll(discount.categoryIds);
           if (_deliveryChannels.isEmpty) _deliveryChannels.add('notification');
           setState(() {});
         }
@@ -151,6 +166,79 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
     }
   }
 
+
+  Future<void> _loadScopeOptions() async {
+    if (mounted) setState(() => _scopeLoading = true);
+    try {
+      final results = await Future.wait([
+        SupabaseService.client.from('products').select('id,name').eq('is_active', true).order('name'),
+        SupabaseService.client.from('categories').select('id,name').eq('is_active', true).order('sort_order'),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _scopeProducts = (results[0] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        _scopeCategories = (results[1] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('دریافت محصولات و دسته‌بندی‌ها ناموفق بود.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _scopeLoading = false);
+    }
+  }
+
+  Future<void> _showScopePicker({required bool products}) async {
+    final options = products ? _scopeProducts : _scopeCategories;
+    final selected = Set<String>.from(products ? _selectedProductIds : _selectedCategoryIds);
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(products ? 'انتخاب محصولات مشمول' : 'انتخاب دسته‌بندی‌های مشمول'),
+          content: SizedBox(
+            width: 420,
+            height: 420,
+            child: options.isEmpty
+                ? const Center(child: Text('مورد فعالی برای انتخاب وجود ندارد.'))
+                : ListView.builder(
+                    itemCount: options.length,
+                    itemBuilder: (context, index) {
+                      final item = options[index];
+                      final id = item['id'].toString();
+                      return CheckboxListTile(
+                        value: selected.contains(id),
+                        title: Text((item['name'] ?? '').toString()),
+                        dense: true,
+                        onChanged: (checked) => setDialogState(() {
+                          if (checked == true) {
+                            selected.add(id);
+                          } else {
+                            selected.remove(id);
+                          }
+                        }),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, selected), child: const Text('تأیید')),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      if (products) {
+        _selectedProductIds..clear()..addAll(result);
+      } else {
+        _selectedCategoryIds..clear()..addAll(result);
+      }
+    });
+  }
 
   Future<void> _loadExistingTargetCustomers(List<String> phones) async {
     final repository = context.read<CustomersRepository>();
@@ -253,6 +341,19 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         );
         return;
       }
+      if (sendNow && _deliveryAudience == 'selected_customers' && _selectedCustomers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('برای ارسال به مشتریان انتخاب‌شده، حداقل یک مشتری انتخاب کنید.'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+      if (sendNow && _deliveryChannels.contains('banner') &&
+          (_deliveryAudience != 'all_customers' || _restrictedToCustomers)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('بنر عمومی فقط برای تخفیف قابل‌استفاده توسط همه مشتریان مجاز است.'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
       if (_selectedType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('نوع تخفیف را انتخاب کنید'), backgroundColor: AppColors.error),
@@ -279,7 +380,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
 
       final discountData = {
         'title': _titleController.text,
-        'code': _codeController.text.toUpperCase(),
+        'code': _codeController.text.trim().toUpperCase(),
         'type': _selectedType == 'Percentage' ? 'percentage' : 'fixed_amount',
         'value': _parseNumber(_valueController.text),
         'min_purchase_amount': _minPurchaseController.text.isEmpty ? null : _parseNumber(_minPurchaseController.text),
@@ -288,6 +389,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
         'per_user_usage_limit': _perUserUsageController.text.trim().isEmpty ? null : int.parse(_perUserUsageController.text.trim()),
         'restricted_to_customers': _restrictedToCustomers,
         'delivery_channels': _deliveryChannels.toList(growable: false),
+        'allow_with_product_discount': _allowWithProductDiscount,
+        'product_ids': _selectedProductIds.toList(),
+        'category_ids': _selectedCategoryIds.toList(),
         'target_phones': _selectedCustomers.isNotEmpty ? _selectedCustomers.values.map((customer) => customer.phone!.trim()).toSet().toList() : _targetPhonesController.text.split(RegExp(r'[,،;；\n]')).map((v) => v.trim()).where((v) => v.isNotEmpty).toSet().toList(),
         'is_active': _isActive,
         'start_date': _startDate!.toIso8601String(),
@@ -308,10 +412,17 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
           final savedId = isEditing
               ? widget.discountId!
               : await repository.getDiscountIdByCode(_codeController.text.trim().toUpperCase());
+          _dispatchRequestKey ??= const Uuid().v4();
           final result = await repository.dispatchDiscountDelivery(
             discountId: savedId,
             channels: _deliveryChannels.toList(growable: false),
+            audience: _deliveryAudience,
+            customerIds: _deliveryAudience == 'selected_customers'
+                ? _selectedCustomers.keys.toList(growable: false)
+                : const [],
+            requestKey: _dispatchRequestKey!,
           );
+          _dispatchRequestKey = null;
           final status = (result['status'] ?? 'failed').toString();
           final sent = (result['sent_count'] as num?)?.toInt() ?? 0;
           final failed = (result['failed_count'] as num?)?.toInt() ?? 0;
@@ -468,6 +579,35 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.getSecondaryText(context),
                           ),
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                    DropdownButtonFormField<String>(
+                      value: _deliveryAudience,
+                      decoration: const InputDecoration(
+                        labelText: 'مخاطبان کمپین تخفیف',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'all_customers', child: Text('همه مشتریان فعال')),
+                        DropdownMenuItem(value: 'selected_customers', child: Text('مشتریان انتخاب‌شده')),
+                        DropdownMenuItem(value: 'inactive_30d', child: Text('مشتریان غیرفعال در ۳۰ روز اخیر')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _deliveryAudience = value;
+                          _restrictedToCustomers = value == 'selected_customers';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _deliveryAudience == 'inactive_30d'
+                          ? 'مخاطبان بر اساس سفارش‌های ثبت‌شده در دیتابیس و زمان سرور انتخاب می‌شوند.'
+                          : _deliveryAudience == 'selected_customers'
+                              ? 'فقط مشتریان انتخاب‌شده در بخش محدودسازی، کد را دریافت و مصرف می‌کنند.'
+                              : 'کد برای تمام مشتریان فعال منتشر می‌شود.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context)),
                     ),
                     const SizedBox(height: AppSizes.sm),
                     CheckboxListTile(
@@ -626,7 +766,10 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     title: const Text('فقط شماره‌های مشخص‌شده بتوانند کد را مصرف کنند'),
                     subtitle: const Text('شماره‌ها باید از قبل در پروفایل مشتریان ثبت شده باشند.'),
                     value: _restrictedToCustomers,
-                    onChanged: (value) => setState(() => _restrictedToCustomers = value),
+                    onChanged: (value) => setState(() {
+                      _restrictedToCustomers = value;
+                      _deliveryAudience = value ? 'selected_customers' : 'all_customers';
+                    }),
                   ),
                   if (_restrictedToCustomers) ...[
                     const SizedBox(height: AppSizes.sm),
@@ -705,6 +848,44 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     },
                   ),
                 ]),
+              ),
+              const SizedBox(height: AppSizes.lg),
+
+              // Product/category eligibility and stacking rules.
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('دامنه اعمال تخفیف', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: AppSizes.sm),
+                    const Text('اگر هیچ محصول یا دسته‌بندی انتخاب نشود، کد روی تمام سبد (با رعایت سایر شرایط) اعمال می‌شود.'),
+                    const SizedBox(height: AppSizes.md),
+                    Wrap(
+                      spacing: AppSizes.md,
+                      runSpacing: AppSizes.md,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _scopeLoading ? null : () => _showScopePicker(products: true),
+                          icon: const Icon(Icons.restaurant_menu),
+                          label: Text('محصولات (${_selectedProductIds.length})'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _scopeLoading ? null : () => _showScopePicker(products: false),
+                          icon: const Icon(Icons.category_outlined),
+                          label: Text('دسته‌بندی‌ها (${_selectedCategoryIds.length})'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSizes.sm),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('قابل ترکیب با تخفیف خود محصول'),
+                      subtitle: const Text('در حالت خاموش، محصولاتی که تخفیف مستقل دارند از مبلغ مشمول کد کنار گذاشته می‌شوند.'),
+                      value: _allowWithProductDiscount,
+                      onChanged: (value) => setState(() => _allowWithProductDiscount = value),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSizes.lg),
 

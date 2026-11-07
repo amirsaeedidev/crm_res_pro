@@ -42,7 +42,9 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
       final data = await _campaignRepository.resendCampaign(campaign);
       if (!mounted) return;
       setState(() => _sentHistory = _loadSentHistory());
-      final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
+      final retryData = data['sms_retry'] is Map ? Map<String, dynamic>.from(data['sms_retry'] as Map) : <String, dynamic>{};
+      final channelData = data['channel_retry'] is Map ? Map<String, dynamic>.from(data['channel_retry'] as Map) : <String, dynamic>{};
+      final count = (data['requeued_count'] as num?)?.toInt() ?? (retryData['requeued_count'] as num?)?.toInt() ?? (channelData['sent_count'] as num?)?.toInt() ?? (data['sent_count'] as num?)?.toInt() ?? (data['recipient_count'] as num?)?.toInt() ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ارسال مجدد ثبت شد. تعداد گیرندگان: $count')),
       );
@@ -403,7 +405,37 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                     'targeted_discount' => 'مشتریان هدف تخفیف',
                                     _ => '—',
                                   };
-                                  final isResendable = (row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification')) || (row['campaign_type'] == 'discount' && (row['discount_id']?.toString().isNotEmpty ?? false));
+                                  final channelResults = row['channel_results'] is Map
+                                      ? Map<String, dynamic>.from(row['channel_results'] as Map)
+                                      : <String, dynamic>{};
+                                  final hasFailedDiscountChannel = channelResults.values.any((value) {
+                                    if (value is! Map) return false;
+                                    final channelStatus = (value['status'] ?? '').toString();
+                                    return channelStatus == 'failed' || channelStatus == 'partial';
+                                  });
+                                  final isResendable = (row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification')) ||
+                                      (row['campaign_type'] == 'discount' &&
+                                          (row['discount_id']?.toString().isNotEmpty ?? false) &&
+                                          hasFailedDiscountChannel);
+                                  final channelStatusLabels = <String, String>{
+                                    'completed': 'موفق',
+                                    'partial': 'ناقص',
+                                    'failed': 'ناموفق',
+                                    'queued': 'در صف',
+                                    'sending': 'در حال ارسال',
+                                    'cancelled': 'لغوشده',
+                                  };
+                                  final channelDetails = channelResults.entries.map((entry) {
+                                    final value = entry.value is Map ? Map<String, dynamic>.from(entry.value as Map) : <String, dynamic>{};
+                                    final channelName = switch (entry.key) {
+                                      'banner' => 'بنر',
+                                      'notification' => 'اعلان',
+                                      'sms' => 'پیامک',
+                                      _ => entry.key,
+                                    };
+                                    final channelStatus = channelStatusLabels[(value['status'] ?? '').toString()] ?? '—';
+                                    return '$channelName: $channelStatus';
+                                  }).join(' • ');
                                   final status = switch ((row['status'] ?? '').toString()) {
                                     'completed' => 'تکمیل‌شده',
                                     'partial' => 'ارسال ناقص',
@@ -417,7 +449,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                     contentPadding: EdgeInsets.zero,
                                     title: Text((row['title'] ?? 'اعلان').toString()),
                                     subtitle: Text(
-                                      '$status • ${row['sent_count'] ?? 0} ارسال از ${row['target_count'] ?? 0} هدف • $audience • $channels\n$dateLabel',
+                                      '$status • ${row['sent_count'] ?? 0} موفق • ${row['failed_count'] ?? 0} ناموفق • $audience • $channels\n$channelDetails\n$dateLabel',
                                     ),
                                     isThreeLine: true,
                                     trailing: isResendable

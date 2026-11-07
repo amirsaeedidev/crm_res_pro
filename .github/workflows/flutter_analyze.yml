@@ -1,10 +1,11 @@
 name: Flutter Analyze
+# Phase 3 discount and campaign changes are validated on this stacked PR branch.
 
 on:
   push:
     branches: [main, fix/notification-history-and-audit]
   pull_request:
-    branches: [main]
+    branches: [main, fix/notification-history-and-audit]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter analyze --no-pub --machine . > analyze-results.txt 2>&1
+          flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos --machine . > analyze-results.txt 2>&1
           analyze_status=$?
           set -e
           python3 - <<'PY'

@@ -13,6 +13,7 @@ import '../../../core/widgets/app_search.dart';
 import '../../../core/widgets/custom_chip.dart';
 import '../../../models/discount_model.dart';
 import '../../../providers/discounts_provider.dart';
+import '../../../repositories/discounts_repository.dart';
 import '../../../shared/dialogs/delete_dialog.dart';
 import '../../../shared/widgets/empty_widget.dart';
 import '../../../shared/widgets/error_widget.dart' as app_error;
@@ -64,16 +65,24 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
     super.dispose();
   }
 
-  ChipType _getStatusChipType(bool isActive, DateTime endDate) {
-    if (!isActive) return ChipType.neutral;
-    if (DateTime.now().isAfter(endDate)) return ChipType.error;
-    return ChipType.success;
+  ChipType _getStatusChipType(DiscountModel discount) {
+    switch (discount.serverStatus) {
+      case 'inactive': return ChipType.neutral;
+      case 'scheduled': return ChipType.neutral;
+      case 'exhausted': return ChipType.error;
+      case 'expired': return ChipType.error;
+      default: return ChipType.success;
+    }
   }
 
-  String _getStatusText(bool isActive, DateTime endDate) {
-    if (!isActive) return 'غیرفعال';
-    if (DateTime.now().isAfter(endDate)) return 'منقضی شده';
-    return 'فعال';
+  String _getStatusText(DiscountModel discount) {
+    switch (discount.serverStatus) {
+      case 'inactive': return 'غیرفعال';
+      case 'scheduled': return 'زمان‌بندی‌شده';
+      case 'exhausted': return 'تمام‌شده';
+      case 'expired': return 'منقضی شده';
+      default: return 'فعال';
+    }
   }
 
   @override
@@ -152,6 +161,53 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showRedemptionHistory(BuildContext context, DiscountModel discount) async {
+    try {
+      final rows = await context.read<DiscountsRepository>().getDiscountRedemptions(discount.id);
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('سوابق مصرف ${discount.code}'),
+          content: SizedBox(
+            width: 560,
+            height: 420,
+            child: rows.isEmpty
+                ? const Center(child: Text('هنوز مصرفی برای این کد ثبت نشده است.'))
+                : ListView.separated(
+                    itemCount: rows.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final row = rows[index];
+                      final released = row['status'] == 'released';
+                      final date = DateTime.tryParse((row['redeemed_at'] ?? '').toString());
+                      final customerName = (row['customer_name'] ?? '').toString();
+                      final amount = (row['discount_amount'] as num?)?.round() ?? 0;
+                      return ListTile(
+                        title: Text(customerName.isEmpty ? 'مشتری' : customerName),
+                        subtitle: Text('${row['phone'] ?? '—'} • سفارش ${row['order_code'] ?? '—'}\n${date == null ? '—' : DateFormat('yyyy/MM/dd HH:mm').format(date.toLocal())}'),
+                        isThreeLine: true,
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('${NumberFormat('#,###').format(amount)} تومان'),
+                            Text(released ? 'ظرفیت آزادشده' : 'مصرف‌شده', style: TextStyle(color: released ? Colors.grey : Colors.green, fontSize: 11)),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('بستن'))],
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('دریافت سوابق مصرف ناموفق بود: $error')));
+    }
   }
 
   Widget _buildDesktopTable(BuildContext context, DiscountsProvider provider) {
@@ -264,14 +320,34 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
           Expanded(
             flex: 1,
             child: CustomChip(
-              label: _getStatusText(discount.isActive, discount.endDate),
-              type: _getStatusChipType(discount.isActive, discount.endDate),
+              label: _getStatusText(discount),
+              type: _getStatusChipType(discount),
             ),
           ),
           Expanded(
             flex: 1,
             child: Row(
               children: [
+                IconButton(
+                  tooltip: 'سوابق مصرف',
+                  icon: const Icon(Icons.history, color: AppColors.primary),
+                  onPressed: () => _showRedemptionHistory(context, discount),
+                ),
+                IconButton(
+                  tooltip: discount.isActive ? 'غیرفعال کردن تخفیف' : 'فعال کردن تخفیف',
+                  icon: Icon(
+                    discount.isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                    color: discount.isActive ? Colors.orange : Colors.green,
+                  ),
+                  onPressed: () async {
+                    final ok = await provider.toggleDiscountStatus(discount.id, !discount.isActive);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(ok ? (discount.isActive ? 'تخفیف غیرفعال شد.' : 'تخفیف فعال شد.') : (provider.error ?? 'تغییر وضعیت تخفیف ناموفق بود.')),
+                    ));
+                  },
+                ),
+
                 IconButton(
                   icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                   onPressed: () {
@@ -285,8 +361,12 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                       context: context,
                       title: 'حذف تخفیف',
                       message: 'آیا از حذف تخفیف "${discount.title}" مطمئن هستید؟',
-                      onDelete: () {
-                        provider.deleteDiscount(discount.id);
+                      onDelete: () async {
+                        final deleted = await provider.deleteDiscount(discount.id);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(deleted ? 'تخفیف حذف شد.' : (provider.error ?? 'حذف تخفیف ناموفق بود؛ اگر سابقه مصرف دارد آن را غیرفعال کنید.')),
+                        ));
                       },
                     );
                   },
@@ -316,9 +396,14 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                     discount.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
+                  IconButton(
+                    tooltip: 'سوابق مصرف',
+                    icon: const Icon(Icons.history, color: AppColors.primary),
+                    onPressed: () => _showRedemptionHistory(context, discount),
+                  ),
                   CustomChip(
-                    label: _getStatusText(discount.isActive, discount.endDate),
-                    type: _getStatusChipType(discount.isActive, discount.endDate),
+                    label: _getStatusText(discount),
+                    type: _getStatusChipType(discount),
                   ),
                 ],
               ),
@@ -337,6 +422,20 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
+                      tooltip: discount.isActive ? 'غیرفعال کردن تخفیف' : 'فعال کردن تخفیف',
+                      icon: Icon(
+                        discount.isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                        color: discount.isActive ? Colors.orange : Colors.green,
+                      ),
+                      onPressed: () async {
+                        final ok = await provider.toggleDiscountStatus(discount.id, !discount.isActive);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(ok ? (discount.isActive ? 'تخفیف غیرفعال شد.' : 'تخفیف فعال شد.') : (provider.error ?? 'تغییر وضعیت تخفیف ناموفق بود.')),
+                        ));
+                      },
+                    ),
+                    IconButton(
                       icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: AppColors.primary),
                       onPressed: () {
                         context.push('/discounts/edit/${discount.id}');
@@ -349,8 +448,12 @@ class _DiscountsListScreenState extends State<DiscountsListScreen> {
                           context: context,
                           title: 'حذف تخفیف',
                           message: 'آیا از حذف تخفیف "${discount.title}" مطمئن هستید؟',
-                          onDelete: () {
-                            provider.deleteDiscount(discount.id);
+                          onDelete: () async {
+                            final deleted = await provider.deleteDiscount(discount.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(deleted ? 'تخفیف حذف شد.' : (provider.error ?? 'حذف تخفیف ناموفق بود؛ اگر سابقه مصرف دارد آن را غیرفعال کنید.')),
+                            ));
                           },
                         );
                       },
