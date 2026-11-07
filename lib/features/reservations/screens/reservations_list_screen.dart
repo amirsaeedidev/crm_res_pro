@@ -324,6 +324,38 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
     if (result == true && mounted) { await reservationsProvider.fetchReservations(); if (!mounted) return; await tablesProvider.fetchTables(); if (!mounted) return; scaffoldMessenger.showSnackBar(const SnackBar(content: Text('رزرو ذخیره شد.'))); }
   }
 
+  List<PopupMenuEntry<String>> _statusMenuItems(ReservationModel reservation) {
+    final options = switch (reservation.status) {
+      ReservationStatus.pending => const [
+        ('confirmed', 'تأیید'),
+        ('delayed', 'ثبت تأخیر'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.confirmed => const [
+        ('delayed', 'ثبت تأخیر'),
+        ('arrived', 'ثبت ورود مشتری'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.delayed => const [
+        ('confirmed', 'بازگشت به تأیید'),
+        ('arrived', 'ثبت ورود مشتری'),
+        ('cancelled', 'لغو رزرو'),
+        ('no_show', 'عدم مراجعه'),
+      ],
+      ReservationStatus.arrived => const [
+        ('completed', 'تکمیل رزرو'),
+        ('cancelled', 'لغو رزرو'),
+      ],
+      _ => const <(String, String)>[],
+    };
+    return options.map((option) => PopupMenuItem<String>(
+      value: option.$1,
+      child: Text(option.$2),
+    )).toList(growable: false);
+  }
+
   Future<void> _changeStatus(ReservationModel reservation, String status) async {
     final provider = context.read<ReservationsProvider>();
     final tablesProvider = context.read<TablesProvider>();
@@ -426,15 +458,7 @@ class _ReservationsListScreenState extends State<ReservationsListScreen> {
           if (reservation.delayNote?.isNotEmpty == true) Text('توضیح تأخیر: ${reservation.delayNote}'),
           if (reservation.cancellationReason?.isNotEmpty == true) Text('دلیل لغو: ${reservation.cancellationReason}'),
           Text('مدت رزرو: ${_persianDigits(reservation.durationMinutes)} دقیقه'),
-          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [if (['pending', 'confirmed', 'delayed'].contains(reservation.status.name)) OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => const [
-            PopupMenuItem(value: 'pending', child: Text('در انتظار')),
-            PopupMenuItem(value: 'confirmed', child: Text('تأیید')),
-            PopupMenuItem(value: 'delayed', child: Text('ثبت تأخیر')),
-            PopupMenuItem(value: 'arrived', child: Text('ثبت ورود مشتری')),
-            PopupMenuItem(value: 'completed', child: Text('تکمیل رزرو')),
-            PopupMenuItem(value: 'no_show', child: Text('عدم مراجعه')),
-            PopupMenuItem(value: 'cancelled', child: Text('لغو رزرو')),
-          ], child: const Chip(avatar: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeftRight, size: 18), label: Text('وضعیت'))),
+          const SizedBox(height: 8), Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 4, children: [if (['pending', 'confirmed', 'delayed'].contains(reservation.status.name)) OutlinedButton.icon(onPressed: () => _showReservationForm(reservation), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02), label: const Text('ویرایش زمان/میز')), PopupMenuButton<String>(tooltip: 'تغییر وضعیت', onSelected: (status) => _changeStatus(reservation, status), itemBuilder: (_) => _statusMenuItems(reservation), child: const Chip(avatar: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeftRight, size: 18), label: Text('وضعیت'))),
           if (reservation.orderId == null && !['cancelled','completed','no_show'].contains(reservation.status.name))
             OutlinedButton.icon(onPressed: () => _convertToOrder(reservation), icon: const Icon(Icons.restaurant, size: 18), label: const Text('تبدیل به سفارش'))
           else if (reservation.orderId != null)
