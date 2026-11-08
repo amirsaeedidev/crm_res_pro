@@ -19,9 +19,9 @@ class DashboardBreakdownItem {
   }) {
     return DashboardBreakdownItem(
       label: json[labelKey]?.toString() ?? '—',
-      count: _toInt(json['usage_count'] ?? json['orders']),
-      quantity: _toInt(json['quantity']),
-      amount: _toDouble(
+      count: StatisticsModel._toInt(json['usage_count'] ?? json['orders']),
+      quantity: StatisticsModel._toInt(json['quantity']),
+      amount: StatisticsModel._toDouble(
         json['total_amount'] ??
             json['discount_amount'] ??
             json['sales'],
