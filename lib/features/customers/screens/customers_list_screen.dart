@@ -181,7 +181,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'جست‌وجو، وضعیت حساب و رضایت پیامکی',
+                        'جست‌وجو و مدیریت وضعیت حساب مشتریان',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.getSecondaryText(context),
                             ),
@@ -254,24 +254,6 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                               ],
                               onChanged: (value) {
                                 if (value != null) provider.setStatusFilter(value);
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: fieldWidth,
-                            child: DropdownButtonFormField<String>(
-                              initialValue: provider.marketingFilter,
-                              decoration: const InputDecoration(
-                                labelText: 'رضایت پیامک تبلیغاتی',
-                                prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
-                              ),
-                              items: const [
-                                DropdownMenuItem(value: 'all', child: Text('همه مشتریان')),
-                                DropdownMenuItem(value: 'opted_in', child: Text('رضایت داده‌اند')),
-                                DropdownMenuItem(value: 'opted_out', child: Text('رضایت نداده‌اند')),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) provider.setMarketingFilter(value);
                               },
                             ),
                           ),
@@ -512,14 +494,6 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                     CustomChip(
                                       label: _statusLabel(customer.status),
                                       type: _statusType(customer.status),
-                                    ),
-                                    CustomChip(
-                                      label: customer.marketingSmsOptIn
-                                          ? 'رضایت پیامک دارد'
-                                          : 'بدون رضایت پیامک',
-                                      type: customer.marketingSmsOptIn
-                                          ? ChipType.success
-                                          : ChipType.neutral,
                                     ),
                                   ],
                                 ),
