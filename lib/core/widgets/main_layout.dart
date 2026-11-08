@@ -123,10 +123,18 @@ class _MainLayoutState extends State<MainLayout> {
 
     // Intercept back inside the ShellRoute navigator. Pushed forms/details
     // still pop normally; at the section root we restore the previous section.
+    final routerCanPop = GoRouter.of(context).canPop();
     return PopScope<Object?>(
       canPop: Navigator.of(context).canPop(),
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+        if (didPop) {
+          // A pushed detail route was handled by Navigator itself. Do not
+          // re-add that route when MainLayout observes the resulting URI.
+          if (routerCanPop) {
+            context.read<NavigationProvider>().skipNextHistoryEntry();
+          }
+          return;
+        }
         final previousRoute = context.read<NavigationProvider>().goBack();
         if (previousRoute != null) {
           context.go(previousRoute);
