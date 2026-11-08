@@ -11,7 +11,10 @@ class NavigationProvider extends ChangeNotifier {
   int get selectedIndex => _selectedIndex;
 
   void updateNavigation(String route) {
-    if (_currentRoute == route) return;
+    if (_currentRoute == route) {
+      _skipNextHistoryEntry = false;
+      return;
+    }
 
     if (_skipNextHistoryEntry) {
       _skipNextHistoryEntry = false;
