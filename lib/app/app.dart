@@ -6,6 +6,7 @@ import 'providers.dart';
 import 'router.dart';
 import 'theme.dart';
 import '../providers/theme_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../core/constants/app_strings.dart';
 
 class CrmApp extends StatelessWidget {
@@ -33,11 +34,24 @@ class CrmApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             routerConfig: AppRouter.router,
-            // Added: Force RTL direction globally for all routes, dialogs, and overlays
+            // Preserve the route stack on Android: pushed forms/details pop first.
+            // At the shell root, restore the previous section instead of exiting.
             builder: (context, child) {
-              return Directionality(
-                textDirection: TextDirection.rtl,
-                child: child!,
+              final router = AppRouter.router;
+              return PopScope<Object?>(
+                canPop: router.canPop(),
+                onPopInvokedWithResult: (didPop, result) {
+                  if (didPop) return;
+                  final previousRoute =
+                      context.read<NavigationProvider>().goBack();
+                  if (previousRoute != null) {
+                    router.go(previousRoute);
+                  }
+                },
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
           );
