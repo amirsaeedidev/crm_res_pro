@@ -4,24 +4,50 @@ import '../core/constants/app_routes.dart';
 class NavigationProvider extends ChangeNotifier {
   String _currentRoute = AppRoutes.dashboard;
   int _selectedIndex = 0;
+  final List<String> _routeHistory = [];
 
   String get currentRoute => _currentRoute;
   int get selectedIndex => _selectedIndex;
 
   void updateNavigation(String route) {
-    if (_currentRoute != route) {
-      _currentRoute = route;
-      _selectedIndex = _getIndexByRoute(route);
-      notifyListeners();
-    }
+    if (_currentRoute == route) return;
+
+    _routeHistory.add(_currentRoute);
+    if (_routeHistory.length > 50) _routeHistory.removeAt(0);
+
+    _currentRoute = route;
+    _selectedIndex = _getIndexByRoute(route);
+    notifyListeners();
+  }
+
+  /// Moves the provider state to the previous route before the router changes.
+  /// This prevents the route observer from adding the popped route back to history.
+  String? goBack() {
+    if (_routeHistory.isEmpty) return null;
+
+    final previousRoute = _routeHistory.removeLast();
+    _currentRoute = previousRoute;
+    _selectedIndex = _getIndexByRoute(previousRoute);
+    notifyListeners();
+    return previousRoute;
+  }
+
+  void clearHistory() {
+    _routeHistory.clear();
   }
 
   void updateIndex(int index) {
-    if (_selectedIndex != index) {
-      _selectedIndex = index;
-      _currentRoute = _getRouteByIndex(index);
-      notifyListeners();
-    }
+    if (_selectedIndex == index) return;
+
+    final route = _getRouteByIndex(index);
+    if (route == _currentRoute) return;
+
+    _routeHistory.add(_currentRoute);
+    if (_routeHistory.length > 50) _routeHistory.removeAt(0);
+
+    _selectedIndex = index;
+    _currentRoute = route;
+    notifyListeners();
   }
 
   int _getIndexByRoute(String route) {
