@@ -24,6 +24,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   late final TabController _tabs;
   DateRangeFilter _selectedFilter = DateRangeFilter.thisMonth;
   DateTimeRange? _customDateRange;
+  Future<Map<String, dynamic>>? _tableUsageFuture;
 
   static const _ink = Color(0xFF14264B);
   static const _blue = Color(0xFF3977EE);
@@ -33,7 +34,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 7, vsync: this);
+    _tabs = TabController(length: 8, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchReport();
     });
@@ -83,6 +84,67 @@ class _ReportsScreenState extends State<ReportsScreen>
     provider.fetchFinancialReport(startDate: startDate, endDate: endDate);
     provider.fetchInventoryReport(startDate: startDate, endDate: endDate);
     provider.fetchOrderHealthReport(startDate: startDate, endDate: endDate);
+    _tableUsageFuture = _loadTableUsageReport(startDate, endDate);
+  }
+
+  Future<Map<String, dynamic>> _loadTableUsageReport(DateTime startDate, DateTime endDate) async {
+    final response = await SupabaseService.client.rpc('get_table_usage_report', params: {
+      'start_date': startDate.toUtc().toIso8601String(),
+      'end_date': endDate.toUtc().toIso8601String(),
+    });
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Widget _tableUsageTab(BuildContext context, bool mobile) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _tableUsageFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('دریافت گزارش میزها ناموفق بود: ${snapshot.error}'));
+        }
+        final report = snapshot.data;
+        if (report == null) return const SizedBox.shrink();
+        final summary = Map<String, dynamic>.from(report['summary'] as Map? ?? {});
+        final chart = Map<String, dynamic>.from(report['chart_data'] as Map? ?? {});
+        final tables = (chart['tables'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        final hours = (chart['hours'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        Widget metric(String label, String value, IconData icon) => Card(child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon, color: _blue), const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(color: Colors.black54)),
+          ]),
+        ));
+        return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            SizedBox(width: mobile ? 150 : 220, child: metric('تعداد استفاده', _digits(summary['total_orders'] ?? 0), Icons.receipt_long)),
+            SizedBox(width: mobile ? 150 : 220, child: metric('دقایق اشغال', _digits(summary['occupied_minutes'] ?? 0), Icons.timer)),
+            SizedBox(width: mobile ? 150 : 220, child: metric('میانگین دقیقه', _digits(summary['average_minutes'] ?? 0), Icons.av_timer)),
+            SizedBox(width: mobile ? 150 : 220, child: metric('ساعت اوج', '${_digits(summary['peak_hour'] ?? 0)}:00', Icons.trending_up)),
+          ]),
+          const SizedBox(height: 18),
+          Text('میزها و مدت استفاده', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...tables.map((row) => Card(child: ListTile(
+            title: Text('میز ${_digits(row['table_number'])}'),
+            subtitle: Text('${_digits(row['order_count'])} بار استفاده • میانگین ${_digits(row['average_minutes'])} دقیقه'),
+            trailing: Text('${_digits(row['occupied_minutes'])} دقیقه'),
+          ))),
+          const SizedBox(height: 18),
+          Text('ساعات شلوغی رستوران', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: hours.where((row) => (row['order_count'] as num? ?? 0) > 0).map((row) =>
+            Chip(label: Text('${row['label']} • ${_digits(row['order_count'])} سفارش'))
+          ).toList()),
+          if (hours.every((row) => (row['order_count'] as num? ?? 0) == 0))
+            const Text('در این بازه استفاده‌ای از میزها ثبت نشده است.'),
+        ]));
+      },
+    );
   }
 
   Future<void> _pickCustomRange() async {
@@ -226,6 +288,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedWallet01, size: 18), text: 'مالی و سود'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedPackage, size: 18), text: 'انبار'),
                         Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedAlert02, size: 18), text: 'وضعیت سفارش‌ها'),
+                        Tab(icon: HugeIcon(icon:HugeIcons.strokeRoundedCalendar01, size: 18), text: 'میزها و شلوغی'),
                       ],
                     ),
                   ),
@@ -242,6 +305,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _financialTab(context, mobile, provider.financialReport?.summary ?? const {}, provider.financialReport?.chartData ?? const [], provider.isLoading),
                         _inventoryTab(context, mobile, provider.inventoryReport?.summary ?? const {}, provider.inventoryReport?.chartData ?? const [], provider.isLoading),
                         _orderHealthTab(context, mobile, provider.orderHealthReport?.summary ?? const {}, provider.orderHealthReport?.chartData ?? const [], provider.isLoading),
+                        _tableUsageTab(context, mobile),
                       ],
                     ),
                   ),

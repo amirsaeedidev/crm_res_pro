@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/supabase_service.dart';
 import '../core/services/logger_service.dart';
 import '../core/utils/app_error_message.dart';
 import '../models/table_model.dart';
@@ -7,6 +10,26 @@ import '../repositories/tables_repository.dart';
 class TablesProvider extends ChangeNotifier {
   final TablesRepository _repository;
   TablesProvider(this._repository);
+
+  RealtimeChannel? _realtimeChannel;
+  Timer? _refreshTimer;
+  bool _disposed = false;
+
+  void _ensureRealtime() {
+    if (_realtimeChannel != null) return;
+    _realtimeChannel = SupabaseService.client.channel('crm-table-reservation-live')
+      .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'restaurant_tables', callback: (_) => _scheduleRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'reservations', callback: (_) => _scheduleRefresh())
+      .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'orders', callback: (_) => _scheduleRefresh())
+      .subscribe();
+  }
+
+  void _scheduleRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!_disposed) unawaited(fetchTables());
+    });
+  }
 
   // State
   bool _isLoading = false;
@@ -21,6 +44,8 @@ class TablesProvider extends ChangeNotifier {
   List<TableModel> get tables => _tables;
 
   Future<void> fetchTables() async {
+    if (_disposed) return;
+    _ensureRealtime();
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -111,5 +136,15 @@ class TablesProvider extends ChangeNotifier {
       _isUpdating = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _refreshTimer?.cancel();
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) unawaited(SupabaseService.client.removeChannel(channel).then((_) {}));
+    super.dispose();
   }
 }

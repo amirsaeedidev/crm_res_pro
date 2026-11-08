@@ -605,17 +605,16 @@ class _TablesGridScreenState extends State<TablesGridScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (table.status ==
-                                              TableStatus.occupied &&
-                                          table.currentOrderId != null) ...[
+                                      if (table.status == TableStatus.occupied && table.currentOrderId != null) ...[
                                         const SizedBox(height: AppSizes.sm),
-                                        Text(
-                                          'سفارش فعال به این میز متصل است',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                        TextButton.icon(
+                                          onPressed: () => context.push('/orders/details/${table.currentOrderId}'),
+                                          icon: const Icon(Icons.receipt_long, size: 16),
+                                          label: Text(
+                                            'مشاهده سفارش #${table.currentOrderId!.substring(0, 8).toUpperCase()}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ],
