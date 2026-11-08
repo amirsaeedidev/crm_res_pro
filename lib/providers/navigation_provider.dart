@@ -5,6 +5,7 @@ class NavigationProvider extends ChangeNotifier {
   String _currentRoute = AppRoutes.dashboard;
   int _selectedIndex = 0;
   final List<String> _routeHistory = [];
+  bool _skipNextHistoryEntry = false;
 
   String get currentRoute => _currentRoute;
   int get selectedIndex => _selectedIndex;
@@ -12,8 +13,12 @@ class NavigationProvider extends ChangeNotifier {
   void updateNavigation(String route) {
     if (_currentRoute == route) return;
 
-    _routeHistory.add(_currentRoute);
-    if (_routeHistory.length > 50) _routeHistory.removeAt(0);
+    if (_skipNextHistoryEntry) {
+      _skipNextHistoryEntry = false;
+    } else {
+      _routeHistory.add(_currentRoute);
+      if (_routeHistory.length > 50) _routeHistory.removeAt(0);
+    }
 
     _currentRoute = route;
     _selectedIndex = _getIndexByRoute(route);
@@ -34,6 +39,13 @@ class NavigationProvider extends ChangeNotifier {
 
   void clearHistory() {
     _routeHistory.clear();
+    _skipNextHistoryEntry = false;
+  }
+
+  /// The router already popped a pushed detail route. Its subsequent route
+  /// notification must update selection without adding the popped route again.
+  void skipNextHistoryEntry() {
+    _skipNextHistoryEntry = true;
   }
 
   void updateIndex(int index) {
