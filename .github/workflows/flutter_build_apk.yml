@@ -1,0 +1,47 @@
+name: Flutter APK Build
+
+on:
+  push:
+    branches: [main, integration/phase11-security-dashboard]
+  pull_request:
+    branches: [fix/notification-history-and-audit]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build CRM Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release --no-pub
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: crm-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

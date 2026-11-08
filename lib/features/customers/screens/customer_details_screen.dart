@@ -134,7 +134,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     final firstName = TextEditingController(text: customer.firstName ?? '');
     final lastName = TextEditingController(text: customer.lastName ?? '');
     final phone = TextEditingController(text: customer.phone ?? '');
-    var marketingOptIn = customer.marketingSmsOptIn;
     var status = customer.status;
     final data = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -150,13 +149,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           DropdownButtonFormField<String>(initialValue: status, decoration: const InputDecoration(labelText: 'وضعیت حساب', border: OutlineInputBorder()),
             items: const [DropdownMenuItem(value: 'active', child: Text('فعال')), DropdownMenuItem(value: 'inactive', child: Text('غیرفعال')), DropdownMenuItem(value: 'blocked', child: Text('مسدود'))],
             onChanged: (value) { if (value != null) setDialogState(() => status = value); }),
-          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('رضایت برای دریافت پیامک تبلیغاتی'), subtitle: const Text('پیام تبلیغاتی فقط برای مشتریان دارای رضایت صف می‌شود.'), value: marketingOptIn, onChanged: (value) => setDialogState(() => marketingOptIn = value)),
         ]))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('انصراف')),
           FilledButton(onPressed: () => Navigator.pop(dialogContext, {
             'first_name': firstName.text.trim(), 'last_name': lastName.text.trim(), 'phone': phone.text.trim(),
-            'status': status, 'marketing_sms_opt_in': marketingOptIn,
+            'status': status,
           }), child: const Text('ذخیره')),
         ],
       )),
@@ -234,7 +232,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               if ((customer.phone ?? '').isNotEmpty) Text(customer.phone!),
               Text('وضعیت: ${_customerStatusLabel(customer.status)} • تاریخ ثبت‌نام: ${_formatDate(customer.createdAt)}'),
               const SizedBox(height: 6),
-              Wrap(spacing: 6, children: [Chip(label: Text(customer.marketingSmsOptIn ? 'رضایت پیامک تبلیغاتی' : 'بدون رضایت تبلیغاتی')), Chip(label: Text('شناسه ${customer.id.substring(0, customer.id.length > 8 ? 8 : customer.id.length)}'))]),
+              Wrap(spacing: 6, children: [Chip(label: Text('شناسه ${customer.id.substring(0, customer.id.length > 8 ? 8 : customer.id.length)}'))]),
             ])),
             IconButton(tooltip: 'ویرایش اطلاعات', onPressed: () => _editCustomer(customer), icon: const HugeIcon(icon: HugeIcons.strokeRoundedEdit02)),
           ])),

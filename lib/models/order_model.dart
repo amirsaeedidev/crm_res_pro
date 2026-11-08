@@ -4,6 +4,7 @@ class OrderModel {
   final String customerName;
   final String customerPhone;
   final String orderType;
+  final String orderSource;
   final String status;
   final String? assignedStaffId;
   final double totalAmount;
@@ -20,7 +21,7 @@ class OrderModel {
   final List<OrderItem> items;
 
   const OrderModel({required this.id, required this.userId, required this.customerName,
-    required this.customerPhone, required this.orderType, required this.status,
+    required this.customerPhone, required this.orderType, this.orderSource = 'customer_app', required this.status,
     required this.totalAmount, this.subtotalAmount = 0, this.discountAmount = 0, this.discountCode,
     this.tableNumber, this.dailyQueueNumber, this.assignedStaffId, this.estimatedReadyMinutes, this.adminNote, this.completedAt,
     required this.createdAt, this.updatedAt, required this.items});
@@ -28,7 +29,7 @@ class OrderModel {
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
     id: json['id'].toString(), userId: (json['user_id'] ?? '').toString(),
     customerName: (json['customer_name'] ?? '').toString(), customerPhone: (json['customer_phone'] ?? '').toString(),
-    orderType: (json['order_type'] ?? 'delivery').toString(), status: (json['status'] ?? 'pending').toString(),
+    orderType: (json['order_type'] ?? 'delivery').toString(), orderSource: (json['order_source'] ?? 'customer_app').toString(), status: (json['status'] ?? 'pending').toString(),
     assignedStaffId: json['assigned_staff_id']?.toString(),
     totalAmount: (json['total_amount'] as num? ?? 0).toDouble(),
     subtotalAmount: (json['subtotal_amount'] as num? ?? json['total_amount'] as num? ?? 0).toDouble(),
@@ -44,12 +45,12 @@ class OrderModel {
       .whereType<Map>().map((e) => OrderItem.fromJson(Map<String, dynamic>.from(e))).toList(growable: false));
 
   OrderModel copyWith({String? id, String? userId, String? customerName, String? customerPhone,
-    String? orderType, String? status, String? assignedStaffId, double? totalAmount, int? estimatedReadyMinutes,
+    String? orderType, String? orderSource, String? status, String? assignedStaffId, double? totalAmount, int? estimatedReadyMinutes,
     String? adminNote, DateTime? completedAt, DateTime? createdAt, DateTime? updatedAt, List<OrderItem>? items,
     double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, int? dailyQueueNumber}) => OrderModel(
       id: id ?? this.id, userId: userId ?? this.userId, customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone, orderType: orderType ?? this.orderType,
-      status: status ?? this.status, assignedStaffId: assignedStaffId ?? this.assignedStaffId, totalAmount: totalAmount ?? this.totalAmount,
+      orderSource: orderSource ?? this.orderSource, status: status ?? this.status, assignedStaffId: assignedStaffId ?? this.assignedStaffId, totalAmount: totalAmount ?? this.totalAmount,
       subtotalAmount: subtotalAmount ?? this.subtotalAmount, discountAmount: discountAmount ?? this.discountAmount,
       discountCode: discountCode ?? this.discountCode, tableNumber: tableNumber ?? this.tableNumber,
       dailyQueueNumber: dailyQueueNumber ?? this.dailyQueueNumber,
@@ -63,6 +64,7 @@ class OrderModel {
     'customer_name': customerName,
     'customer_phone': customerPhone,
     'order_type': orderType,
+    'order_source': orderSource,
     'status': status,
     'assigned_staff_id': assignedStaffId,
     'total_amount': totalAmount,
