@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
@@ -394,7 +393,6 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSizes.md),
                         SizedBox(
                           width: MediaQuery.of(context).size.width < 600 ? double.infinity : 250,
                           child: GestureDetector(
@@ -408,10 +406,9 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                             ),
                           ),
                         ),
-                          ],
-                        );
-                      },
+                      ],
                     ),
+                    const SizedBox(height: AppSizes.md),
                   ],
                 ),
               ),
@@ -425,42 +422,41 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     Text(
                       'محدودیت‌ها و شرایط استفاده',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.getPrimaryText(context),
-                            fontWeight: FontWeight.bold,
-                          ),
+                        color: AppColors.getPrimaryText(context),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: AppSizes.lg),
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final fieldWidth = constraints.maxWidth < 600
-                            ? constraints.maxWidth
-                            : 320.0;
+                        final fieldWidth = constraints.maxWidth < 600 ? constraints.maxWidth : 320.0;
                         return Wrap(
                           spacing: AppSizes.md,
                           runSpacing: AppSizes.md,
                           children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: AppTextField(
-                            controller: _minPurchaseController,
-                            labelText: 'حداقل مبلغ خرید (تومان)',
-                            hintText: '۰',
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [_moneyFormatter],
-                            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedFilter),
-                            validator: (value) => _validatePositiveNumber(value),
-                          ),
-                        ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: AppTextField(
-                            controller: _maxDiscountController,
-                            labelText: 'حداکثر مبلغ تخفیف (تومان)',
-                            hintText: '۰',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => _validatePositiveNumber(value),
-                          ),
-                        ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _minPurchaseController,
+                                labelText: 'حداقل مبلغ خرید (تومان)',
+                                hintText: '۰',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [_moneyFormatter],
+                                prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedFilter),
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _maxDiscountController,
+                                labelText: 'حداکثر مبلغ تخفیف (تومان)',
+                                hintText: '۰',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [_moneyFormatter],
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
                           ],
                         );
                       },
@@ -468,24 +464,24 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                     const SizedBox(height: AppSizes.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final fieldWidth = constraints.maxWidth < 600
-                            ? constraints.maxWidth
-                            : 320.0;
+                        final fieldWidth = constraints.maxWidth < 600 ? constraints.maxWidth : 320.0;
                         return Wrap(
                           spacing: AppSizes.md,
                           runSpacing: AppSizes.md,
                           children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: AppTextField(
-                            controller: _totalUsageController,
-                            labelText: 'سقف کل استفاده',
-                            hintText: 'مثلاً ۱۰۰',
-                            keyboardType: TextInputType.number,
-                            validator: (value) => _validatePositiveNumber(value),
-                          ),
-                        ),
-                      ],
+                            SizedBox(
+                              width: fieldWidth,
+                              child: AppTextField(
+                                controller: _totalUsageController,
+                                labelText: 'سقف کل استفاده',
+                                hintText: 'مثلاً ۱۰۰',
+                                keyboardType: TextInputType.number,
+                                validator: (value) => _validatePositiveNumber(value),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -510,7 +506,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                       controller: _customerSearchController,
                       labelText: 'جست‌وجوی مشتری با شماره یا نام *',
                       hintText: 'شماره موبایل یا نام مشتری را وارد کنید',
-                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserSearch),
+                      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup),
                       onChanged: _searchCustomers,
                     ),
                     if (_customerSearchLoading)
@@ -524,7 +520,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: _customerSuggestions.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final customer = _customerSuggestions[index];
                             final selected = _selectedCustomers.containsKey(customer.id);

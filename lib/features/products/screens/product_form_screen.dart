@@ -27,9 +27,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final _aboutDish = TextEditingController();
   final _labels = TextEditingController();
   final _discountPercent = TextEditingController(text: '10');
+  final _sortOrder = TextEditingController(text: '0');
   XFile? _image;
   Uint8List? _imageBytes;
   String? _imageUrl;
+  String? _originalImageUrl;
   String? _categoryId;
   bool _popular = false;
   bool _active = true;
@@ -62,9 +64,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _description.text = product.description;
       _aboutDish.text = product.aboutDish;
       _labels.text = product.labels.join(', ');
-      _discountEnabled = product.discountPercent > 0;
+      _discountEnabled = product.isDiscountActive;
+      _unavailableReason.text = product.isAvailable ? '' : product.unavailableReason;
+      _sortOrder.text = product.sortOrder.toString();
       _discountPercent.text = product.discountPercent.toStringAsFixed(product.discountPercent % 1 == 0 ? 0 : 2);
       _imageUrl = product.imageUrl;
+      _originalImageUrl = product.imageUrl;
       _categoryId = product.categoryId;
       _popular = product.isPopular;
       _active = product.status == 'active';
@@ -79,7 +84,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   void dispose() {
-    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _unavailableReason.dispose();
+    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _sortOrder.dispose(); _unavailableReason.dispose();
     super.dispose();
   }
 
@@ -100,8 +105,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
+  String _normalizePriceDigits(String value) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = value.trim();
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized.replaceAll(persian[i], '$i').replaceAll(arabic[i], '$i');
+    }
+    return normalized.replaceAll(',', '').replaceAll('٬', '').replaceAll(' ', '');
+  }
+
   String? _validatePrice(String? value) {
-    final n = int.tryParse((value ?? '').trim());
+    final n = int.tryParse(_normalizePriceDigits(value ?? ''));
     if (n == null || n <= 0) return 'قیمت باید عدد صحیح بزرگ‌تر از صفر باشد.';
     return null;
   }
@@ -117,18 +132,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<ProductsProvider>();
     setState(() => _saving = true);
+    String? uploadedImageUrl;
+    var productSaved = false;
+    final previousImageUrl = _originalImageUrl ?? _imageUrl ?? '';
     try {
       var imageUrl = _imageUrl ?? '';
-      if (_image != null) imageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
-      final percentage = _discountEnabled ? double.parse(_discountPercent.text.trim()) : 0.0;
+      if (_image != null) {
+        uploadedImageUrl = await UploadService.uploadImage(file: _image!, folderName: 'products', bucketName: 'products');
+        imageUrl = uploadedImageUrl;
+      }
+      final percentage = double.tryParse(_discountPercent.text.trim()) ?? 0.0;
       final labels = _labels.text.split(RegExp(r'[,،\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+      final priceText = _normalizePriceDigits(_price.text);
       final data = <String, dynamic>{
         'name': _name.text.trim(),
         'description': _description.text.trim(),
         'about_dish': _aboutDish.text.trim(),
         'labels': labels,
         'discount_percent': percentage,
-        'price': int.parse(_price.text.trim()),
+        'is_discount_active': _discountEnabled,
+        'sort_order': int.tryParse(_sortOrder.text.trim()) ?? 0,
+        'price': int.parse(priceText),
         'image_url': imageUrl,
         'category_id': _categoryId,
         'is_popular': _popular,
@@ -138,11 +162,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       };
       final ok = _editing ? await provider.updateProduct(widget.productId!, data) : await provider.createProduct(data);
       if (!ok) throw Exception(provider.error ?? 'ذخیره محصول انجام نشد.');
+      productSaved = true;
+
+      // The DB now points to the replacement. Delete the old owned object only after this point.
+      if (previousImageUrl.isNotEmpty && previousImageUrl != imageUrl) {
+        final removed = await UploadService.deletePublicImageUrl(previousImageUrl, bucketName: 'products', folderName: 'products');
+        if (!removed) _message('محصول ذخیره شد، اما حذف تصویر قبلی ناموفق بود؛ تصویر قبلی فعلاً باقی مانده است.');
+      }
+
       await provider.fetchProducts();
       if (!mounted) return;
-      _message(_editing ? 'محصول ویرایش شد.' : 'محصول اضافه شد.');
+      _message(_editing ? 'محصول و تصویر با موفقیت ویرایش شدند.' : 'محصول و تصویر با موفقیت اضافه شدند.');
       Navigator.of(context).pop();
     } catch (e) {
+      // Roll back an upload that was never referenced by a successfully saved product.
+      if (!productSaved && uploadedImageUrl != null) {
+        await UploadService.deletePublicImageUrl(uploadedImageUrl, bucketName: 'products', folderName: 'products');
+      }
       _message(AppErrorMessage.from(e, fallback: 'ذخیره محصول ناموفق بود. اطلاعات واردشده و اتصال را بررسی کنید.'));
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -163,21 +199,31 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         const SizedBox(height: 14),
         TextFormField(controller: _description, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'توضیحات عمومی', border: OutlineInputBorder())),
         const SizedBox(height: 14),
-        TextFormField(controller: _aboutDish, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'درباره این غذا', hintText: 'مواد اولیه، روش آماده‌سازی، حساسیت غذایی و ...', border: OutlineInputBorder())),
+        TextFormField(controller: _aboutDish, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'توضیحات غذا / مواد تشکیل‌دهنده', hintText: 'مواد اولیه، ترکیبات، روش پخت و موارد حساسیت‌زا را وارد کنید.', helperText: 'این متن در صفحه جزئیات غذا در اپ مشتری نمایش داده می‌شود.', border: OutlineInputBorder())),
         const SizedBox(height: 14),
         TextFormField(controller: _labels, decoration: const InputDecoration(labelText: 'لیبل‌ها', hintText: 'پرطرفدار، تند، گیاهی، جدید', helperText: 'لیبل‌ها را با ویرگول جدا کنید.', border: OutlineInputBorder())),
         const SizedBox(height: 8),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _discountEnabled, onChanged: _saving ? null : (v) => setState(() => _discountEnabled = v), title: const Text('اعمال تخفیف روی محصول'), subtitle: const Text('قیمت تخفیف‌خورده در سفارش هم از سمت دیتابیس محاسبه می‌شود.')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _discountEnabled, onChanged: _saving ? null : (v) => setState(() { _discountEnabled = v; if (v && (double.tryParse(_discountPercent.text) ?? 0) <= 0) _discountPercent.text = '10'; }), title: const Text('اعمال تخفیف روی محصول'), subtitle: const Text('قیمت تخفیف‌خورده در سفارش هم از سمت دیتابیس محاسبه می‌شود.')),
         if (_discountEnabled) Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(controller: _discountPercent, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'درصد تخفیف', suffixText: '%', border: OutlineInputBorder()), validator: _validatePercent)),
+        const SizedBox(height: 12),
+        TextFormField(controller: _sortOrder, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ترتیب نمایش (عدد کمتر، بالاتر)', border: OutlineInputBorder()), validator: (v) { final n = int.tryParse((v ?? '').trim()); return n == null || n < 0 ? 'ترتیب باید عدد صحیح صفر یا بیشتر باشد.' : null; }),
+        const SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('قابل سفارش باشد'), subtitle: const Text('در صورت ناموجود بودن، محصول در اپ مشتری قابل سفارش نخواهد بود.')),
+        if (!_available) TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجود بودن (اختیاری)', border: OutlineInputBorder())),
+        const SizedBox(height: 12),
         if (_discountEnabled && double.tryParse(_discountPercent.text) != null && double.tryParse(_price.text) != null)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('قیمت بعد از تخفیف: ${(double.parse(_price.text) * (100 - double.parse(_discountPercent.text)) / 100).round()} تومان')),
-        OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'تصویر ذخیره‌شده موجود است؛ برای جایگزینی انتخاب کنید'))),
+        Row(children: [
+          Expanded(child: OutlinedButton.icon(onPressed: _saving ? null : _pickImage, icon: const Icon(Icons.image_outlined), label: Text(_image?.name ?? (_imageUrl == null || _imageUrl!.isEmpty ? 'انتخاب تصویر محصول (اختیاری)' : 'جایگزینی تصویر')))),
+          if ((_imageUrl?.isNotEmpty ?? false) || _image != null) ...[
+            const SizedBox(width: 8),
+            IconButton(tooltip: 'حذف تصویر محصول', onPressed: _saving ? null : () => setState(() { _image = null; _imageBytes = null; _imageUrl = ''; }), icon: const Icon(Icons.delete_outline, color: Colors.red)),
+          ],
+        ]),
         if (_imageBytes != null) Padding(padding: const EdgeInsets.only(top: 12), child: Image.memory(_imageBytes!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('پیش‌نمایش تصویر ناموفق بود.')))
-        else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست.'))),
+        else if (_imageUrl != null && _imageUrl!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Image.network(_imageUrl!, height: 180, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('تصویر ذخیره‌شده قابل نمایش نیست؛ برای جایگزینی، تصویر جدید انتخاب کنید.'))),
         const SizedBox(height: 8),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: _active, onChanged: _saving ? null : (v) => setState(() => _active = v), title: const Text('نمایش محصول در منو'), subtitle: const Text('خاموش باشد، غذا از منوی عمومی حذف می‌شود.')),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: _available, onChanged: _saving ? null : (v) => setState(() => _available = v), title: const Text('قابل سفارش باشد'), subtitle: const Text('برای تمام‌شدن موقت غذا خاموش کنید؛ ثبت سفارش در دیتابیس هم مسدود می‌شود.')),
-        if (!_available) TextFormField(controller: _unavailableReason, decoration: const InputDecoration(labelText: 'علت ناموجود بودن (اختیاری)', border: OutlineInputBorder())),
         if (_editing) ...[
           const SizedBox(height: 20),
           const Divider(),

@@ -41,14 +41,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       if (product.imageUrl.isNotEmpty) ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(product.imageUrl, height: 260, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox(height: 140, child: Icon(Icons.broken_image_outlined, size: 48)))),
       const SizedBox(height: 16), Text(product.name, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
-      if (product.discountedPrice != null && product.discountedPrice! < product.price) ...[
+      if (product.isDiscountActive && product.discountedPrice != null && product.discountedPrice! < product.price) ...[
         Text('${product.price.toStringAsFixed(0)} تومان', style: Theme.of(context).textTheme.bodyMedium?.copyWith(decoration: TextDecoration.lineThrough, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         Text('${product.discountedPrice!.toStringAsFixed(0)} تومان  (${product.discountPercent.toStringAsFixed(product.discountPercent % 1 == 0 ? 0 : 2)}٪ تخفیف)', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
       ] else Text('${product.price.toStringAsFixed(0)} تومان', style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 12), Text(product.description.isEmpty ? 'توضیحی ثبت نشده است.' : product.description),
       if (product.aboutDish.trim().isNotEmpty) ...[const SizedBox(height: 12), Text('درباره این غذا', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(product.aboutDish)],
       if (product.labels.isNotEmpty) ...[const SizedBox(height: 12), Text('لیبل‌ها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 6), Wrap(spacing: 6, runSpacing: 6, children: product.labels.map((label) => Chip(label: Text(label))).toList())],
-      const SizedBox(height: 12), Text('دسته‌بندی: ${product.categoryName ?? 'بدون دسته‌بندی'}'), Text('وضعیت نمایش: ${product.status == 'active' ? 'فعال' : 'غیرفعال'}'), Text('وضعیت سفارش: ${product.isAvailable ? 'قابل سفارش' : 'ناموجود'}'), Text('محبوب: ${product.isPopular ? 'بله' : 'خیر'}'), Text('شناسه: ${product.id}'),
+      const SizedBox(height: 12), Text('دسته‌بندی: ${product.categoryName ?? 'بدون دسته‌بندی'}'), Text('وضعیت نمایش: ${product.status == 'active' ? 'فعال' : 'غیرفعال'}'), Text('وضعیت سفارش: ${product.isAvailable ? 'قابل سفارش' : 'ناموجود'}'), if (!product.isAvailable && product.unavailableReason.isNotEmpty) Text('علت ناموجودی: ${product.unavailableReason}'), Text('ترتیب نمایش: ${product.sortOrder}'), Text('تخفیف: ${product.isDiscountActive ? 'فعال' : 'غیرفعال'}'), Text('محبوب: ${product.isPopular ? 'بله' : 'خیر'}'), Text('شناسه: ${product.id}'),
       const SizedBox(height: 24), Wrap(spacing: 12, children: [FilledButton.icon(onPressed: () => context.push('/products/edit/${product.id}'), icon: const Icon(Icons.edit_outlined), label: const Text('ویرایش')), OutlinedButton.icon(onPressed: () => _delete(product), icon: const Icon(Icons.delete_outline), label: const Text('حذف'))])
     ])));
   }));

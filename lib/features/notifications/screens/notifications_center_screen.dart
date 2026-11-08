@@ -196,23 +196,33 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                         children: [
                           Text('تعیین مخاطبان', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 8),
-                          _audienceTile(
-                            value: 'all_customers',
-                            title: 'تمام مشتریان فعال',
-                            subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
-                            icon: HugeIcons.strokeRoundedUserGroup,
-                          ),
-                          _audienceTile(
-                            value: 'inactive_30d',
-                            title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
-                            subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
-                            icon: HugeIcons.strokeRoundedUserRemove01,
-                          ),
-                          _audienceTile(
-                            value: 'admins',
-                            title: 'مدیران CRM',
-                            subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
-                            icon: HugeIcons.strokeRoundedShieldUser,
+                          RadioGroup<String>(
+                            groupValue: _audience,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _audience = value);
+                            },
+                            child: Column(
+                              children: [
+                                _audienceTile(
+                                  value: 'all_customers',
+                                  title: 'تمام مشتریان فعال',
+                                  subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
+                                  icon: HugeIcons.strokeRoundedUserGroup,
+                                ),
+                                _audienceTile(
+                                  value: 'inactive_30d',
+                                  title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
+                                  subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
+                                  icon: HugeIcons.strokeRoundedUserRemove01,
+                                ),
+                                _audienceTile(
+                                  value: 'admins',
+                                  title: 'مدیران CRM',
+                                  subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
+                                  icon: HugeIcons.strokeRoundedShieldUser,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -227,32 +237,36 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                         children: [
                           Text('سطح اهمیت اعلان', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 8),
-                          RadioListTile<String>(
-                            value: 'normal',
+                          RadioGroup<String>(
                             groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('عادی'),
-                            subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: Colors.blueGrey),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          RadioListTile<String>(
-                            value: 'high',
-                            groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('مهم'),
-                            subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.orange),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          RadioListTile<String>(
-                            value: 'urgent',
-                            groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('فوری'),
-                            subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red),
-                            contentPadding: EdgeInsets.zero,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _priority = value);
+                            },
+                            child: Column(
+                              children: [
+                                RadioListTile<String>(
+                                  value: 'normal',
+                                  title: const Text('عادی'),
+                                  subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: Colors.blueGrey),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                RadioListTile<String>(
+                                  value: 'high',
+                                  title: const Text('مهم'),
+                                  subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.orange),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                RadioListTile<String>(
+                                  value: 'urgent',
+                                  title: const Text('فوری'),
+                                  subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -286,8 +300,6 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
   }) {
     return RadioListTile<String>(
       value: value,
-      groupValue: _audience,
-      onChanged: (next) => setState(() => _audience = next!),
       title: Text(title),
       subtitle: Text(subtitle),
       secondary: HugeIcon(icon: icon),

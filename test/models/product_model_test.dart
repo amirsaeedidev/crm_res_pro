@@ -10,6 +10,11 @@ void main() {
         'description': 'پیتزا با پنیر و پپرونی',
         'price': 120000.0,
         'discounted_price': 99000.0,
+        'discount_percent': 17.5,
+        'is_discount_active': true,
+        'sort_order': 6,
+        'is_available': false,
+        'unavailable_reason': 'اتمام موجودی',
         'category_id': 'cat-1',
         'stock': 50,
         'image_url': 'https://example.com/pizza.jpg',
@@ -25,8 +30,15 @@ void main() {
       expect(product.id, 'prod-123');
       expect(product.name, 'پیتزا پپرونی');
       expect(product.description, 'پیتزا با پنیر و پپرونی');
-      expect(product.price, 120000.0);
-      expect(product.discountedPrice, 99000.0);
+      expect(product.price, 120000);
+      expect(product.price, isA<int>());
+      expect(product.discountedPrice, 99000);
+      expect(product.discountedPrice, isA<int>());
+      expect(product.discountPercent, 17.5);
+      expect(product.isDiscountActive, isTrue);
+      expect(product.sortOrder, 6);
+      expect(product.isAvailable, isFalse);
+      expect(product.unavailableReason, 'اتمام موجودی');
       expect(product.categoryId, 'cat-1');
       expect(product.stock, 50);
       expect(product.imageUrl, 'https://example.com/pizza.jpg');
@@ -64,8 +76,8 @@ void main() {
         id: 'prod-789',
         name: 'سالاد',
         description: 'سالاد سزار',
-        price: 50000.0,
-        discountedPrice: 40000.0,
+        price: 50000,
+        discountedPrice: 40000,
         categoryId: 'cat-3',
         stock: 10,
         imageUrl: 'https://example.com/salad.jpg',
@@ -92,7 +104,7 @@ void main() {
         id: 'prod-001',
         name: 'نوشابه',
         description: 'نوشابه گازدار',
-        price: 15000.0,
+        price: 15000,
         categoryId: 'cat-4',
         stock: 100,
         imageUrl: '',

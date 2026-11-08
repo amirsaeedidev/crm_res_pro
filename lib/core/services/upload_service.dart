@@ -162,4 +162,30 @@ class UploadService {
       return false;
     }
   }
+
+  /// Delete only objects owned by this public bucket/folder. External URLs are ignored.
+  static Future<bool> deletePublicImageUrl(
+    String? imageUrl, {
+    required String bucketName,
+    required String folderName,
+  }) async {
+    if (imageUrl == null || imageUrl.trim().isEmpty) return true;
+    try {
+      final uri = Uri.tryParse(imageUrl.trim());
+      if (uri == null || !uri.hasAuthority || !{'http', 'https'}.contains(uri.scheme)) return true;
+      final segments = uri.pathSegments;
+      final publicIndex = segments.indexOf('public');
+      if (publicIndex < 0 || publicIndex + 2 >= segments.length) return true;
+      if (segments[publicIndex + 1] != bucketName) return true;
+      final objectPath = segments.skip(publicIndex + 2).join('/');
+      if (objectPath.isEmpty || objectPath.split('/').first != folderName) return true;
+      await SupabaseService.storage.from(bucketName).remove([objectPath]);
+      LoggerService.info('Deleted managed image bucket=$bucketName path=$objectPath');
+      return true;
+    } catch (e, st) {
+      LoggerService.error('Managed Storage image deletion failed', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
 }

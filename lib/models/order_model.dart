@@ -6,9 +6,10 @@ class OrderModel {
   final String orderType;
   final String status;
   final String? assignedStaffId;
-  final double totalAmount;
-  final double subtotalAmount;
-  final double discountAmount;
+  /// Whole Iranian toman, matching the customer app's integer money model.
+  final int totalAmount;
+  final int subtotalAmount;
+  final int discountAmount;
   final String? discountCode;
   final int? tableNumber;
   final int? dailyQueueNumber;
@@ -30,9 +31,9 @@ class OrderModel {
     customerName: (json['customer_name'] ?? '').toString(), customerPhone: (json['customer_phone'] ?? '').toString(),
     orderType: (json['order_type'] ?? 'delivery').toString(), status: (json['status'] ?? 'pending').toString(),
     assignedStaffId: json['assigned_staff_id']?.toString(),
-    totalAmount: (json['total_amount'] as num? ?? 0).toDouble(),
-    subtotalAmount: (json['subtotal_amount'] as num? ?? json['total_amount'] as num? ?? 0).toDouble(),
-    discountAmount: (json['discount_amount'] as num? ?? 0).toDouble(),
+    totalAmount: (json['total_amount'] as num? ?? 0).round(),
+    subtotalAmount: (json['subtotal_amount'] as num? ?? json['total_amount'] as num? ?? 0).round(),
+    discountAmount: (json['discount_amount'] as num? ?? 0).round(),
     discountCode: json['discount_code']?.toString(),
     tableNumber: (json['table_number'] as num?)?.toInt(),
     dailyQueueNumber: (json['daily_queue_number'] as num?)?.toInt(),
@@ -44,9 +45,9 @@ class OrderModel {
       .whereType<Map>().map((e) => OrderItem.fromJson(Map<String, dynamic>.from(e))).toList(growable: false));
 
   OrderModel copyWith({String? id, String? userId, String? customerName, String? customerPhone,
-    String? orderType, String? status, String? assignedStaffId, double? totalAmount, int? estimatedReadyMinutes,
+    String? orderType, String? status, String? assignedStaffId, int? totalAmount, int? estimatedReadyMinutes,
     String? adminNote, DateTime? completedAt, DateTime? createdAt, DateTime? updatedAt, List<OrderItem>? items,
-    double? subtotalAmount, double? discountAmount, String? discountCode, int? tableNumber, int? dailyQueueNumber}) => OrderModel(
+    int? subtotalAmount, int? discountAmount, String? discountCode, int? tableNumber, int? dailyQueueNumber}) => OrderModel(
       id: id ?? this.id, userId: userId ?? this.userId, customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone, orderType: orderType ?? this.orderType,
       status: status ?? this.status, assignedStaffId: assignedStaffId ?? this.assignedStaffId, totalAmount: totalAmount ?? this.totalAmount,
@@ -84,8 +85,9 @@ class OrderItem {
   final String? productId;
   final String name;
   final int quantity;
-  final double price;
-  final double? totalPrice;
+  /// Whole Iranian toman.
+  final int price;
+  final int? totalPrice;
   final String? note;
 
   const OrderItem({this.productId, required this.name, required this.quantity, required this.price, this.totalPrice, this.note});
@@ -96,8 +98,8 @@ class OrderItem {
       productId: json['product_id']?.toString(),
       name: (json['name'] ?? (relation is Map ? relation['name'] : null) ?? 'محصول حذف‌شده').toString(),
       quantity: (json['quantity'] as num? ?? 1).toInt(),
-      price: (json['unit_price'] as num? ?? json['price'] as num? ?? 0).toDouble(),
-      totalPrice: (json['total_price'] as num?)?.toDouble(), note: json['note'] as String?);
+      price: (json['unit_price'] as num? ?? json['price'] as num? ?? 0).round(),
+      totalPrice: (json['total_price'] as num?)?.round(), note: json['note'] as String?);
   }
 
   Map<String, dynamic> toJson() => {'product_id': productId, 'name': name, 'quantity': quantity,

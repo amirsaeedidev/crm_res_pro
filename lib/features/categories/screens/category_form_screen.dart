@@ -214,7 +214,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                           controller: _name,
                           decoration: const InputDecoration(
                             labelText: 'نام دسته‌بندی *',
-                            prefixIcon: HugeIcon(icon:HugeIcons.strokeRoundedTag),
+                            prefixIcon: HugeIcon(icon:HugeIcons.strokeRoundedFilter),
                           ),
                           textInputAction: TextInputAction.next,
                           validator: (value) => value == null || value.trim().isEmpty

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/supabase_service.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/upload_service.dart';
 import '../models/product_model.dart';
 
 class ProductsRepository {
@@ -15,7 +16,7 @@ class ProductsRepository {
       final search = searchQuery?.trim();
       if (search != null && search.isNotEmpty) query = query.ilike('name', '%${_escapeLike(search)}%');
       if (categoryId != null && categoryId.isNotEmpty) query = query.eq('category_id', categoryId);
-      final rows = await query.order('created_at', ascending: false).range(start, start + pageSize - 1);
+      final rows = await query.order('sort_order', ascending: true).order('created_at', ascending: false).range(start, start + pageSize - 1);
       return rows.map((row) => ProductModel.fromJson(Map<String, dynamic>.from(row))).toList();
     } on PostgrestException catch (e, st) {
       LoggerService.error('Fetch products failed', error: e, stackTrace: st);
@@ -55,7 +56,13 @@ class ProductsRepository {
 
   Future<void> deleteProduct(String id) async {
     try {
+      final previous = await _client.from('products').select('image_url').eq('id', id).maybeSingle();
+      final previousImageUrl = previous?['image_url']?.toString();
       await _client.from('products').delete().eq('id', id);
+      if (previousImageUrl != null && previousImageUrl.isNotEmpty) {
+        final removed = await UploadService.deletePublicImageUrl(previousImageUrl, bucketName: 'products', folderName: 'products');
+        if (!removed) LoggerService.error('Product row deleted but Storage image cleanup failed for product=$id');
+      }
     } on PostgrestException catch (e, st) {
       LoggerService.error('Delete product failed', error: e, stackTrace: st);
       throw Exception(_friendlyError(e, 'حذف محصول'));
@@ -69,7 +76,7 @@ class ProductsRepository {
     for (final key in ['discounted_price', 'discountedPrice', 'stock', 'status', 'category_name', 'categories', 'id', 'created_at']) {
       data.remove(key);
     }
-    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','price','image_url','is_active','is_available','unavailable_reason','is_popular','rating','review_count','category_id'}.contains(key));
+    data.removeWhere((key, value) => !const {'name','description','about_dish','labels','discount_percent','is_discount_active','sort_order','price','image_url','is_active','is_available','unavailable_reason','is_popular','rating','review_count','category_id'}.contains(key));
     if (data['price'] is num) data['price'] = (data['price'] as num).round();
     if (data['discount_percent'] is num) data['discount_percent'] = (data['discount_percent'] as num).clamp(0, 100).toDouble();
     if (data['labels'] is List) data['labels'] = (data['labels'] as List).map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toSet().toList();
