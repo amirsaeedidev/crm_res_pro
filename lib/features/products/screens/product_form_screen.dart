@@ -199,7 +199,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         const SizedBox(height: 14),
         TextFormField(controller: _description, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'توضیحات عمومی', border: OutlineInputBorder())),
         const SizedBox(height: 14),
-        TextFormField(controller: _aboutDish, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'درباره این غذا', hintText: 'مواد اولیه، روش آماده‌سازی، حساسیت غذایی و ...', border: OutlineInputBorder())),
+        TextFormField(controller: _aboutDish, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'توضیحات غذا / مواد تشکیل‌دهنده', hintText: 'مواد اولیه، ترکیبات، روش پخت و موارد حساسیت‌زا را وارد کنید.', helperText: 'این متن در صفحه جزئیات غذا در اپ مشتری نمایش داده می‌شود.', border: OutlineInputBorder())),
         const SizedBox(height: 14),
         TextFormField(controller: _labels, decoration: const InputDecoration(labelText: 'لیبل‌ها', hintText: 'پرطرفدار، تند، گیاهی، جدید', helperText: 'لیبل‌ها را با ویرگول جدا کنید.', border: OutlineInputBorder())),
         const SizedBox(height: 8),
