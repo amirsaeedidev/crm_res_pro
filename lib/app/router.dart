@@ -30,6 +30,7 @@ import '../features/sms/screens/sms_center_screen.dart';
 import '../features/inventory/screens/inventory_screen.dart';
 import '../features/wallet/screens/customer_wallets_screen.dart';
 import '../features/notifications/screens/notifications_center_screen.dart';
+import '../features/notifications/screens/notification_inbox_screen.dart';
 import '../features/notifications/screens/activity_log_screen.dart';
 
 class AppRouter {
@@ -55,7 +56,7 @@ class AppRouter {
       // Routes inside the Main Layout (Sidebar + Topbar)
       ShellRoute(
         builder: (context, state, child) => AdminRouteGuard(
-          child: MainLayout(child: child, currentRoute: state.uri.path),
+          child: MainLayout(currentRoute: state.uri.path, child: child),
         ),
         routes: [
           GoRoute(path: AppRoutes.dashboard, name: AppRoutes.dashboard, pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen())),
@@ -76,6 +77,7 @@ class AppRouter {
           GoRoute(path: AppRoutes.inventory, name: AppRoutes.inventory, pageBuilder: (context, state) => const NoTransitionPage(child: InventoryScreen())),
           GoRoute(path: AppRoutes.wallets, name: AppRoutes.wallets, pageBuilder: (context, state) => const NoTransitionPage(child: CustomerWalletsScreen())),
           GoRoute(path: AppRoutes.notifications, name: AppRoutes.notifications, pageBuilder: (context, state) => const NoTransitionPage(child: NotificationsCenterScreen())),
+          GoRoute(path: '/notification-inbox', name: 'notification_inbox', pageBuilder: (context, state) => const NoTransitionPage(child: NotificationInboxScreen())),
           GoRoute(path: AppRoutes.activityLogs, name: AppRoutes.activityLogs, pageBuilder: (context, state) => const NoTransitionPage(child: ActivityLogScreen())),
         ],
       ),

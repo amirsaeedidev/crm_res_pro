@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../providers/notifications_provider.dart';
 
 import '../../../core/services/supabase_service.dart';
+import '../../../repositories/notification_campaigns_repository.dart';
 
 class NotificationsCenterScreen extends StatefulWidget {
   const NotificationsCenterScreen({super.key});
@@ -20,6 +21,45 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
   String _audience = 'all_customers';
   String _priority = 'normal';
   bool _sending = false;
+  String? _resendingId;
+  final _campaignRepository = NotificationCampaignsRepository();
+  late Future<List<Map<String, dynamic>>> _sentHistory;
+
+  @override
+  void initState() {
+    super.initState();
+    _sentHistory = _loadSentHistory();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSentHistory() {
+    return _campaignRepository.getHistory();
+  }
+
+  Future<void> _resend(Map<String, dynamic> campaign) async {
+    if (_resendingId != null) return;
+    setState(() => _resendingId = campaign['id']?.toString());
+    try {
+      final data = await _campaignRepository.resendCampaign(campaign);
+      if (!mounted) return;
+      setState(() => _sentHistory = _loadSentHistory());
+      final retryData = data['sms_retry'] is Map ? Map<String, dynamic>.from(data['sms_retry'] as Map) : <String, dynamic>{};
+      final channelData = data['channel_retry'] is Map ? Map<String, dynamic>.from(data['channel_retry'] as Map) : <String, dynamic>{};
+      final count = (data['requeued_count'] as num?)?.toInt() ?? (retryData['requeued_count'] as num?)?.toInt() ?? (channelData['sent_count'] as num?)?.toInt() ?? (data['sent_count'] as num?)?.toInt() ?? (data['recipient_count'] as num?)?.toInt() ?? 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ارسال مجدد ثبت شد. تعداد گیرندگان: $count')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ارسال مجدد ناموفق بود: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _resendingId = null);
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +84,21 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
       final data = Map<String, dynamic>.from(response as Map);
       if (!mounted) return;
       final count = (data['recipient_count'] as num?)?.toInt() ?? 0;
+      try {
+        await _campaignRepository.recordManualNotification(
+          title: _titleController.text.trim(),
+          body: _bodyController.text.trim(),
+          audience: _audience,
+          priority: _priority,
+          recipientCount: count,
+        );
+      } catch (historyError) {
+        // The announcement has already been sent; do not report it as failed
+        // solely because the separate audit/history write did not complete.
+        debugPrint('Could not persist notification campaign history: $historyError');
+      }
+      if (!mounted) return;
+      setState(() => _sentHistory = _loadSentHistory());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -196,23 +251,33 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                         children: [
                           Text('تعیین مخاطبان', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 8),
-                          _audienceTile(
-                            value: 'all_customers',
-                            title: 'تمام مشتریان فعال',
-                            subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
-                            icon: HugeIcons.strokeRoundedUserGroup,
-                          ),
-                          _audienceTile(
-                            value: 'inactive_30d',
-                            title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
-                            subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
-                            icon: HugeIcons.strokeRoundedUserRemove01,
-                          ),
-                          _audienceTile(
-                            value: 'admins',
-                            title: 'مدیران CRM',
-                            subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
-                            icon: HugeIcons.strokeRoundedShieldUser,
+                          RadioGroup<String>(
+                            groupValue: _audience,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _audience = value);
+                            },
+                            child: Column(
+                              children: [
+                                _audienceTile(
+                                  value: 'all_customers',
+                                  title: 'تمام مشتریان فعال',
+                                  subtitle: 'ارسال اعلان به همه حساب‌های مشتری فعال',
+                                  icon: HugeIcons.strokeRoundedUserGroup,
+                                ),
+                                _audienceTile(
+                                  value: 'inactive_30d',
+                                  title: 'مشتریان غیرفعال در ۳۰ روز اخیر',
+                                  subtitle: 'مشتریانی که در ۳۰ روز گذشته سفارش غیرلغوشده نداشته‌اند',
+                                  icon: HugeIcons.strokeRoundedUserRemove01,
+                                ),
+                                _audienceTile(
+                                  value: 'admins',
+                                  title: 'مدیران CRM',
+                                  subtitle: 'ثبت اعلان در صندوق اعلان‌های مدیریتی',
+                                  icon: HugeIcons.strokeRoundedShieldUser,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -227,32 +292,36 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                         children: [
                           Text('سطح اهمیت اعلان', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 8),
-                          RadioListTile<String>(
-                            value: 'normal',
+                          RadioGroup<String>(
                             groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('عادی'),
-                            subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: Colors.blueGrey),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          RadioListTile<String>(
-                            value: 'high',
-                            groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('مهم'),
-                            subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.orange),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          RadioListTile<String>(
-                            value: 'urgent',
-                            groupValue: _priority,
-                            onChanged: (value) => setState(() => _priority = value!),
-                            title: const Text('فوری'),
-                            subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
-                            secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red),
-                            contentPadding: EdgeInsets.zero,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _priority = value);
+                            },
+                            child: Column(
+                              children: [
+                                RadioListTile<String>(
+                                  value: 'normal',
+                                  title: const Text('عادی'),
+                                  subtitle: const Text('برای اطلاع‌رسانی‌های روزمره'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01, color: Colors.blueGrey),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                RadioListTile<String>(
+                                  value: 'high',
+                                  title: const Text('مهم'),
+                                  subtitle: const Text('برای اطلاعیه‌هایی که باید بیشتر دیده شوند'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.orange),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                RadioListTile<String>(
+                                  value: 'urgent',
+                                  title: const Text('فوری'),
+                                  subtitle: const Text('برای هشدارهای ضروری و زمان‌حساس'),
+                                  secondary: const HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -267,6 +336,138 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                           : const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
                       label: Text(_sending ? 'در حال ثبت...' : 'ثبت و ارسال اعلان'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'تاریخچه اعلان‌های ارسال‌شده',
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'بروزرسانی تاریخچه',
+                                onPressed: () => setState(() => _sentHistory = _loadSentHistory()),
+                                icon: const Icon(Icons.refresh),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _sentHistory,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
+                              if (snapshot.hasError) {
+                                return Text(
+                                  'تاریخچه در دسترس نیست. Migration شماره 040 را در Supabase اجرا کنید.\n${snapshot.error}',
+                                  style: TextStyle(color: theme.colorScheme.error),
+                                );
+                              }
+                              final rows = snapshot.data ?? const <Map<String, dynamic>>[];
+                              if (rows.isEmpty) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(child: Text('هنوز اعلانی ارسال نشده است.')),
+                                );
+                              }
+                              return Column(
+                                children: rows.map((row) {
+                                  final channels = (row['delivery_channels'] as List? ?? const [])
+                                      .map((value) => value.toString())
+                                      .map((value) => switch (value) {
+                                            'banner' => 'بنر',
+                                            'notification' => 'اعلان',
+                                            'sms' => 'پیامک',
+                                            _ => value,
+                                          })
+                                      .join('، ');
+                                  final createdAt = DateTime.tryParse((row['created_at'] ?? '').toString())?.toLocal();
+                                  final dateLabel = createdAt == null
+                                      ? '—'
+                                      : createdAt.toString().substring(0, 16);
+                                  final audience = switch ((row['audience'] ?? '').toString()) {
+                                    'admins' => 'مدیران',
+                                    'all_customers' => 'همه مشتریان',
+                                    'inactive_30d' => 'مشتریان غیرفعال',
+                                    'targeted_discount' => 'مشتریان هدف تخفیف',
+                                    _ => '—',
+                                  };
+                                  final channelResults = row['channel_results'] is Map
+                                      ? Map<String, dynamic>.from(row['channel_results'] as Map)
+                                      : <String, dynamic>{};
+                                  final hasFailedDiscountChannel = channelResults.values.any((value) {
+                                    if (value is! Map) return false;
+                                    final channelStatus = (value['status'] ?? '').toString();
+                                    return channelStatus == 'failed' || channelStatus == 'partial';
+                                  });
+                                  final isResendable = (row['campaign_type'] == 'manual' && (row['delivery_channels'] as List? ?? const []).contains('notification')) ||
+                                      (row['campaign_type'] == 'discount' &&
+                                          (row['discount_id']?.toString().isNotEmpty ?? false) &&
+                                          hasFailedDiscountChannel);
+                                  final channelStatusLabels = <String, String>{
+                                    'completed': 'موفق',
+                                    'partial': 'ناقص',
+                                    'failed': 'ناموفق',
+                                    'queued': 'در صف',
+                                    'sending': 'در حال ارسال',
+                                    'cancelled': 'لغوشده',
+                                  };
+                                  final channelDetails = channelResults.entries.map((entry) {
+                                    final value = entry.value is Map ? Map<String, dynamic>.from(entry.value as Map) : <String, dynamic>{};
+                                    final channelName = switch (entry.key) {
+                                      'banner' => 'بنر',
+                                      'notification' => 'اعلان',
+                                      'sms' => 'پیامک',
+                                      _ => entry.key,
+                                    };
+                                    final channelStatus = channelStatusLabels[(value['status'] ?? '').toString()] ?? '—';
+                                    return '$channelName: $channelStatus';
+                                  }).join(' • ');
+                                  final status = switch ((row['status'] ?? '').toString()) {
+                                    'completed' => 'تکمیل‌شده',
+                                    'partial' => 'ارسال ناقص',
+                                    'failed' => 'ناموفق',
+                                    'queued' => 'در صف ارسال',
+                                    'sending' => 'در حال ارسال',
+                                    'cancelled' => 'لغوشده',
+                                    _ => '—',
+                                  };
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text((row['title'] ?? 'اعلان').toString()),
+                                    subtitle: Text(
+                                      '$status • ${row['sent_count'] ?? 0} موفق • ${row['failed_count'] ?? 0} ناموفق • $audience • $channels\n$channelDetails\n$dateLabel',
+                                    ),
+                                    isThreeLine: true,
+                                    trailing: isResendable
+                                        ? IconButton(
+                                            tooltip: 'ارسال مجدد',
+                                            onPressed: _resendingId == row['id'] ? null : () => _resend(row),
+                                            icon: _resendingId == row['id']
+                                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                                : const Icon(Icons.replay),
+                                          )
+                                        : const Icon(Icons.history),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -286,8 +487,6 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
   }) {
     return RadioListTile<String>(
       value: value,
-      groupValue: _audience,
-      onChanged: (next) => setState(() => _audience = next!),
       title: Text(title),
       subtitle: Text(subtitle),
       secondary: HugeIcon(icon: icon),

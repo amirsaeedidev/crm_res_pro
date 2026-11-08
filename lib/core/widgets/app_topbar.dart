@@ -311,14 +311,19 @@ class _AppTopbarState extends State<AppTopbar> {
           ),
           position: PopupMenuPosition.under,
           onSelected: (value) async {
+            final notifications = context.read<NotificationsProvider>();
             if (value == 'mark_all_read') {
-              widget.onMarkAllNotificationsRead?.call();
+              if (widget.onMarkAllNotificationsRead != null) {
+                widget.onMarkAllNotificationsRead!.call();
+              } else {
+                await notifications.markAllAsRead();
+              }
             } else if (value == 'open_notifications') {
-              if (context.mounted) context.push('/notifications');
+              if (context.mounted) context.push('/notification-inbox');
             } else {
-              await context.read<NotificationsProvider>().markAsRead(value);
+              await notifications.markAsRead(value);
               widget.onNotificationSelected?.call(value);
-              if (context.mounted) context.push('/notifications');
+              if (context.mounted) context.push('/notification-inbox');
             }
           },
           itemBuilder: (context) => _buildNotificationItems(
@@ -384,7 +389,7 @@ class _AppTopbarState extends State<AppTopbar> {
         PopupMenuItem<String>(
           value: notif.id,
           // Disable the item unless the parent provides its handler.
-          enabled: widget.onNotificationSelected != null,
+          enabled: true,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: popupMaxWidth - 48,
@@ -407,7 +412,7 @@ class _AppTopbarState extends State<AppTopbar> {
     items.add(
       PopupMenuItem<String>(
         value: 'mark_all_read',
-        enabled: widget.onMarkAllNotificationsRead != null,
+        enabled: provider.unreadCount > 0,
         child: Center(
           child: Text(
             'علامت‌گذاری همه به‌عنوان خوانده‌شده',

@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - fix/notification-history-and-audit
 
 permissions:
   contents: read
@@ -66,22 +67,24 @@ jobs:
 
       - name: Validate Supabase key
         env:
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_PUBLIC_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
         shell: bash
         run: |
-          if [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "::error::Add SUPABASE_PUBLISHABLE_KEY in GitHub Actions secrets."
+          if [ -z "$SUPABASE_PUBLIC_KEY" ]; then
+            echo "::error::Add SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY in GitHub Actions secrets."
             exit 1
           fi
 
       - name: Build release APK
         env:
           SUPABASE_URL: https://cfdzxtnkiptnlitwvnla.supabase.co
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: >
-          flutter build apk --release
-          --dart-define=SUPABASE_URL=${SUPABASE_URL}
-          --dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+          SUPABASE_PUBLIC_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY }}
+        shell: bash
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLIC_KEY" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_PUBLIC_KEY"
 
       - name: Check APK
         if: success()

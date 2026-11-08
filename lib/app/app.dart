@@ -33,11 +33,11 @@ class CrmApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             routerConfig: AppRouter.router,
-            // Added: Force RTL direction globally for all routes, dialogs, and overlays
+            // Force RTL direction globally for all routes, dialogs, and overlays.
             builder: (context, child) {
               return Directionality(
                 textDirection: TextDirection.rtl,
-                child: child!,
+                child: child ?? const SizedBox.shrink(),
               );
             },
           );

@@ -8,7 +8,7 @@ class DiscountModel {
   final double? minPurchaseAmount;
   final double? maxDiscountAmount;
   final int? totalUsageLimit;
-  /// The current schema has no per-user usage limit column.
+  /// Enforced by PostgreSQL for each authenticated customer.
   final int? perUserUsageLimit;
   final bool restrictedToCustomers;
   final List<String> targetPhones;
@@ -19,8 +19,13 @@ class DiscountModel {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? description;
+  final List<String> deliveryChannels;
+  final bool allowWithProductDiscount;
+  final List<String> productIds;
+  final List<String> categoryIds;
+  final DateTime serverNow;
 
-  const DiscountModel({
+  DiscountModel({
     required this.id,
     required this.title,
     required this.code,
@@ -39,7 +44,17 @@ class DiscountModel {
     required this.createdAt,
     this.updatedAt,
     this.description,
-  });
+    this.deliveryChannels = const ['notification'],
+    this.allowWithProductDiscount = false,
+    this.productIds = const [],
+    this.categoryIds = const [],
+    DateTime? serverNow,
+  }) : serverNow = serverNow ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+
+  bool get isExpired => isActive && !serverNow.isBefore(endDate);
+  bool get isScheduled => isActive && serverNow.isBefore(startDate);
+  bool get isExhausted => totalUsageLimit != null && usedCount >= totalUsageLimit!;
+  String get serverStatus => !isActive ? 'inactive' : (isExhausted ? 'exhausted' : (isScheduled ? 'scheduled' : (isExpired ? 'expired' : 'active')));
 
   factory DiscountModel.fromJson(Map<String, dynamic> json) {
     final created = DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
@@ -63,6 +78,13 @@ class DiscountModel {
       createdAt: created,
       updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
       description: json['description'] as String?,
+      deliveryChannels: json['delivery_channels'] is List
+          ? (json['delivery_channels'] as List).map((value) => value.toString()).toList(growable: false)
+          : const ['notification'],
+      allowWithProductDiscount: json['allow_with_product_discount'] as bool? ?? false,
+      productIds: json['product_ids'] is List ? (json['product_ids'] as List).map((e) => e.toString()).toList(growable: false) : const [],
+      categoryIds: json['category_ids'] is List ? (json['category_ids'] as List).map((e) => e.toString()).toList(growable: false) : const [],
+      serverNow: DateTime.tryParse((json['server_now'] ?? '').toString()),
     );
   }
 
@@ -84,6 +106,8 @@ class DiscountModel {
         'expires_at': endDate.toUtc().toIso8601String(),
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
+        'delivery_channels': deliveryChannels,
+        'allow_with_product_discount': allowWithProductDiscount,
       };
 
   DiscountModel copyWith({
@@ -91,6 +115,8 @@ class DiscountModel {
     double? minPurchaseAmount, double? maxDiscountAmount, int? totalUsageLimit,
     int? perUserUsageLimit, bool? restrictedToCustomers, List<String>? targetPhones, int? usedCount, bool? isActive, DateTime? startDate,
     DateTime? endDate, DateTime? createdAt, DateTime? updatedAt, String? description,
+    List<String>? deliveryChannels, bool? allowWithProductDiscount,
+    List<String>? productIds, List<String>? categoryIds, DateTime? serverNow,
   }) => DiscountModel(
         id: id ?? this.id, title: title ?? this.title, code: code ?? this.code,
         type: type ?? this.type, value: value ?? this.value,
@@ -104,5 +130,10 @@ class DiscountModel {
         startDate: startDate ?? this.startDate, endDate: endDate ?? this.endDate,
         createdAt: createdAt ?? this.createdAt, updatedAt: updatedAt ?? this.updatedAt,
         description: description ?? this.description,
+        deliveryChannels: deliveryChannels ?? this.deliveryChannels,
+        allowWithProductDiscount: allowWithProductDiscount ?? this.allowWithProductDiscount,
+        productIds: productIds ?? this.productIds,
+        categoryIds: categoryIds ?? this.categoryIds,
+        serverNow: serverNow ?? this.serverNow,
       );
 }

@@ -94,7 +94,7 @@ class OrderItem {
     final relation = json['products'];
     return OrderItem(
       productId: json['product_id']?.toString(),
-      name: (json['name'] ?? (relation is Map ? relation['name'] : null) ?? 'محصول حذف‌شده').toString(),
+      name: (json['product_name'] ?? json['name'] ?? (relation is Map ? relation['name'] : null) ?? 'محصول حذف‌شده').toString(),
       quantity: (json['quantity'] as num? ?? 1).toInt(),
       price: (json['unit_price'] as num? ?? json['price'] as num? ?? 0).toDouble(),
       totalPrice: (json['total_price'] as num?)?.toDouble(), note: json['note'] as String?);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_sizes.dart';
 import '../theme/app_breakpoints.dart';
@@ -105,7 +106,9 @@ class _MainLayoutState extends State<MainLayout> {
       case '/wallets':
         return 'کیف پول مالی مشتریان';
       case '/notifications':
-        return 'اعلان‌ها';
+        return 'مدیریت اعلان‌ها';
+      case '/notification-inbox':
+        return 'صندوق اعلان‌ها';
       case '/activity-logs':
         return 'ثبت فعالیت‌ها';
       default:
@@ -118,9 +121,27 @@ class _MainLayoutState extends State<MainLayout> {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= AppBreakpoints.laptop; // 1024px
 
-    // Directionality is now applied globally in app.dart
-    return Scaffold(
-      key: _scaffoldKey,
+    // Intercept back inside the ShellRoute navigator. Pushed forms/details
+    // still pop normally; at the section root we restore the previous section.
+    final routerCanPop = GoRouter.of(context).canPop();
+    return PopScope<Object?>(
+      canPop: Navigator.of(context).canPop(),
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          // A pushed detail route was handled by Navigator itself. Do not
+          // re-add that route when MainLayout observes the resulting URI.
+          if (routerCanPop) {
+            context.read<NavigationProvider>().skipNextHistoryEntry();
+          }
+          return;
+        }
+        final previousRoute = context.read<NavigationProvider>().goBack();
+        if (previousRoute != null) {
+          context.go(previousRoute);
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
       drawer: isDesktop
           ? null
           : Drawer(
@@ -158,6 +179,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
