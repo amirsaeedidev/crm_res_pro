@@ -23,16 +23,11 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   String? _loadError;
   Map<String, dynamic> _settings = {};
   List<Map<String, dynamic>> _templates = [];
-  List<Map<String, dynamic>> _eligibleCustomers = [];
-  List<Map<String, dynamic>> _discounts = [];
-  String? _selectedDiscountId;
   List<Map<String, dynamic>> _staff = [];
   List<Map<String, dynamic>> _outbox = [];
   List<Map<String, dynamic>> _attempts = [];
   List<Map<String, dynamic>> _stats = [];
   Map<String, dynamic> _campaignEffectiveness = {};
-  final Set<String> _selectedCustomers = {};
-  DateTime? _campaignSchedule;
   final Map<String, TextEditingController> _normalTemplateControllers = {};
   final Map<String, TextEditingController> _patternTemplateControllers = {};
   final Map<String, bool> _templateActive = {};
@@ -44,11 +39,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   final _adminPhone = TextEditingController();
   final _maxAttempts = TextEditingController(text: '5');
   final _retryDelay = TextEditingController(text: '60');
-  final _campaignName = TextEditingController(text: 'کمپین پیامکی');
-  final _campaignMessage = TextEditingController();
-  final _campaignBodyId = TextEditingController();
-  final _campaignPatternArgs = TextEditingController();
-  final _customerSearch = TextEditingController();
   final _testPhone = TextEditingController();
   final _testMessage = TextEditingController(
     text: 'این یک پیام آزمایشی از پنل مدیریت رستوران است.',
@@ -57,13 +47,11 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   final _testPatternArgs = TextEditingController();
 
   bool _smsEnabled = false;
-  bool _marketingEnabled = false;
   bool _notifyReady = true;
   bool _notifyTicketCustomer = true;
   bool _notifyTicketAdmin = true;
   bool _notifyStaff = true;
   bool _isPattern = false;
-  bool _loadingCustomers = false;
   bool _loadingStaff = false;
   bool _loadingLogs = false;
   String _logStatusFilter = 'all';
@@ -72,7 +60,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     _tabs.addListener(() {
       if (mounted) setState(() {});
     });
@@ -90,11 +78,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _adminPhone,
       _maxAttempts,
       _retryDelay,
-      _campaignName,
-      _campaignMessage,
-      _campaignBodyId,
-      _campaignPatternArgs,
-      _customerSearch,
       _testPhone,
       _testMessage,
       _testBodyId,
@@ -124,9 +107,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
         _repo.getOutbox(),
         _repo.getAttemptLogs(),
         _repo.getDeliveryStats(),
-        _repo.getMarketingEligibleCustomers(),
         _repo.getCampaignEffectiveness(),
-        _repo.getActiveDiscounts(),
       ]);
       if (!mounted) return;
       _settings = Map<String, dynamic>.from(values[0] as Map);
@@ -135,9 +116,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       _outbox = List<Map<String, dynamic>>.from(values[3] as List);
       _attempts = List<Map<String, dynamic>>.from(values[4] as List);
       _stats = List<Map<String, dynamic>>.from(values[5] as List);
-      _eligibleCustomers = List<Map<String, dynamic>>.from(values[6] as List);
-      _campaignEffectiveness = Map<String, dynamic>.from(values[7] as Map);
-      _discounts = List<Map<String, dynamic>>.from(values[8] as List);
+      _campaignEffectiveness = Map<String, dynamic>.from(values[6] as Map);
       _applySettingsToForm();
       _applyTemplatesToForm();
     } catch (e) {
@@ -155,7 +134,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     _maxAttempts.text = (_settings['max_attempts'] ?? 5).toString();
     _retryDelay.text = (_settings['retry_delay_seconds'] ?? 60).toString();
     _smsEnabled = _settings['sms_enabled'] == true;
-    _marketingEnabled = _settings['marketing_enabled'] == true;
     _isPattern = _settings['send_mode'] == 'pattern';
     _notifyReady = _settings['notify_order_ready_customer'] != false;
     _notifyTicketCustomer = _settings['notify_ticket_customer'] != false;
@@ -221,7 +199,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     try {
       final result = await _repo.saveSettings({
         'p_sms_enabled': _smsEnabled,
-        'p_marketing_enabled': _marketingEnabled,
         'p_send_mode': _isPattern ? 'pattern' : 'normal',
         'p_username': _username.text.trim(),
         'p_api_key': _apiKey.text.trim(),
@@ -269,97 +246,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
       await _loadAll();
     } catch (e) {
       _toast('ذخیره الگوها ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<void> _loadMarketingCustomers({String? query}) async {
-    setState(() => _loadingCustomers = true);
-    try {
-      final rows = await _repo.getMarketingEligibleCustomers(query: query);
-      if (!mounted) return;
-      _eligibleCustomers = rows;
-      final validIds = rows.map((r) => r['id'].toString()).toSet();
-      _selectedCustomers.removeWhere((id) => !validIds.contains(id));
-    } catch (e) {
-      _toast('دریافت فهرست مشتریان دارای رضایت ناموفق بود: $e');
-    } finally {
-      if (mounted) setState(() => _loadingCustomers = false);
-    }
-  }
-
-  Future<void> _pickCampaignSchedule() async {
-    final now = DateTime.now();
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _campaignSchedule ?? now,
-      firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year + 2),
-      helpText: 'تاریخ اجرای کمپین',
-    );
-    if (pickedDate == null || !mounted) return;
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_campaignSchedule ?? now.add(const Duration(minutes: 5))),
-      helpText: 'ساعت اجرای کمپین',
-    );
-    if (pickedTime == null || !mounted) return;
-    final selected = DateTime(
-      pickedDate.year, pickedDate.month, pickedDate.day,
-      pickedTime.hour, pickedTime.minute,
-    );
-    if (selected.isBefore(DateTime.now().add(const Duration(minutes: 1)))) {
-      _toast('زمان اجرای کمپین باید حداقل یک دقیقه بعد از زمان فعلی باشد.');
-      return;
-    }
-    setState(() => _campaignSchedule = selected);
-  }
-
-  Future<void> _queueCampaign() async {
-    if (_selectedCustomers.isEmpty) {
-      _toast('حداقل یک مشتری دارای رضایت پیامک تبلیغاتی انتخاب کنید.');
-      return;
-    }
-    if (!_isPattern && _campaignMessage.text.trim().isEmpty) {
-      _toast('متن پیامک را وارد کنید.');
-      return;
-    }
-    if (_isPattern &&
-        _campaignBodyId.text.trim().isEmpty &&
-        _defaultBodyId.text.trim().isEmpty) {
-      _toast('شناسه الگو (Body ID) را وارد کنید.');
-      return;
-    }
-    final confirmed = await _confirm(
-      'ایجاد کمپین پیامکی',
-      _campaignSchedule == null
-          ? 'برای ${_selectedCustomers.length} مشتری دارای رضایت، پیامک در صف قرار می‌گیرد و پس از تأیید درگاه ارسال می‌شود. ادامه می‌دهید؟'
-          : 'کمپین برای ${DateFormat('yyyy/MM/dd HH:mm').format(_campaignSchedule!)} زمان‌بندی می‌شود و تا آن زمان ارسال نخواهد شد. ادامه می‌دهید؟',
-    );
-    if (!confirmed || !mounted) return;
-    setState(() => _saving = true);
-    try {
-      final result = await _repo.createCampaign(
-        name: _campaignName.text.trim(),
-        customerIds: _selectedCustomers.toList(),
-        message: _campaignMessage.text,
-        bodyId: _campaignBodyId.text.trim(),
-        patternArgs: _campaignPatternArgs.text
-            .split(';')
-            .map((e) => e.trim())
-            .toList(),
-        scheduledAt: _campaignSchedule,
-        discountId: _selectedDiscountId,
-      );
-      _toast(
-        'کمپین در صف قرار گرفت؛ تعداد گیرندگان: ${result['recipient_count'] ?? 0}.',
-      );
-      _selectedCustomers.clear();
-      _campaignSchedule = null;
-      await _reloadLogs();
-    } catch (e) {
-      _toast('ساخت کمپین ناموفق بود: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -643,7 +529,7 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
     'ticket_answered_customer' => 'پاسخ تیکت',
     'ticket_new_message_admin' => 'اطلاع تیکت به مدیر',
     'new_order_staff' => 'سفارش جدید پرسنل',
-    'marketing_campaign' => 'کمپین تبلیغاتی',
+    'discount_campaign' => 'ارسال کد تخفیف',
     'admin_test' => 'پیامک آزمایشی',
     _ => 'رویداد پیامکی دیگر',
   };
@@ -765,7 +651,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
                 icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings04),
                 text: 'تنظیمات و الگوها',
               ),
-              Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedMegaphone01), text: 'کمپین تبلیغاتی'),
               Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedUserGroup), text: 'پرسنل'),
               Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedChartLineData01), text: 'گزارش و رویدادها'),
             ],
@@ -776,7 +661,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             controller: _tabs,
             children: [
               _buildSettingsTab(),
-              _buildCampaignTab(),
               _buildStaffTab(),
               _buildLogsTab(),
             ],
@@ -845,12 +729,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
               'وقتی خاموش باشد، پیامک جدیدی وارد صف ارسال نمی‌شود.',
               _smsEnabled,
               (v) => setState(() => _smsEnabled = v),
-            ),
-            _switch(
-              'فعال‌سازی بازاریابی پیامکی',
-              'کمپین فقط برای مشتریانی که رضایت پیامک تبلیغاتی دارند ساخته می‌شود.',
-              _marketingEnabled,
-              (v) => setState(() => _marketingEnabled = v),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -1070,188 +948,6 @@ class _SmsCenterScreenState extends State<SmsCenterScreen>
             }),
             if (_templates.isEmpty)
               const Text('هنوز الگویی در دیتابیس ثبت نشده است.'),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildCampaignTab() => ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      _card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'کمپین تبلیغاتی هدفمند',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text('${_selectedCustomers.length} انتخاب شده'),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'فقط مشتری فعال با شماره معتبر و رضایت ثبت‌شده انتخاب می‌شود. رضایت‌ها از اطلاعات مشتریان مدیریت می‌شوند؛ شماره بدون رضایت برای بازاریابی صف نمی‌شود.',
-            ),
-            if (!_marketingEnabled)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'بازاریابی پیامکی در تنظیمات خاموش است.',
-                  style: TextStyle(color: AppColors.error),
-                ),
-              ),
-            const SizedBox(height: 12),
-            _field(_campaignName, 'نام کمپین'),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String?>(
-              initialValue: _selectedDiscountId,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'کد تخفیف متصل به کمپین (اختیاری)',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('بدون کد تخفیف'),
-                ),
-                ..._discounts.map((discount) {
-                  final id = discount['id'].toString();
-                  final title = (discount['title'] ?? '').toString();
-                  final code = (discount['code'] ?? '').toString();
-                  return DropdownMenuItem<String?>(
-                    value: id,
-                    child: Text('$title • $code', overflow: TextOverflow.ellipsis),
-                  );
-                }),
-              ],
-              onChanged: (value) => setState(() => _selectedDiscountId = value),
-            ),
-            const SizedBox(height: 12),
-            if (!_isPattern)
-              _field(_campaignMessage, 'متن پیامک', maxLines: 4)
-            else ...[
-              _field(_campaignBodyId, 'Body ID الگو'),
-              const SizedBox(height: 12),
-              _field(
-                _campaignPatternArgs,
-                'مقادیر متغیر ثابت با ; جدا شوند؛ برای نام/تلفن از {{name}} و {{phone}} استفاده کنید',
-                maxLines: 2,
-              ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _pickCampaignSchedule,
-              icon: const HugeIcon(icon: HugeIcons.strokeRoundedClock01),
-              label: Text(
-                _campaignSchedule == null
-                    ? 'ارسال فوری (برای زمان‌بندی انتخاب کن)'
-                    : 'زمان اجرا: ${DateFormat('yyyy/MM/dd – HH:mm').format(_campaignSchedule!)}',
-              ),
-            ),
-            if (_campaignSchedule != null)
-              TextButton.icon(
-                onPressed: () => setState(() => _campaignSchedule = null),
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
-                label: const Text('حذف زمان‌بندی و ارسال فوری'),
-              ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _loadingCustomers
-                      ? null
-                      : () => _loadMarketingCustomers(
-                          query: _customerSearch.text,
-                        ),
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01),
-                  label: const Text('جست‌وجو'),
-                ),
-                TextButton(
-                  onPressed: () => setState(() => _selectedCustomers.clear()),
-                  child: const Text('لغو انتخاب همه'),
-                ),
-                TextButton(
-                  onPressed: () => setState(() {
-                    _selectedCustomers.addAll(
-                      _eligibleCustomers.map((e) => e['id'].toString()),
-                    );
-                  }),
-                  child: const Text('انتخاب فهرست جاری'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _field(_customerSearch, 'فیلتر نام یا شماره مشتری'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text('مشتریان دارای رضایت: ${_eligibleCustomers.length}'),
-                const Spacer(),
-                IconButton(
-                  onPressed: _loadingCustomers
-                      ? null
-                      : () => _loadMarketingCustomers(
-                          query: _customerSearch.text,
-                        ),
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
-                ),
-              ],
-            ),
-            if (_loadingCustomers) const LinearProgressIndicator(),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 340),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _eligibleCustomers.length,
-                itemBuilder: (context, index) {
-                  final customer = _eligibleCustomers[index];
-                  final id = customer['id'].toString();
-                  final name =
-                      '${customer['first_name'] ?? ''} ${customer['last_name'] ?? ''}'
-                          .trim();
-                  return CheckboxListTile(
-                    value: _selectedCustomers.contains(id),
-                    onChanged: (v) => setState(
-                      () => v == true
-                          ? _selectedCustomers.add(id)
-                          : _selectedCustomers.remove(id),
-                    ),
-                    title: Text(
-                      name.isEmpty ? 'مشتری ${id.substring(0, 8)}' : name,
-                    ),
-                    subtitle: Text(
-                      (customer['phone'] ?? 'بدون شماره').toString(),
-                    ),
-                    dense: true,
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _saving || !_marketingEnabled
-                    ? null
-                    : _queueCampaign,
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedMegaphone01),
-                label: Text(
-                  _saving
-                      ? 'در حال ثبت…'
-                      : 'ثبت کمپین و قرار دادن پیام‌ها در صف',
-                ),
-              ),
-            ),
           ],
         ),
       ),

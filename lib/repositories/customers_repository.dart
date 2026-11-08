@@ -17,7 +17,7 @@ class CustomersRepository {
   }) async {
     if (page < 1 || pageSize < 1) throw ArgumentError('page and pageSize must be positive');
     try {
-      var query = _client.from('profiles').select('id,email,first_name,last_name,phone,avatar_url,role,status,marketing_sms_opt_in,created_at').eq('role', 'customer');
+      var query = _client.from('profiles').select('id,email,first_name,last_name,phone,avatar_url,role,status,created_at').eq('role', 'customer');
       final search = _normalizeSearch(searchQuery);
       if (search != null && search.isNotEmpty) {
         final safe = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('(', r'\(').replaceAll(')', r'\)').replaceAll('%', r'\%').replaceAll('_', r'\_');
@@ -166,7 +166,7 @@ class CustomersRepository {
 
   Future<void> updateCustomer(String id, Map<String, dynamic> data) async {
     final allowed = <String, dynamic>{};
-    for (final key in ['first_name','last_name','phone','status','marketing_sms_opt_in']) {
+    for (final key in ['first_name','last_name','phone','status']) {
       if (data.containsKey(key)) allowed[key] = data[key];
     }
     allowed['updated_at'] = DateTime.now().toUtc().toIso8601String();
@@ -175,11 +175,6 @@ class CustomersRepository {
       throw ArgumentError.value(allowed['status'], 'status');
     }
     if (allowed['phone'] != null && (allowed['phone'] as String).trim().isEmpty) allowed['phone'] = null;
-    if (allowed['marketing_sms_opt_in'] == true) {
-      allowed['marketing_sms_opt_in_at'] = DateTime.now().toUtc().toIso8601String();
-    } else if (allowed['marketing_sms_opt_in'] == false) {
-      allowed['marketing_sms_opt_in_at'] = null;
-    }
     try {
       final rows = await _client.from('profiles').update(allowed).eq('id', id).eq('role', 'customer').select('id');
       if (rows.isEmpty) throw Exception('مشتری پیدا نشد یا مجوز تغییر اطلاعات آن را ندارید.');

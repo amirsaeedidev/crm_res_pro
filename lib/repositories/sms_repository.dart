@@ -32,45 +32,6 @@ class SmsRepository {
     }).eq('event_key', key);
   }
 
-  Future<List<Map<String, dynamic>>> getMarketingEligibleCustomers({String? query}) async {
-    var builder = _client.from('profiles').select(
-      'id,first_name,last_name,phone,status,marketing_sms_opt_in',
-    ).eq('role', 'customer').eq('status', 'active').eq('marketing_sms_opt_in', true).not('phone', 'is', null);
-    final search = query?.trim();
-    if (search != null && search.isNotEmpty) {
-      final safe = search.replaceAll('\\', '\\\\').replaceAll(',', r'\,').replaceAll('%', r'\%').replaceAll('_', r'\_');
-      builder = builder.or('first_name.ilike.%$safe%,last_name.ilike.%$safe%,phone.ilike.%$safe%');
-    }
-    final rows = await builder.order('created_at', ascending: false).limit(1000);
-    return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
-  }
-
-  Future<Map<String, dynamic>> createCampaign({
-    required String name,
-    required List<String> customerIds,
-    required String message,
-    required String bodyId,
-    required List<String> patternArgs,
-    DateTime? scheduledAt,
-    String? discountId,
-  }) async {
-    final result = await _client.rpc('admin_create_sms_campaign_scheduled', params: {
-      'p_name': name,
-      'p_customer_ids': customerIds,
-      'p_normal_message': message,
-      'p_pattern_body_id': bodyId,
-      'p_pattern_args': patternArgs,
-      'p_audience_filter': {'customer_ids': customerIds},
-      'p_discount_id': discountId,
-      'p_sms_cost_per_message': 0,
-      'p_other_campaign_cost': 0,
-      'p_attribution_window_days': 7,
-      'p_scheduled_at': (scheduledAt ?? DateTime.now()).toUtc().toIso8601String(),
-    });
-    if (result is! Map) throw const FormatException('پاسخ ایجاد کمپین معتبر نیست.');
-    return Map<String, dynamic>.from(result);
-  }
-
   Future<List<Map<String, dynamic>>> getCampaigns({int limit = 100}) async {
     final rows = await _client.from('sms_campaigns').select(
       'id,name,send_mode,status,scheduled_at,recipient_count,sent_count,delivered_count,failed_count,created_at,completed_at,cancelled_at',
@@ -104,14 +65,6 @@ class SmsRepository {
     }
     if (response.data is Map) return Map<String, dynamic>.from(response.data as Map);
     return {'result': response.data};
-  }
-
-  Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
-    final rows = await _client.from('discounts')
-        .select('id,title,code,is_active')
-        .eq('is_active', true)
-        .order('created_at', ascending: false);
-    return rows.map((row) => Map<String, dynamic>.from(row)).toList(growable: false);
   }
 
   Future<Map<String, dynamic>> getCampaignEffectiveness({int days = 90}) async {
