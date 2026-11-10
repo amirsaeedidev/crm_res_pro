@@ -247,7 +247,6 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                             itemBuilder: (context, index) => _buildOrderRow(
                               context,
                               provider.orders[index],
-                              provider,
                               compact: constraints.maxWidth < 720,
                             ),
                           ),
@@ -276,8 +275,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 
   Widget _buildOrderRow(
     BuildContext context,
-    OrderModel order,
-    OrdersProvider provider, {
+    OrderModel order, {
     required bool compact,
   }) {
     final amount = '${_persianDigits(order.totalAmount.round())} تومان';
