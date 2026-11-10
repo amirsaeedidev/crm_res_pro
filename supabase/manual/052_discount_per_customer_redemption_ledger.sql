@@ -40,8 +40,10 @@ begin
     into v_definition;
   v_updated := replace(
     v_definition,
-    $old$select count(*) from public.orders o where o.user_id=auth.uid()
-      and pg_catalog.upper(coalesce(o.discount_code,''))=pg_catalog.upper(d.code) and o.status<>'cancelled'$old$,
+    $old$select count(*) from public.orders o
+        where o.user_id=auth.uid()
+          and pg_catalog.upper(coalesce(o.discount_code,''))=pg_catalog.upper(d.code)
+          and o.status <> 'cancelled'$old$,
     $new$select count(*) from public.discount_redemptions r
       where r.discount_id=d.id and r.user_id=auth.uid() and r.status='redeemed'$new$
   );
