@@ -3,8 +3,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../../providers/notifications_provider.dart';
+
+String _formatNotificationDate(DateTime value) {
+  final local = value.toLocal();
+  final date = Jalali.fromDateTime(local);
+  const digits = '۰۱۲۳۴۵۶۷۸۹';
+  final raw = '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  return raw.replaceAllMapped(RegExp(r'[0-9]'), (match) => digits[int.parse(match.group(0)!) ]);
+}
 
 class NotificationInboxScreen extends StatelessWidget {
   const NotificationInboxScreen({super.key});
@@ -82,7 +91,7 @@ class NotificationInboxScreen extends StatelessWidget {
                                       subtitle: Padding(
                                         padding: const EdgeInsets.only(top: 4),
                                         child: Text(
-                                          '${item.description}\n${item.timestamp.toLocal()}',
+                                          '${item.description}\n${_formatNotificationDate(item.timestamp)}',
                                           maxLines: 4,
                                           overflow: TextOverflow.ellipsis,
                                         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,7 +10,6 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_loading.dart';
 import '../../../core/widgets/app_search.dart';
-import '../../../core/widgets/app_table.dart';
 import '../../../core/widgets/custom_chip.dart';
 import '../../../models/order_model.dart';
 import '../../../providers/orders_provider.dart';
@@ -27,7 +26,6 @@ class OrdersListScreen extends StatefulWidget {
 
 class _OrdersListScreenState extends State<OrdersListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final NumberFormat _currencyFormatter = NumberFormat.decimalPattern('en_US');
   RealtimeChannel? _ordersChannel;
   bool _realtimeConnected = false;
   bool _refreshQueued = false;
@@ -127,9 +125,10 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 
   String _formatDate(DateTime value) {
     final date = value.toLocal();
+    final jalali = Jalali.fromDateTime(date);
     return _persianDigits(
-      '${date.year}/${date.month.toString().padLeft(2, '0')}/'
-      '${date.day.toString().padLeft(2, '0')}  '
+      '${jalali.year}/${jalali.month.toString().padLeft(2, '0')}/'
+      '${jalali.day.toString().padLeft(2, '0')}  '
       '${date.hour.toString().padLeft(2, '0')}:'
       '${date.minute.toString().padLeft(2, '0')}',
     );
@@ -240,65 +239,17 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                   child: Column(
                     children: [
                       Expanded(
-                        child: AppTable(
-                          minWidth: 900,
-                          headers: const [
-                            'شماره سفارش',
-                            'مشتری',
-                            'تاریخ',
-                            'مبلغ',
-                            'وضعیت',
-                            'عملیات'
-                          ],
-                          rows: provider.orders.map((order) {
-                            return [
-                              Text(
-                                order.dailyQueueNumber == null ? '—' : _persianDigits(order.dailyQueueNumber),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
-                              ),
-                              Text(
-                                '#${order.id.substring(0, 8).toUpperCase()}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              Text(
-                                order.customerName,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.getPrimaryText(context),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              Text(
-                                _formatDate(order.createdAt),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.getSecondaryText(context),
-                                    ),
-                              ),
-                              Text(
-                                '${_persianDigits(_currencyFormatter.format(order.totalAmount))} تومان',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.getPrimaryText(context),
-                                    ),
-                              ),
-                              CustomChip(
-                                label: _formatStatus(order.status),
-                                type: _getStatusChipType(order.status),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.visibility_outlined, color: AppColors.info),
-                                    onPressed: () {
-                                      context.push('/orders/details/${order.id}');
-                                    },
-                                  ),
-                                  _buildStatusChangeMenu(context, order),
-                                ],
-                              ),
-                            ];
-                          }).toList(),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) => ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                            itemCount: provider.orders.length,
+                            separatorBuilder: (_, _) => const Divider(height: 1),
+                            itemBuilder: (context, index) => _buildOrderRow(
+                              context,
+                              provider.orders[index],
+                              compact: constraints.maxWidth < 720,
+                            ),
+                          ),
                         ),
                       ),
                       if (provider.totalPages > 1)
@@ -307,9 +258,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                           child: PaginationWidget(
                             currentPage: provider.currentPage,
                             totalPages: provider.totalPages,
-                            onPageChanged: (page) {
-                              provider.changePage(page);
-                            },
+                            onPageChanged: provider.changePage,
                           ),
                         ),
                     ],
@@ -323,6 +272,65 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     );
   }
 
+
+  Widget _buildOrderRow(
+    BuildContext context,
+    OrderModel order, {
+    required bool compact,
+  }) {
+    final amount = '${_persianDigits(order.totalAmount.round())} تومان';
+    final identity = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(order.customerName.isEmpty ? 'مشتری نامشخص' : order.customerName,
+            maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text('${_formatDate(order.createdAt)} • #${order.id.substring(0, 8).toUpperCase()}',
+            maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context))),
+      ],
+    );
+    final paymentAndStatus = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(amount, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        CustomChip(label: _formatStatus(order.status), type: _getStatusChipType(order.status)),
+      ],
+    );
+    final actions = Wrap(
+      spacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        IconButton(
+          tooltip: 'نمایش سفارش',
+          icon: const Icon(Icons.visibility_outlined, color: AppColors.info),
+          onPressed: () => context.push('/orders/details/${order.id}'),
+        ),
+        _buildStatusChangeMenu(context, order),
+      ],
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.sm),
+      child: compact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                identity,
+                const SizedBox(height: AppSizes.sm),
+                Row(children: [Expanded(child: paymentAndStatus), actions]),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(flex: 4, child: identity),
+                Expanded(flex: 2, child: paymentAndStatus),
+                actions,
+              ],
+            ),
+    );
+  }
 
   Widget _buildStalledOrdersPanel(BuildContext context) {
     final cutoff = DateTime.now().toUtc().subtract(const Duration(minutes: 15)).toIso8601String();

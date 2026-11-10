@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hugeicons/hugeicons.dart';
-import '../../../providers/notifications_provider.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../../core/services/supabase_service.dart';
 import '../../../repositories/notification_campaigns_repository.dart';
@@ -148,71 +148,12 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                     style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 24),
-                  Consumer<NotificationsProvider>(
-                    builder: (context, provider, _) {
-                      final notifications = provider.notifications;
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text('صندوق اعلان‌ها',
-                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                  ),
-                                  Text('${notifications.length} اعلان'),
-                                  const SizedBox(width: 8),
-                                  if (provider.unreadCount > 0)
-                                    TextButton(
-                                      onPressed: provider.markAllAsRead,
-                                      child: const Text('خواندن همه'),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              if (provider.isLoading && notifications.isEmpty)
-                                const Center(child: Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: CircularProgressIndicator(),
-                                ))
-                              else if (notifications.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Center(child: Text('هنوز اعلانی ثبت نشده است.')),
-                                )
-                              else
-                                ...notifications.map((notification) => ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: HugeIcon(
-                                    icon: switch (notification.type) {
-                                      NotificationType.newOrder => HugeIcons.strokeRoundedShoppingCart01,
-                                      NotificationType.newReservation => HugeIcons.strokeRoundedCalendarCheckIn01,
-                                      NotificationType.newCustomer => HugeIcons.strokeRoundedUserGroup,
-                                      NotificationType.newTicket => HugeIcons.strokeRoundedHeadset,
-                                      NotificationType.unknown => HugeIcons.strokeRoundedNotification01,
-                                    },
-                                    color: notification.isRead
-                                        ? theme.colorScheme.onSurfaceVariant
-                                        : theme.colorScheme.primary,
-                                  ),
-                                  title: Text(notification.title,
-                                    style: TextStyle(fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold)),
-                                  subtitle: Text(notification.description),
-                                  trailing: notification.isRead
-                                      ? const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02)
-                                      : TextButton(
-                                          onPressed: () => provider.markAsRead(notification.id),
-                                          child: const Text('خوانده شد'),
-                                        ),
-                                )),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                  Card(
+                    child: ListTile(
+                      leading: const HugeIcon(icon: HugeIcons.strokeRoundedNotification01),
+                      title: const Text('صندوق اعلان‌های دریافتی'),
+                      subtitle: const Text('اعلان‌های دریافت‌شده و وضعیت خواندن آن‌ها در صفحه مستقل صندوق اعلان‌ها مدیریت می‌شوند.'),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Card(
@@ -281,6 +222,15 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.phonelink_ring_outlined, color: theme.colorScheme.onSurfaceVariant),
+                      title: const Text('Push Notification'),
+                      subtitle: const Text('ارسال پوش هنوز فعال نیست؛ پروژه Firebase/FCM، ثبت توکن دستگاه در اپ مشتری و کلید سرویس امن سمت سرور پیکربندی نشده است. تا زمان تکمیل این موارد، این گزینه عمداً غیرفعال است.'),
+                      trailing: const Icon(Icons.lock_outline),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -397,7 +347,7 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
                                   final createdAt = DateTime.tryParse((row['created_at'] ?? '').toString())?.toLocal();
                                   final dateLabel = createdAt == null
                                       ? '—'
-                                      : createdAt.toString().substring(0, 16);
+                                      : _formatJalaliDate(createdAt);
                                   final audience = switch ((row['audience'] ?? '').toString()) {
                                     'admins' => 'مدیران',
                                     'all_customers' => 'همه مشتریان',
@@ -477,6 +427,14 @@ class _NotificationsCenterScreenState extends State<NotificationsCenterScreen> {
         ),
       ),
     );
+  }
+
+  String _formatJalaliDate(DateTime value) {
+    final local = value.toLocal();
+    final date = Jalali.fromDateTime(local);
+    const digits = '۰۱۲۳۴۵۶۷۸۹';
+    final raw = '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return raw.replaceAllMapped(RegExp(r'[0-9]'), (match) => digits[int.parse(match.group(0)!)]);
   }
 
   Widget _audienceTile({

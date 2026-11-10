@@ -1,7 +1,7 @@
 import 'package:crm_panel/core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -30,8 +30,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   List<Map<String, dynamic>> _smsStaff = [];
   bool _staffLoading = false;
   bool _staffSaving = false;
-  final DateFormat _dateFormatter = DateFormat('yyyy-MM-dd – HH:mm');
-  final TextEditingController _readyTimeController = TextEditingController();
   final TextEditingController _adminNoteController = TextEditingController();
 
   String _persianDigits(Object? value) {
@@ -42,6 +40,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       result = result.replaceAll(latin[i], persian[i]);
     }
     return result;
+  }
+
+  String _formatJalaliDate(DateTime value) {
+    final local = value.toLocal();
+    final date = Jalali.fromDateTime(local);
+    return _persianDigits('${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}');
   }
 
   String _statusStepLabel(String status) {
@@ -113,7 +117,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   @override
   void dispose() {
-    _readyTimeController.dispose();
     _adminNoteController.dispose();
     super.dispose();
   }
@@ -241,9 +244,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             );
           }
 
-          if (order.estimatedReadyMinutes != null && _readyTimeController.text.isEmpty) {
-            _readyTimeController.text = order.estimatedReadyMinutes.toString();
-          }
           if (_adminNoteController.text.isEmpty && (order.adminNote ?? '').isNotEmpty) {
             _adminNoteController.text = order.adminNote!;
           }
@@ -259,7 +259,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 const SizedBox(height: AppSizes.lg),
                 _buildStaffAssignment(context, provider, order),
                 const SizedBox(height: AppSizes.lg),
-                _buildReadyTimeControl(context, provider, order),
+                _buildReadyTimeInfo(context, order),
                 const SizedBox(height: AppSizes.lg),
                 _buildAdminNoteControl(context, provider, order),
                 const SizedBox(height: AppSizes.lg),
@@ -402,39 +402,26 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  Widget _buildReadyTimeControl(BuildContext context, OrdersProvider provider, OrderModel order) {
+  Widget _buildReadyTimeInfo(BuildContext context, OrderModel order) {
     return AppCard(
       child: Row(
         children: [
+          const Icon(Icons.timer_outlined, color: AppColors.primary),
+          const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
-              'زمان تقریبی آماده‌سازی (دقیقه)',
+              'زمان تخمینی آماده‌شدن سفارش',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          SizedBox(
-            width: 100,
-            child: TextFormField(
-              controller: _readyTimeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: AppSizes.sm),
-              ),
+          Text(
+            order.estimatedReadyMinutes == null
+                ? 'در انتظار محاسبه'
+                : '${_persianDigits(order.estimatedReadyMinutes)} دقیقه',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.save_outlined, color: AppColors.primary),
-            onPressed: provider.isUpdatingStatus ? null : () async {
-              final minutes = int.tryParse(_readyTimeController.text.trim());
-              if (minutes == null || minutes < 1) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('زمان باید عدد صحیح مثبت باشد.')));
-                return;
-              }
-              final ok = await provider.updateEstimatedDeliveryTime(order.id, minutes);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'زمان آماده‌سازی ذخیره شد.' : provider.detailsError ?? 'ذخیره زمان ناموفق بود.')));
-            },
           ),
         ],
       ),
@@ -488,6 +475,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             '${_persianDigits(item.quantity)} × ${item.name}',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'قیمت واحد: ${_persianDigits(item.price)} تومان',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.getSecondaryText(context)),
+                          ),
+                          Text(
+                            'جمع این مورد: ${_persianDigits(item.price * item.quantity)} تومان',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                          ),
                           if (item.note != null && item.note!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0),
@@ -505,10 +501,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             ),
                         ],
                       ),
-                    ),
-                    Text(
-                      '${_persianDigits(item.price * item.quantity)} تومان',
-                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
@@ -538,7 +530,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           _buildSummaryRow(
             context,
             'تاریخ سفارش',
-            _persianDigits(_dateFormatter.format(order.createdAt.toLocal())),
+            _formatJalaliDate(order.createdAt),
           ),
         ],
       ),

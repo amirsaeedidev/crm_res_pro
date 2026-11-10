@@ -23,6 +23,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _price = TextEditingController();
+  final _preparationTime = TextEditingController(text: '15');
   final _description = TextEditingController();
   final _aboutDish = TextEditingController();
   final _labels = TextEditingController();
@@ -59,6 +60,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (!mounted) return;
       _name.text = product.name;
       _price.text = product.price.toStringAsFixed(0);
+      _preparationTime.text = product.preparationTimeMinutes.toString();
       _description.text = product.description;
       _aboutDish.text = product.aboutDish;
       _labels.text = product.labels.join(', ');
@@ -79,7 +81,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   void dispose() {
-    _name.dispose(); _price.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _unavailableReason.dispose();
+    _name.dispose(); _price.dispose(); _preparationTime.dispose(); _description.dispose(); _aboutDish.dispose(); _labels.dispose(); _discountPercent.dispose(); _unavailableReason.dispose();
     super.dispose();
   }
 
@@ -129,6 +131,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'labels': labels,
         'discount_percent': percentage,
         'price': int.parse(_price.text.trim()),
+        'preparation_time_minutes': int.parse(_preparationTime.text.trim()),
         'image_url': imageUrl,
         'category_id': _categoryId,
         'is_popular': _popular,
@@ -158,6 +161,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'نام محصول *', border: OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'نام محصول را وارد کنید.' : null),
         const SizedBox(height: 14),
         TextFormField(controller: _price, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'قیمت پایه (تومان) *', border: OutlineInputBorder()), validator: _validatePrice),
+        const SizedBox(height: 14),
+        TextFormField(controller: _preparationTime, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'زمان آماده‌سازی (دقیقه) *', helperText: 'برای محاسبه خودکار زمان آماده‌شدن سفارش استفاده می‌شود.', border: OutlineInputBorder()), validator: (value) { final minutes = int.tryParse((value ?? '').trim()); return minutes == null || minutes < 1 || minutes > 600 ? 'زمان باید بین ۱ تا ۶۰۰ دقیقه باشد.' : null; }),
         const SizedBox(height: 14),
         Consumer<CategoriesProvider>(builder: (context, provider, _) => DropdownButtonFormField<String?>(initialValue: _categoryId, decoration: const InputDecoration(labelText: 'دسته‌بندی (اختیاری)', border: OutlineInputBorder()), items: [const DropdownMenuItem<String?>(value: null, child: Text('بدون دسته‌بندی')), ...provider.categories.map((cat) => DropdownMenuItem<String?>(value: cat.id, child: Text(cat.name)))], onChanged: provider.isLoading || _saving ? null : (value) => setState(() => _categoryId = value))),
         const SizedBox(height: 14),

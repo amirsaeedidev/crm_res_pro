@@ -9,6 +9,7 @@ void main() {
         'name': 'پیتزا پپرونی',
         'description': 'پیتزا با پنیر و پپرونی',
         'price': 120000.0,
+        'preparation_time_minutes': 25,
         'discounted_price': 99000.0,
         'category_id': 'cat-1',
         'stock': 50,
@@ -26,6 +27,7 @@ void main() {
       expect(product.name, 'پیتزا پپرونی');
       expect(product.description, 'پیتزا با پنیر و پپرونی');
       expect(product.price, 120000.0);
+      expect(product.preparationTimeMinutes, 25);
       expect(product.discountedPrice, 99000.0);
       expect(product.categoryId, 'cat-1');
       expect(product.stock, 50);
@@ -54,6 +56,7 @@ void main() {
       final product = ProductModel.fromJson(json);
 
       expect(product.discountedPrice, isNull);
+      expect(product.preparationTimeMinutes, 15);
       expect(product.isPopular, false); // Default value
       expect(product.rating, isNull);
       expect(product.reviewCount, isNull);
@@ -81,6 +84,7 @@ void main() {
       expect(json['id'], 'prod-789');
       expect(json['name'], 'سالاد');
       expect(json['price'], 50000);
+      expect(json['preparation_time_minutes'], 15);
       expect(json.containsKey('discounted_price'), false);
       expect(json.containsKey('stock'), false);
       expect(json['is_popular'], false);

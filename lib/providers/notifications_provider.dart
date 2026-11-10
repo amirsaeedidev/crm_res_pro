@@ -387,35 +387,71 @@ class NotificationsProvider extends ChangeNotifier {
     if (_disposed) return;
     final index = _notifications.indexWhere((notification) => notification.id == id);
     if (index == -1 || _notifications[index].isRead) return;
-    _notifications[index] = _notifications[index].copyWith(isRead: true);
-    _notifyIfAlive();
     try {
-      await _client.from('admin_notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', id);
+      final updated = await _client
+          .from('admin_notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', id)
+          .eq('is_read', false)
+          .select('id');
+      if (updated.isEmpty) {
+        throw StateError('اعلان به‌روزرسانی نشد؛ مجوز مدیر یا وضعیت رکورد را بررسی کنید.');
+      }
+      if (_disposed) return;
+      final currentIndex = _notifications.indexWhere((item) => item.id == id);
+      if (currentIndex >= 0) {
+        _notifications[currentIndex] = _notifications[currentIndex].copyWith(isRead: true);
+        _notifyIfAlive();
+      }
     } catch (e, st) {
       LoggerService.error('Could not persist notification read state', error: e, stackTrace: st);
+      _reloadAfterReadFailure();
     }
   }
 
   /// Persists the read state for all unread notifications.
   Future<void> markAllAsRead() async {
     if (_disposed) return;
-    final hasUnread = _notifications.any((notification) => !notification.isRead);
-    if (!hasUnread) return;
-    for (var i = 0; i < _notifications.length; i++) {
-      if (!_notifications[i].isRead) _notifications[i] = _notifications[i].copyWith(isRead: true);
-    }
-    _notifyIfAlive();
+    final unreadIds = _notifications
+        .where((notification) => !notification.isRead)
+        .map((notification) => notification.id)
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (unreadIds.isEmpty) return;
     try {
-      await _client.from('admin_notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('is_read', false);
+      final updated = await _client
+          .from('admin_notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .inFilter('id', unreadIds)
+          .eq('is_read', false)
+          .select('id');
+      if (updated.length != unreadIds.length) {
+        throw StateError('فقط ${updated.length} مورد از ${unreadIds.length} اعلان به‌روزرسانی شد.');
+      }
+      if (_disposed) return;
+      for (var i = 0; i < _notifications.length; i++) {
+        if (unreadIds.contains(_notifications[i].id)) {
+          _notifications[i] = _notifications[i].copyWith(isRead: true);
+        }
+      }
+      _notifyIfAlive();
     } catch (e, st) {
       LoggerService.error('Could not persist all-read notification state', error: e, stackTrace: st);
+      _reloadAfterReadFailure();
     }
+  }
+
+  void _reloadAfterReadFailure() {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || _disposed) return;
+    _resolvedUserId = null;
+    unawaited(_syncForUser(userId));
   }
 
   void clearNotifications() {
