@@ -839,7 +839,7 @@ class _DiscountFormScreenState extends State<DiscountFormScreen> {
                   AppTextField(
                     controller: _perUserUsageController,
                     labelText: 'سقف استفاده برای هر مشتری (اختیاری)',
-                    hintText: 'مثلاً ۱',
+                    hintText: 'خالی = نامحدود؛ ۱ = یک‌بار برای هر مشتری',
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) return null;
